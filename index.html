@@ -79,6 +79,7 @@ input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--brass);outline:
 .die.hor{background:var(--horror);border-color:var(--horror)}
 .die.hor::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--surface)}
 .die.empty{border-style:dashed;border-color:var(--line)}
+.die.pend{border-color:var(--horror);border-style:solid;box-shadow:0 0 0 3px var(--horror-soft)}
 .die.lost{border:2px solid var(--danger-soft);background:repeating-linear-gradient(45deg,var(--danger-soft) 0 4px,transparent 4px 8px)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .stat{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--surface2);border-radius:4px;min-width:110px}
@@ -360,7 +361,7 @@ const R={
  strain(s){const c=chars[s];if(c.poolLimit>=c.poolMax)return toast('You can only strain when your pool limit is below its maximum.');
   if(c.injuries.some(j=>['Nasty Cut','Comatose','Dire'].includes(j.name)))return toast('An injury is stopping the pool limit from rising.');
   save(s,{poolLimit:c.poolMax},'Strained: pool limit restored, injury due at end of turn');toast('Pool limit restored. Roll an injury at the end of your turn.');},
- horror(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.poolMax,c.horrorLimit+n));save(s,{horrorLimit:v},(n>0?'Suffered ':'Removed ')+Math.abs(v-c.horrorLimit)+' horror');},
+ horror(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.poolMax,c.horrorLimit+n));save(s,{horrorLimit:v},(n>0?'Suffered ':'Removed ')+Math.abs(v-c.horrorLimit)+' horror');if(n>0&&v>c.horror)toast('Horror dice limit is now '+v+'. Tap Refill pool to swap in horror dice.');},
  habitual(s){const c=chars[s];if(c.habitual.used)return toast('Already used a habitual item this session.');if(c.horrorLimit<=0)return toast('No horror to remove.');
   const m=Math.round(((Number(c.money)||0)-1)*100)/100;save(s,{horrorLimit:c.horrorLimit-1,habitual:{name:c.habitual.name,used:true},money:m},'Used '+(c.habitual.name||'habitual item')+': removed 1 horror');},
  insight(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.insightLimit,c.insight+n));save(s,{insight:v},n<0?'Spent 1 insight':null);},
@@ -404,9 +405,10 @@ function status(c){
  return['ok','Steady'];
 }
 function poolHtml(c,mini){
- let h='';for(let i=0;i<c.horror;i++)h+='<span class="die hor" title="Horror die"></span>';
- for(let i=0;i<c.regular;i++)h+='<span class="die reg" title="Regular die"></span>';
- for(let i=c.regular+c.horror;i<c.poolLimit;i++)h+='<span class="die empty" title="Spent"></span>';
+ let h='',k=0;const pend=()=>k++<c.horrorLimit;
+ for(let i=0;i<c.horror;i++){k++;h+='<span class="die hor" title="Horror die"></span>';}
+ for(let i=0;i<c.regular;i++)h+=pend()?'<span class="die reg pend" title="Regular die \u2014 becomes a horror die on the next refill"></span>':'<span class="die reg" title="Regular die"></span>';
+ for(let i=c.regular+c.horror;i<c.poolLimit;i++)h+=pend()?'<span class="die empty pend" title="Spent \u2014 refills as a horror die"></span>':'<span class="die empty" title="Spent"></span>';
  for(let i=c.poolLimit;i<c.poolMax;i++)h+='<span class="die lost" title="Lost to damage"></span>';
  return '<div class="pool'+(mini?' mini':'')+'" aria-label="'+(c.regular+c.horror)+' dice in pool">'+h+'</div>';
 }
@@ -445,7 +447,7 @@ function renderCharBody(s){
 
  // condition
  h+='<section class="sec"><div class="sec-head"><h2>Dice pool</h2><span class="note num">'+(c.regular+c.horror)+' in pool · limit '+c.poolLimit+' of '+c.poolMax+'</span></div>'+poolHtml(c)+
- '<div class="legend"><span>■ regular</span><span style="color:var(--horror)">■ horror</span><span>□ spent</span><span style="color:var(--danger)">▨ lost to damage</span></div>'+
+ '<div class="legend"><span>■ regular</span><span style="color:var(--horror)">■ horror</span><span>□ spent</span><span style="color:var(--danger)">▨ lost to damage</span><span style="color:var(--horror)">▢ green ring = becomes horror on refill</span></div>'+
  '<div class="row"><button class="btn" data-act="spend" data-k="reg" '+(c.regular?'':'disabled')+'>Spend regular die</button><button class="btn hor" data-act="spend" data-k="hor" '+(c.horror?'':'disabled')+'>Spend horror die</button><button class="btn pri" data-act="refill">Refill pool</button></div>'+
  '<div class="row"><button class="btn dng" data-act="dmg" data-n="1">Take 1 damage</button><button class="btn dng" data-act="dmg" data-n="2">Take 2</button><button class="btn" data-act="heal" data-n="1">Heal 1</button><button class="btn" data-act="rest">Full rest</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Strain</button></div>'+
  '<p class="note" style="margin:0">Damage lowers the pool limit. At 0 you’re wounded. Straining restores the limit, then you roll an injury at the end of your turn.</p></section>';
@@ -757,7 +759,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v12 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v13 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -772,7 +774,7 @@ render();
  try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
- syncEl.textContent='Live · synced for the party · v12';
+ syncEl.textContent='Live · synced for the party · v13';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

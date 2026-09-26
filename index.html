@@ -738,7 +738,7 @@ app.addEventListener('change',e=>{
 });
 
 // ---------- passcodes ----------
-async function grant(slot,code){await db.doc('grants/'+authUid+'__'+slot).set({slot,code});}
+async function grant(slot,code){await db.doc('grants/'+authUid+'/keys/'+slot).set({slot,code});}
 async function lockAction(a,s){
  if(!db||!authUid)return toast('Still connecting. Try again in a moment.');
  const val=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
@@ -747,13 +747,13 @@ async function lockAction(a,s){
   else if(a==='munlock'){const code=val('mkey');if(!code)return toast('Enter the master key.');await grant('master',code);toast('Master key active on this device.');}
   else if(a==='lockset'){const code=val('lockset-'+s);if(code.length<4)return toast('Use at least 4 characters.');
    await db.doc('locks/'+s).set({code});await grant(s,code);if(!chars[s].locked)await db.doc('characters/'+s).update({locked:true});toast(chars[s].locked?'Passcode set.':'Passcode changed.');}
-  else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'__'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
-  else if(a==='forget'){await db.doc('grants/'+authUid+'__'+s).delete();toast('This device needs the passcode again to edit.');}
+  else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
+  else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+uid+'__master').delete();toast('Master key removed from this device.');}
  }catch(e){toast(e&&e.code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'You don\u2019t have access to change that.'):'Couldn\u2019t reach the server. Try again.');}
 }
 function watchKeys(){
- [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'__'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
+ [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
 }
 
 // ---------- boot ----------

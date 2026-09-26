@@ -5,7 +5,7 @@ service cloud.firestore {
     function slots() { return ['p1', 'p2', 'p3', 'p4']; }
     function signedIn() { return request.auth != null; }
     function lockDoc(s) { return /databases/$(database)/documents/locks/$(s); }
-    function grantDoc(s) { return /databases/$(database)/documents/grants/$(request.auth.uid + '__' + s); }
+    function grantDoc(s) { return /databases/$(database)/documents/grants/$(request.auth.uid)/keys/$(s); }
 
     // This device unlocked slot s (or 'master') with the passcode that is set right now.
     function holdsKey(s) {
@@ -32,14 +32,14 @@ service cloud.firestore {
       allow delete: if slot in slots() && (isMaster() || holdsKey(slot));
     }
 
-    // A device's proof that it entered the right passcode. Only accepted when the code matches.
-    match /grants/{gid} {
-      allow read, delete: if signedIn() && gid.split('__')[0] == request.auth.uid;
-      allow create, update: if signedIn()
-        && (request.resource.data.slot in slots() || request.resource.data.slot == 'master')
-        && gid == request.auth.uid + '__' + request.resource.data.slot
-        && exists(lockDoc(request.resource.data.slot))
-        && request.resource.data.code == get(lockDoc(request.resource.data.slot)).data.code;
+    // A device's saved keys: grants/{device}/keys/{slot or 'master'}.
+    // Only that device can see or delete them, and a key is only accepted if its code is correct.
+    match /grants/{owner}/keys/{slot} {
+      allow read, delete: if signedIn() && request.auth.uid == owner;
+      allow create, update: if signedIn() && request.auth.uid == owner
+        && (slot in slots() || slot == 'master')
+        && exists(lockDoc(slot))
+        && request.resource.data.code == get(lockDoc(slot)).data.code;
     }
 
     match /{document=**} {

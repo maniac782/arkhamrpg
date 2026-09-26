@@ -1,11 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // The four party sheets: anyone with the site link can read and edit them.
-    match /characters/{slot} {
-      allow read, write: if slot in ['p1', 'p2', 'p3', 'p4'];
+
+    function slots() { return ['p1', 'p2', 'p3', 'p4']; }
+    function signedIn() { return request.auth != null; }
+    function lockDoc(s) { return /databases/$(database)/documents/locks/$(s); }
+    function grantDoc(s) { return /databases/$(database)/documents/grants/$(request.auth.uid + '__' + s); }
+
+    // This device unlocked slot s (or 'master') with the passcode that is set right now.
+    function holdsKey(s) {
+      return signedIn() && exists(lockDoc(s)) && exists(grantDoc(s))
+        && get(grantDoc(s)).data.code == get(lockDoc(s)).data.code;
     }
-    // Everything else is closed.
+    function isMaster() { return holdsKey('master'); }
+    function canEdit(s) { return isMaster() || !exists(lockDoc(s)) || holdsKey(s); }
+
+    // Character sheets: everyone can view; editing a locked sheet needs its passcode or the master key.
+    match /characters/{slot} {
+      allow read: if slot in slots();
+      allow write: if slot in slots() && signedIn() && canEdit(slot);
+    }
+
+    // Passcodes: nobody can read them. Set one on an open sheet; change or remove it with the passcode or master key.
+    // The master key (locks/master) can only be set in the Firebase console.
+    match /locks/{slot} {
+      allow read: if false;
+      allow create: if slot in slots() && signedIn() && request.resource.data.code is string
+        && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64;
+      allow update: if slot in slots() && (isMaster() || holdsKey(slot)) && request.resource.data.code is string
+        && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64;
+      allow delete: if slot in slots() && (isMaster() || holdsKey(slot));
+    }
+
+    // A device's proof that it entered the right passcode. Only accepted when the code matches.
+    match /grants/{gid} {
+      allow read, delete: if signedIn() && gid.split('__')[0] == request.auth.uid;
+      allow create, update: if signedIn()
+        && (request.resource.data.slot in slots() || request.resource.data.slot == 'master')
+        && gid == request.auth.uid + '__' + request.resource.data.slot
+        && exists(lockDoc(request.resource.data.slot))
+        && request.resource.data.code == get(lockDoc(request.resource.data.slot)).data.code;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

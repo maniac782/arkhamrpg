@@ -25,10 +25,18 @@ These values are safe to have in a public repo. They only identify the project; 
 2. On GitHub: **Settings → Pages** → Source: **Deploy from a branch** → Branch: `main`, folder `/ (root)` → **Save**.
 3. After a minute, the site is at `https://<your-username>.github.io/<repo-name>/`.
 
-Open it. The top right should say **Live · synced for the party**. The first time it loads, it fills slot 1 with Wallace Morrow and leaves the other three slots blank.
+### 4. Turn on passcodes
+1. In Firebase, open **Security → Authentication** → **Get started** → **Sign-in method** → **Anonymous** → turn it on → **Save**. This gives each device an ID with no account needed.
+2. Set your master key: open **Databases & Storage → Firestore** → **Data** → **Start collection**. Collection ID: `locks`. Document ID: `master`. Add a field named `code`, type **string**, with your master key as the value. **Save**.
+
+To change the master key later, edit that `code` field. Every device using the old key loses master access.
+
+Open the site. The top right should say **Live · synced for the party**. The first time it loads, it fills slot 1 with Wallace Morrow and leaves the other three slots blank.
 
 ## Good to know
-- Anyone with the link can edit any sheet. There are no logins, so share the link only with the group.
+- Anyone with the link can view every sheet. A player can lock their own sheet with a passcode at the top of it; after that, only devices that entered the passcode (or the master key on the Party tab) can edit it. Firebase enforces this, not just the page.
+- Unlocking is remembered on that device and browser. **Lock this device** makes it ask again.
+- If a player forgets their passcode, use the master key to open their sheet and set a new one or remove it.
 - Firebase's free plan covers far more than a four-player table uses.
 - **Download printable sheet** saves an HTML file. Open it and print on Letter paper with background graphics on.
 - Knack names and tiers follow each archetype's table in the corebook. Write each knack's effect in from the book.

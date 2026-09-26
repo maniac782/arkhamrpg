@@ -239,6 +239,7 @@ function sheetHtml(c){
  const lines=n=>'<div class="ln"></div>'.repeat(n);
  const f=(l,v,n)=>'<div class="fd"><span class="lb">'+l+'</span>'+(v?'<div class="val">'+e(v)+'</div>':'')+lines(v?Math.max(0,(n||1)-1):(n||1))+'</div>';
  const eq=(c.items||[]).map(it=>'<div class="eq"><b>'+e(it.name)+'</b>'+(it.note?' — '+e(it.note):'')+'</div>').join('');
+ const luck=c.lucky&&c.lucky.name?'<div class="eq"><b>'+e(c.lucky.name)+'</b> (lucky item) \u2014 once per session, a simple action recovers 1 insight.</div>':'';
  const hab=c.habitual&&c.habitual.name?'<div class="eq"><b>'+e(c.habitual.name)+'</b> (habitual) — once per session, a simple action removes 1 horror.</div>':'';
  const txt=v=>e(v||'').replace(/\n/g,'<br>');
  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="color-scheme" content="light only"><meta name="viewport" content="width=880"><title>'+e(c.name||'Investigator')+' — Arkham investigator sheet</title>'+
@@ -277,7 +278,7 @@ function sheetHtml(c){
  '<div class="panel" style="display:flex;flex-direction:column;gap:6px"><div class="h">Background</div>'+f('Place of origin',c.bg&&c.bg.origin)+f('Family &amp; friends',c.bg&&c.bg.family,2)+
  '<div class="row"><div style="flex:2">'+f('Employment',c.bg&&c.bg.employment)+'</div><div style="flex:1">'+f('Weekly salary',c.bg&&c.bg.salary)+'</div></div>'+f('First supernatural encounter',c.bg&&c.bg.encounter,2)+f('Notable enemies',c.bg&&c.bg.enemies)+'</div>'+
  '<div class="row"><div class="panel" style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="h">Mundane Resources</div><div class="fd"><span class="lb">Money</span><div class="val" style="font-family:\'Marcellus SC\',serif;font-size:20px">'+$(c.money)+'</div></div>'+
- '<span class="lb">Equipment</span>'+hab+eq+(c.reloads?'<div class="eq"><b>Spare reloads</b> × '+c.reloads+'</div>':'')+lines(Math.max(2,6-(c.items||[]).length))+f('Vehicle',c.bg&&c.bg.vehicle)+f('Lodging',c.bg&&c.bg.lodging)+'</div>'+
+ '<span class="lb">Equipment</span>'+hab+luck+eq+(c.reloads?'<div class="eq"><b>Spare reloads</b> × '+c.reloads+'</div>':'')+lines(Math.max(2,6-(c.items||[]).length))+f('Vehicle',c.bg&&c.bg.vehicle)+f('Lodging',c.bg&&c.bg.lodging)+'</div>'+
  '<div class="panel" style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="h">Supernatural Resources</div><span class="lb">Tomes</span><div class="tx">'+txt(c.tomes)+'</div>'+lines(1)+'<span class="lb">Relics</span><div class="tx">'+txt(c.relics)+'</div>'+lines(1)+'<span class="lb">Eldritch debts or favors</span><div class="tx">'+txt(c.debts)+'</div>'+lines(1)+'</div></div>'+
  '<div class="panel" style="flex:1"><div class="h">Quick Reference</div><div class="qr">'+
  '<div><b>Tests.</b> Spend dice and roll. Any die at or above the skill rating is a success.</div><div><b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.</div>'+
@@ -328,10 +329,10 @@ function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
  return {name:'Investigator '+i,player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
-  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false},reloads:0,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
-function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});return o;}
+function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});o.lucky=Object.assign({name:'',used:false},o.lucky||{});return o;}
 
 let db=null, chars={}, active='party', pending=false, localMode=false, authUid=null;
 const keys={};// slot or 'master' -> this device holds a key
@@ -387,7 +388,9 @@ const R={
   if(nm==='Shocked'){if(c.regular+c.horror>0){if(c.regular>0)p.regular=c.regular-1;else p.horror=c.horror-1;}else p.traumaMod=c.traumaMod+1;}
   if(nm==='Stunned'){if(c.regular+c.horror>0){p.regular=0;p.horror=0;}else p.traumaMod=c.traumaMod+1;}
   save(s,p,'Trauma: '+nm+' (rolled '+tot+')');},
- newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{name:c.habitual.name,used:false},traumaMod:0},quiet?null:'New session: insight refilled');},
+ lucky(s){const c=chars[s];if(c.lucky.used)return toast('Already used a lucky item this session.');if(c.insight>=c.insightLimit)return toast('Insight is already full.');
+  save(s,{insight:c.insight+1,lucky:{name:c.lucky.name,used:true}},'Used '+(c.lucky.name||'lucky item')+': recovered 1 insight');},
+ newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{name:c.habitual.name,used:false},lucky:{name:c.lucky.name,used:false},traumaMod:0},quiet?null:'New session: insight refilled');},
  improve(s,k){const c=chars[s];const sk=c.skills[k];const cost=SKILL_COST[sk.r];if(!cost)return;
   const floor=sk.max?Number(sk.max):4;if(sk.r-1<floor)return toast(sk.max?'This skill is already at its max.':'Set this skill’s max (from your archetype) to go past 4+.');
   if(c.xpUnused<cost)return toast('Needs '+cost+' XP.');const sks=JSON.parse(JSON.stringify(c.skills));sks[k].r=sk.r-1;
@@ -435,7 +438,7 @@ function renderParty(){
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
- h+='</div><section class="sec"><div class="sec-head"><h2>Game master</h2></div>'+houseToggle()+'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual items and clears trauma roll penalties. Locked sheets you haven\u2019t unlocked are skipped.</p>'+(db?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
+ h+='</div><section class="sec"><div class="sec-head"><h2>Game master</h2></div>'+houseToggle()+'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. Locked sheets you haven\u2019t unlocked are skipped.</p>'+(db?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
@@ -470,6 +473,7 @@ function renderCharBody(s){
  '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
  '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
  '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
+ '<div class="row">'+fld('lucky.name','Lucky item',c.lucky.name,'text','placeholder="e.g. Grandpa\u2019s silver dollar"')+'<button class="btn" data-act="lucky" '+(c.lucky.used||!c.lucky.name||c.insight>=c.insightLimit?'disabled':'')+'>'+(c.lucky.used?'Used this session':'Use it (+1 insight)')+'</button></div>'+
  '<div class="grid2">'+fld('personality','Personality trait',c.personality)+fld('positive','Positive',c.positive)+'</div>'+fld('negative','Negative',c.negative)+'</div></div></section>';
 
  // injuries & trauma
@@ -713,6 +717,7 @@ app.addEventListener('click',e=>{
   case 'strain':R.strain(s);break;
   case 'hor':R.horror(s,n);break;
   case 'habit':R.habitual(s);break;
+  case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
   case 'rinj':R.rollInjury(s);break;
   case 'rtra':R.rollTrauma(s,Math.max(1,Number(document.getElementById('ones-'+s).value)||1));break;
@@ -744,7 +749,7 @@ app.addEventListener('click',e=>{
   case 'rel':save(s,{reloads:Math.max(0,c.reloads+n)});break;
   case 'cash':R.money(s,n);break;
   case 'cashin':case 'cashout':{const el=document.getElementById('cash-'+s);const v=Math.abs(Number(el.value)||0);if(!v)return toast('Enter an amount first.');R.money(s,a==='cashin'?v:-v);break;}
-  case 'session':R.newSession(s);toast('New session: insight refilled, habitual item ready.');break;
+  case 'session':R.newSession(s);toast('New session: insight refilled, habitual and lucky items ready.');break;
  }
 });
 app.addEventListener('change',e=>{
@@ -781,7 +786,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v15 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v16 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -797,7 +802,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v15';
+ syncEl.textContent='Live · synced for the party · v16';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

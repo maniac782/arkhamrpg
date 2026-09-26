@@ -33,6 +33,13 @@ To change the master key later, edit that `code` field. Every device using the o
 
 Open the site. The top right should say **Live · synced for the party**. The first time it loads, it fills slot 1 with Wallace Morrow and leaves the other three slots blank.
 
+## Hosting on arkhamrpg.web.app (optional)
+The repo also deploys to Firebase Hosting through `.github/workflows/deploy-firebase.yml` on every push to `main`. It needs:
+1. A Hosting site named `arkhamrpg` in the Firebase project (Hosting → Add another site).
+2. A GitHub secret named `FIREBASE_SERVICE_ACCOUNT` holding a service account key with the **Firebase Hosting Admin** and **API Keys Viewer** roles.
+
+Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps working.
+
 ## House rules
 Extra weapons and gear live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. They stay hidden until someone with the master key turns them on in the Game master section of the Party tab. The switch is shared with the whole party.
 

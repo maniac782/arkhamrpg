@@ -527,7 +527,7 @@ function renderCharBody(s){
  '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
  '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
  '<div class="row">'+fld('lucky.name','Lucky item',c.lucky.name,'text','placeholder="e.g. Grandpa\u2019s silver dollar"')+'<button class="btn" data-act="lucky" '+(c.lucky.used||!c.lucky.name||c.insight>=c.insightLimit?'disabled':'')+'>'+(c.lucky.used?'Used this session':'Use it (+1 insight)')+'</button></div>'+
- '<div class="grid2">'+fld('personality','Personality trait',c.personality)+fld('positive','Positive',c.positive)+'</div>'+fld('negative','Negative',c.negative)+'</div></div></section>';
+ traitField(s,c)+'</div></div></section>';
 
  // injuries & trauma
  h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2><div class="row"><button class="btn dng" data-act="rinj">Roll injury</button><label class="row note" for="ones-'+s+'">1s on horror dice <input id="ones-'+s+'" type="number" min="1" max="6" value="1" class="maxsel"></label><button class="btn hor" data-act="rtra">Roll trauma</button></div></div>'+
@@ -582,6 +582,15 @@ function houseToggle(){
  const can=!db||!!keys.master;
  return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>House rules '+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' Only the master key can change this.')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
 }
+function traitField(s,c){
+ const names=Object.keys(A.TRAITS);const cur=c.personality||'';const custom=cur&&!names.includes(cur);
+ let h='<label class="field"><span class="lbl">Personality trait</span><select class="f" id="trait-'+s+'" data-trait="1"><option value="">Choose\u2026</option>'+names.map(n=>'<option'+(n===cur?' selected':'')+'>'+n+'</option>').join('')+(custom?'<option selected>'+esc(cur)+'</option>':'')+'</select></label>';
+ const pend=edit.trait&&edit.trait.s===s?edit.trait.t:null;
+ if(pend)h+='<div class="roll" role="status"><span>Changing from <b>'+esc(cur)+'</b> to <b>'+esc(pend)+'</b>. The book allows this with GM permission after a traumatic experience, for 2 XP.</span><div class="row"><button class="btn sm pri" data-act="traitxp" '+(c.xpUnused>=2?'':'disabled')+'>Change for 2 XP</button><button class="btn sm" data-act="traitfree">Just fixing a mistake (free)</button><button class="btn sm" data-act="traitcancel">Cancel</button></div></div>';
+ h+=c.positive||c.negative?'<div class="grid2"><div><span class="lbl">Positive</span><p class="effect" style="margin:4px 0 0">'+esc(c.positive)+'</p></div><div><span class="lbl">Negative (when triggered)</span><p class="effect" style="margin:4px 0 0">'+esc(c.negative)+'</p></div></div>':'';
+ return h;
+}
+function setTrait(s,t,cost){const c=chars[s];const d=A.TRAITS[t]||['',''];const p={personality:t,positive:d[0],negative:d[1]};if(cost)p.xpUnused=c.xpUnused-cost;edit.trait=null;save(s,p,t?(cost?'Changed personality trait to '+t+' (2 XP)':'Personality trait: '+t):'Cleared personality trait');}
 function knackPicker(c){
  const kn=A.knacksFor(c.archetype);
  if(!kn.length)return '<p class="note" style="margin:0">Choose an archetype at the top to pick knacks from its list.</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">Add a knack by hand</button></div>';
@@ -780,6 +789,9 @@ app.addEventListener('click',e=>{
   case 'xp':R.addXp(s,n);break;
   case 'xpfix':edit.xp=!edit.xp;render();break;
   case 'printc':downloadSheet(c);break;
+  case 'traitxp':if(edit.trait&&c.xpUnused>=2)setTrait(s,edit.trait.t,2);break;
+  case 'traitfree':if(edit.trait)setTrait(s,edit.trait.t,0);break;
+  case 'traitcancel':edit.trait=null;render();break;
   case 'picdel':save(s,{portrait:''},'Removed portrait');break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the master key can change house rules.'));break;}
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
@@ -818,6 +830,7 @@ app.addEventListener('change',e=>{
   crSave();render();return;
  }
  const c=chars[s];if(!c)return;
+ if(el.dataset.trait){const t=el.value;if(c.personality&&A.TRAITS[c.personality]&&t&&t!==c.personality){edit.trait={s,t};render();}else setTrait(s,t,0);return;}
  if(el.dataset.f){const p=el.dataset.f;let v=el.value;
   if(p==='xpTotal'||p==='xpUnused')v=Math.max(0,parseInt(v)||0);
   if(p==='archetype'&&v){const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([k])=>{const f=A.maxFor(v,k);sks[k].max=f<4?String(f):'';});save(s,{archetype:v,skills:sks});return;}
@@ -842,7 +855,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v27 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v28 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -858,7 +871,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v27';
+ syncEl.textContent='Live · synced for the party · v28';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

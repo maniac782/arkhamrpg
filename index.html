@@ -75,6 +75,9 @@ main{max-width:980px;margin:0 auto;padding-block:18px 60px;padding-inline:16px;d
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .icon{width:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 input.f,select.f,textarea.f{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 2px;border-radius:0}
+.avatar{flex:none;border-radius:50%;object-fit:cover;background:var(--surface2);border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--display);font-weight:700;overflow:hidden}
+.avatar.lg{width:88px;height:88px;font-size:34px}.avatar.sm{width:48px;height:48px;font-size:20px}
+.pic-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 select{background-color:var(--surface);color:var(--ink)}
 select option,select optgroup{background-color:var(--surface);color:var(--ink)}
 select optgroup{font-weight:700;color:var(--muted)}
@@ -266,7 +269,7 @@ function sheetHtml(c){
  '.holders{display:flex;justify-content:space-around;align-items:center;height:1.12in;flex:none;background:linear-gradient(#8a7a5c,#8a7a5c) center/100% 1px no-repeat}'+'.dh{width:.7in;height:.7in;transform:rotate(45deg);background:#fbf7ec;border:2px solid #1f1a14;box-shadow:0 0 0 3px #f4eedf,0 0 0 4.5px #7b2d26;display:flex;align-items:center;justify-content:center}'+'.dh i{width:.56in;height:.56in;border:1px solid #b9a986;border-radius:3px;display:block}'+'@media print{body{background:none}.bar{display:none}.page{margin:0}}</style></head><body>'+
  '<div class="bar">Print this page on Letter paper at 100% scale, with background graphics on.<button onclick="print()">Print</button></div>'+
  // page 1
- '<section class="page"><div class="top"><div><div class="kick">Arkham Investigator</div><div class="nm">'+e(c.name||'')+'</div><div class="sub">'+e([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · '))+'</div></div>'+
+ '<section class="page"><div class="top"><div style="display:flex;gap:14px;align-items:center">'+(c.portrait?'<img src="'+e(c.portrait)+'" alt="" style="width:.85in;height:.85in;object-fit:cover;border:2px solid #1f1a14;box-shadow:0 0 0 3px #f4eedf,0 0 0 4.5px #7b2d26">':'')+'<div><div class="kick">Arkham Investigator</div><div class="nm">'+e(c.name||'')+'</div><div class="sub">'+e([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · '))+'</div></div></div>'+
  '<div class="xp"><div><span class="lb">Total XP</span><b>'+(c.xpTotal||0)+'</b></div><div><span class="lb">Unused XP</span><b>'+(c.xpUnused||0)+'</b></div></div></div>'+
  '<div class="holders" aria-label="Dice pool holders">'+'<div class="dh"><i></i></div>'.repeat(6)+'</div>'+
  '<div class="row"><div class="panel" style="flex:1"><div class="h">Skills</div><div class="sks">'+skills+'</div></div>'+
@@ -438,7 +441,7 @@ function renderTabs(){
 function renderParty(){
  let h='<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div><div class="party">';
  SLOTS.forEach(s=>{const c=chars[s];const [cls,lab]=status(c);const lr=(c.log||[])[0];
-  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · ')||'Unassigned')+'</div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
+  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · ')||'Unassigned')+'</div></div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
@@ -446,6 +449,12 @@ function renderParty(){
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
+function avatarHtml(c,size){const ini=esc(((c.name||'?').trim()[0]||'?').toUpperCase());return c.portrait?'<img class="avatar '+size+'" src="'+esc(c.portrait)+'" alt="Portrait of '+esc(c.name)+'">':'<span class="avatar '+size+'" aria-hidden="true">'+ini+'</span>';}
+function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();const url=URL.createObjectURL(file);
+ img.onload=()=>{const side=Math.min(img.width,img.height),S=320;const cv=document.createElement('canvas');cv.width=S;cv.height=S;const g=cv.getContext('2d');
+  g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);URL.revokeObjectURL(url);
+  let q=0.82,d=cv.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
+ img.onerror=()=>{URL.revokeObjectURL(url);rej();};img.src=url;});}
 function lockPanel(s){
  const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?'Locked \u00b7 unlocked here':'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'This device can edit this sheet.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  if(!db)return h+'</section>';
@@ -458,7 +467,7 @@ function lockPanel(s){
 function renderChar(s){ const body=renderCharBody(s); return lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>'); }
 function renderCharBody(s){
  const c=chars[s];const [cls,lab]=status(c);const rl=lastRoll[s];
- let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+
+ let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div></div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+
  '<div class="grid2">'+fld('player','Player',c.player)+'<label class="field"><span class="lbl">Archetype</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===c.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label></div>'+
  '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="stepper"><button class="btn sm" data-act="xp" data-n="1">+1 XP</button><button class="btn sm" data-act="xp" data-n="4">+4 XP</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+
  (edit.xp?'<div class="row">'+fld('xpTotal','Total XP',c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused','Unused XP',c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
@@ -731,6 +740,7 @@ app.addEventListener('click',e=>{
   case 'xp':R.addXp(s,n);break;
   case 'xpfix':edit.xp=!edit.xp;render();break;
   case 'printc':downloadSheet(c);break;
+  case 'picdel':save(s,{portrait:''},'Removed portrait');break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the master key can change house rules.'));break;}
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master)return;save(s,{log:[]});toast('Recent history cleared.');break;
@@ -758,6 +768,8 @@ app.addEventListener('click',e=>{
 });
 app.addEventListener('change',e=>{
  const el=e.target,s=active;
+ if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
+  shrinkImage(f).then(d=>save(s,{portrait:d},'Changed portrait')).catch(()=>toast('Couldn\u2019t read that image. Try a JPG or PNG.'));el.value='';return;}
  if(s==='create'){
   if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}
   else if(el.dataset.cbonus){cr.bonus=el.dataset.cbonus;if(cr.bonus!=='xp'){cr.ups={};cr.bought=[];}if(cr.bonus!=='money'&&crMoneySpent()>crMoneyBudget())toast('Your gear now costs more than $50. Remove something.');}
@@ -790,7 +802,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v17 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v18 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -806,7 +818,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v17';
+ syncEl.textContent='Live · synced for the party · v18';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

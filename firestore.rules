@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The four party sheets: anyone with the site link can read and edit them.
+    match /characters/{slot} {
+      allow read, write: if slot in ['p1', 'p2', 'p3', 'p4'];
+    }
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

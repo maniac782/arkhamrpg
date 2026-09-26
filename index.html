@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<script>
+/* Paste your Firebase web app settings here (Firebase console > Project settings > Your apps). */
+window.FIREBASE_CONFIG = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  appId: "PASTE_APP_ID"
+};
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<title>Arkham Party Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#e9ebe4; --surface:#f7f7f2; --surface2:#dfe2d8; --ink:#1b2230; --muted:#4f5664; --line:#b8bcae;
+  --brass:#7e5a12; --brass-soft:#efe3c6; --horror:#2f6b4f; --horror-soft:#d5e8dc;
+  --danger:#a3322a; --danger-soft:#f4dcd8; --ok:#2f6b4f; --warn:#8a5a00; --focus:#2d5bd1;
+  --display:'Bodoni Moda',Didot,'Times New Roman',serif; --body:'Libre Franklin','Helvetica Neue',Arial,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#11151c; --surface:#1a2029; --surface2:#242b36; --ink:#e8e5da; --muted:#a9adb5; --line:#3a4250;
+  --brass:#d6ab52; --brass-soft:#3a3120; --horror:#63b98e; --horror-soft:#1f3a2e; --danger:#ef7c70; --danger-soft:#43221f; --ok:#63b98e; --warn:#e2b04a; --focus:#8fb0ff;}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#11151c; --surface:#1a2029; --surface2:#242b36; --ink:#e8e5da; --muted:#a9adb5; --line:#3a4250;
+  --brass:#d6ab52; --brass-soft:#3a3120; --horror:#63b98e; --horror-soft:#1f3a2e; --danger:#ef7c70; --danger-soft:#43221f; --ok:#63b98e; --warn:#e2b04a; --focus:#8fb0ff;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:980px;margin:0 auto;padding:12px 16px 0;display:flex;flex-direction:column;gap:8px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--display);font-weight:700;font-size:24px;margin:0;letter-spacing:.3px}
+.brand small{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tab{border:0;background:none;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
+main{max-width:980px;margin:0 auto;padding-block:18px 60px;padding-inline:16px;display:flex;flex-direction:column;gap:16px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sec h2{font-family:var(--display);font-size:20px;margin:0;font-weight:700;text-wrap:balance}
+.sec-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lbl{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:8px 12px;min-height:40px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{background:var(--surface2)}
+.btn.pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn.dng{color:var(--danger);border-color:var(--danger)}
+.btn.hor{color:var(--horror);border-color:var(--horror)}
+.btn.sm{min-height:32px;padding:4px 9px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon{width:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+input.f,select.f,textarea.f{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 2px;border-radius:0}
+textarea.f{border:1px solid var(--line);border-radius:4px;padding:8px;min-height:60px;resize:vertical}
+input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--brass);outline:none}
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.namein{font-family:var(--display);font-size:30px;font-weight:700;border:0;border-bottom:1px solid transparent;background:transparent;width:100%;padding:0}
+.namein:focus{border-bottom-color:var(--brass);outline:none}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.chip.ok{background:var(--horror-soft);color:var(--ok)}
+.chip.bad{background:var(--danger-soft);color:var(--danger)}
+.chip.warn{background:var(--brass-soft);color:var(--warn)}
+/* dice pool */
+.pool{display:flex;gap:6px;flex-wrap:wrap}
+.die{width:40px;height:40px;border-radius:7px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.die.reg::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.die.hor{background:var(--horror);border-color:var(--horror)}
+.die.hor::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--surface)}
+.die.empty{border-style:dashed;border-color:var(--line)}
+.die.lost{border:2px solid var(--danger-soft);background:repeating-linear-gradient(45deg,var(--danger-soft) 0 4px,transparent 4px 8px)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.stat{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--surface2);border-radius:4px;min-width:110px}
+.stat b{font-family:var(--mono);font-size:20px}
+.stepper{display:inline-flex;align-items:center;gap:6px}
+/* skills */
+.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.skill{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px dotted var(--line)}
+.skill .nm{flex:1;font-weight:600}
+.rate{width:42px;height:42px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px}
+.maxsel{width:58px;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:4px}
+/* lists */
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tier{font-family:var(--mono);font-size:12px;border:1px solid var(--brass);color:var(--brass);border-radius:3px;padding:2px 6px;white-space:nowrap}
+.effect{font-size:13px;color:var(--muted)}
+.wgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ammo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pip{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);background:var(--ink);cursor:pointer;padding:0}
+.pip.spent{background:transparent;border-color:var(--line)}
+.note{font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:6px;font-size:14px;max-width:calc(100% - 32px);z-index:9}
+.roll{border:1px solid var(--brass);background:var(--brass-soft);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+details.sec>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"+";font-family:var(--mono);font-size:20px;color:var(--muted)}
+details.sec[open]>summary::after{content:"–"}
+/* party */
+.party{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;text-align:left;cursor:pointer}
+.pcard:hover{border-color:var(--brass)}
+.pcard h3{margin:0;font-family:var(--display);font-size:21px}
+.mini .die{width:24px;height:24px;border-radius:5px;border-width:2px}
+.mini .die::after{width:5px!important;height:5px!important}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.kv div{display:flex;flex-direction:column;background:var(--surface2);border-radius:4px;padding:6px 8px}
+.kv b{font-family:var(--mono);font-size:15px}
+.log{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.banner{border:1px solid var(--line);background:var(--surface2);border-radius:6px;padding:12px 14px;font-size:14px}
+.costs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;font-size:13px}
+.costs span:nth-child(even){text-align:right;font-family:var(--mono)}
+@media (max-width:640px){
+  .skills,.party,.grid2{grid-template-columns:minmax(0,1fr)}
+  .wgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .namein{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="brand"><h1>Arkham Party Ledger</h1><small id="sync">Connecting…</small></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+</div></div>
+<main id="app"></main>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+/* Catalogs from the Arkham Horror RPG corebook: names, tiers, costs and stats. Effects are short summaries. */
+window.APL = (function(){
+const K=s=>s.split('|').map(x=>x.trim()).filter(Boolean);
+const ARCH={
+ Adventurer:{three:['athletics','intuition','ranged'],two:'wits',t:[K('Brawler|Light on Your Feet|Navigator|Pulp Heroics|Scrappy|Storyteller|Strong|Treasure Hunter'),K('Awe-inspiring Display*|Dodgy|Healer|Heroic Disarm|Quick Hands|Sure-Footed|Trained|Very Strong'),K('Quick Loader|Skilled Fighter|Skilled Shot|Tracker|Trench Warfare|Very Trained'),K('Dead Lift*|Fearless*|Swing into Action*')]},
+ Believer:{three:['knowledge','lore','resolve'],two:'presence',t:[K('Blinding Light|Cleanse the Spirit*|Empathetic|Helpful|Inspirational Healing*|Inspired|Instrument of Faith*|Storyteller|Symbol of Belief*'),K('Blessing of Sanctuary*|Dealer|Ear for Truth|Exile the Supernatural*|Hallowed Ground*|Healer|Very Empathetic|Wise'),K('Attune|Determination|Linguist|Scrappy|Very Wise|Ward of Protection'),K('Close Call*|Light in the Darkest Hour*|Prayer of Hope*')]},
+ Guardian:{three:['melee','presence','resolve'],two:'athletics',t:[K('Brawler|Come and Get Me*|Determination|Dodgy|Fierce|Healer|Helpful|Inspired|Scrappy'),K('Rational Thinking|Set Them Up…|Skilled Fighter|Stick and Move|Strong|The Best Defense…|Trench Warfare|Very Fierce'),K('Ear for Truth|Heroic Disarm|Improved Come and Get Me*|Like a Rock*|Never Give Up*|Pulp Heroics|Very Strong'),K('Gotta Get Past Me*|Protector*')]},
+ Hunter:{three:['intuition','melee','ranged'],two:'athletics',t:[K('Accurate|Ambush|Driver|Killing Blow|Quick Hands|Stick and Move|Sure-Footed|The Best Defense…|Tracker'),K('Cheap Shot|Fierce|I’ve Seen Worse*|Quick Loader|Skilled Shot|Two-Blade Fighting|Two-Pistol Fighting|Very Accurate'),K('Fast|If It Bleeds…*|Improved Tracker*|Suppressing Fire!|Very Fierce|Weak Spot'),K('Hunter’s Blind*|Slayer*|Trick Shooter*')]},
+ Mystic:{three:['intuition','knowledge','presence'],two:'lore',t:[K('Blinding Light|Counterspell*|Dealer|Dodgy|Driver|Haunting Whispers*|Hypnotic Tone*|Light on Your Feet|Wise'),K('Attune|Azure Flame*|Linguist|Premonition*|Resolute|Shadows in the Eye*|Very Wise|Ward of Protection'),K('Driven by Horrors Seen*|Familiar Spirit*|Glimpses of Great Antiquity*|Mists of R’lyeh*|Storm of Spirits*|Very Resolute'),K('Banish*|Prescient*|Shrivelling*')]},
+ Rogue:{three:['agility','knowledge','wits'],two:'intuition',t:[K('Ambush|Breaking and Entering*|Cheap Shot|Clever|Dodgy|Fast|Pickpocket|Quick Hands|The Best Defense…'),K('Accurate|Backstab*|Brawler|Empathic Mind|Scrappy|Stick and Move|Treasure Hunter|Very Clever'),K('Killing Blow|Known Liar*|Skilled Fighter|Storyteller|Two-Blade Fighting|Very Accurate'),K('Fade Away*|On a Roll*|Silver-Tongued*')]},
+ Seeker:{three:['lore','ranged','wits'],two:'knowledge',t:[K('Brilliant Insight*|Dealer|Dodgy|Ear for Truth|Linguist|Scientific*|Smart|Sure-Footed|Weak Spot'),K('Attune|Empathetic|Empathic Mind|Storyteller|The Pen Is Mightier…*|Thinking Ahead*|Tracker|Very Smart'),K('Eat Lead!|Helpful|Killing Blow|Rational Thinking|Two-Pistol Fighting|Very Empathetic'),K('Flawless Memory*|I Have a Hunch*|Nosy Questions*')]},
+ Survivor:{three:['athletics','intuition','melee'],two:'resolve',t:[K('Dealer|Eat Lead!|Fast|Light on Your Feet|Navigator|Nope!*|Quick Hands|Resolute|Scrappy'),K('Clever|Determination|Dodgy|Helpful|Set Them Up…|Suppressing Fire!|Trench Warfare|Very Resolute'),K('Empathic Mind|Pickpocket|Pulp Heroics|Skilled Fighter|Skilled Shot|Very Clever'),K('Last One Standing*|Not Done Yet*|Tough as Iron*')]},
+};
+// knack table for an archetype: [{name,tier,unique}]
+function knacksFor(a){const d=ARCH[a];if(!d)return[];const out=[];d.t.forEach((list,i)=>list.forEach(n=>out.push({name:n.replace(/\*$/,''),tier:i+1,unique:n.endsWith('*')})));return out;}
+function maxFor(a,k){const d=ARCH[a];if(!d)return 4;if(d.two===k)return 2;if(d.three.includes(k))return 3;return 4;}
+
+const TRAITS={
+ Ambitious:['Spend 1 insight to add two successes to a successful check.','Can’t use Aid an Ally until the end of the scene.'],
+ Analytical:['After an action, spend 1 insight to discard one horror die that rolled a 1, before any trauma.','Roll traumas twice and take the higher result for the rest of the session.'],
+ Cautious:['Spend 1 insight for advantage on every complex action you make with two or more dice this turn.','Next turn, spend half your dice moving away from all opponents by the safest route.'],
+ Imaginative:['When you spend insight for advantage, add two dice and drop the two lowest.','You can’t lower your horror dice limit for the rest of the session.'],
+ Optimistic:['Spend 1 insight to heal 3 damage as a free action on your turn.','No reactions for the rest of the scene.'],
+ Outgoing:['Spend 1 insight to use Presence for any action that interacts with someone.','Until the scene ends, allies interact with others at disadvantage.'],
+ Reserved:['Spend 1 insight on your turn to lower your horror dice limit by 1.','Keep at least half your dice unspent each turn for the rest of the scene.'],
+ Selfless:['When you Aid an Ally, spend 1 insight to also aid a second ally within 15 feet.','No complex actions on your next turn.'],
+ Skeptical:['Spend 1 insight to automatically succeed at a reaction to detect a lie.','Next turn, you can’t interact with, respond to or attack anything supernatural.'],
+ Stubborn:['After being hit, spend 1 insight instead of a reaction to reduce the damage by 3.','Can’t spend dice to move away from an opponent until the scene ends.'],
+ Thrifty:['Spend 1 insight on your turn to produce an item worth $5.00 or less.','Won’t share items or supplies, and grabs any resources found, for the rest of the scene.'],
+};
+
+const R='Ranged Combat',M='Melee Combat';
+const WEAPONS=[
+ {n:'Browning M1918 Automatic Rifle',s:R,d:'3',i:'3',r:'200 ft',a:3,rc:4,c:319,sp:'Full Auto (+1 damage per success). Heavy Kick (Athletics 5+ or worse: disadvantage).'},
+ {n:'Colt 1903 Pocket Hammerless .32',s:R,d:'2',i:'4',r:'30 ft',a:2,rc:1,c:20.5,sp:'Hard to Find (2 successes to spot).'},
+ {n:'Colt 1911 Pistol',s:R,d:'2',i:'3',r:'75 ft',a:2,rc:1,c:36.75,sp:'None'},
+ {n:'Colt Police Revolver',s:R,d:'2',i:'4',r:'75 ft',a:2,rc:0.2,c:30,sp:'Slow Reload (a simple action restores 1 ammo).'},
+ {n:'Double-Barreled Shotgun',s:R,d:'3',i:'3',r:'50 ft',a:2,rc:0.07,c:45,sp:'Reload after 2 attacks. Buckshot (−2 to dodge it).'},
+ {n:'Double Express Rifle',s:R,d:'4',i:'2',r:'100 ft',a:2,rc:0.5,c:285,sp:'Reload after 2 attacks. Brutal (+2 to injury rolls).'},
+ {n:'M1903 Springfield Rifle',s:R,d:'3',i:'3',r:'240 ft',a:1,rc:0.75,c:35,sp:'None'},
+ {n:'Petrol Bomb',s:R,d:'1',i:'–',r:'40 ft',a:0,rc:0,c:0.25,sp:'Single use. Splash; Fire (may cause Burned).'},
+ {n:'Remington Model 95 Derringer',s:R,d:'2',i:'5',r:'10 ft',a:2,rc:0.06,c:18.4,sp:'Reload after 2 attacks. Very Hard to Find (3 successes to spot).'},
+ {n:'Stick of Dynamite',s:R,d:'2',i:'4',r:'Thrown',a:0,rc:0,c:2,sp:'Single use. Blast Radius (2 damage to everyone within 20 ft).'},
+ {n:'Thompson M1921A Submachine Gun',s:R,d:'2',i:'3',r:'75 ft',a:5,rc:5,c:175,sp:'Full Auto (+1 damage per success).'},
+ {n:'Webley Service Revolver',s:R,d:'2',i:'3',r:'80 ft',a:2,rc:0.25,c:26.75,sp:'Slow Reload (a simple action restores 1 ammo).'},
+ {n:'Winchester Model 12 Pump Shotgun',s:R,d:'3',i:'2',r:'40 ft',a:2,rc:0.2,c:63,sp:'Buckshot (−2 to dodge it). Slow Reload.'},
+ {n:'Winchester Model 1894 Rifle',s:R,d:'3',i:'3',r:'100 ft',a:2,rc:0.75,c:44,sp:'Slow Reload (a simple action restores 1 ammo).'},
+ {n:'Baseball Bat',s:M,d:'2',i:'3',r:'Engaged',a:0,rc:0,c:1.86,sp:'Breakable (breaks on two or more 1s).'},
+ {n:'Blackjack',s:M,d:'2',i:'4',r:'Engaged',a:0,rc:0,c:2,sp:'Knockdown (2+ successes knocks the target prone).'},
+ {n:'Brass Knuckles',s:M,d:'1',i:'3',r:'Engaged',a:0,rc:0,c:1,sp:'Hard to Find (2 successes to spot).'},
+ {n:'Bullwhip',s:M,d:'1',i:'–',r:'10 ft',a:0,rc:0,c:5,sp:'Tangle (3+ successes: knock prone or disarm).'},
+ {n:'Dagger',s:M,d:'2',i:'3',r:'Engaged',a:0,rc:0,c:4,sp:'None'},
+ {n:'Hatchet',s:M,d:'3',i:'3',r:'Engaged',a:0,rc:0,c:2,sp:'Brutal (+2 to injury rolls).'},
+ {n:'Axe',s:M,d:'4',i:'3',r:'Engaged',a:0,rc:0,c:3,sp:'Brutal (+2 to injury rolls).'},
+ {n:'Improvised Weapon',s:M,d:'2',i:'4',r:'Engaged',a:0,rc:0,c:0.2,sp:'Fragile (breaks on a 1). Cost varies $0.20–$8.00.'},
+ {n:'Machete',s:M,d:'3',i:'3',r:'Engaged',a:0,rc:0,c:6,sp:'Brutal (+2 to injury rolls).'},
+ {n:'Pocketknife',s:M,d:'1',i:'4',r:'Engaged',a:0,rc:0,c:1.5,sp:'Very Hard to Find (3 successes to spot).'},
+ {n:'Scout Knife (five-attachment)',s:M,d:'1',i:'4',r:'Engaged',a:0,rc:0,c:8,sp:'Very Hard to Find (3 successes to spot).'},
+ {n:'Switchblade',s:M,d:'2',i:'4',r:'Engaged',a:0,rc:0,c:8,sp:'Hard to Find (2 successes to spot).'},
+ {n:'Sword (One-Handed)',s:M,d:'3',i:'3',r:'Engaged',a:0,rc:0,c:30,sp:'Precise Thrust (a 6 on a hit adds 1 success).'},
+ {n:'Sword Cane',s:M,d:'3',i:'3',r:'Engaged',a:0,rc:0,c:34,sp:'Precise Thrust (a 6 on a hit adds 1 success). Concealed in a cane.'},
+];
+const G=(cat,list)=>list.map(([n,c,note])=>({cat,n,c,note:note||''}));
+const GEAR=[
+ ...G('Protection',[['Bulletproof Vest (Plate)',100,'Cancels all damage and injuries from a hit; ruined after 3 hits.'],['Bulletproof Vest (Silk)',800,'−1 damage from ranged attacks (minimum 1).'],['Flowing Clothing',15,'Reroll a reaction to avoid a ranged attack once.'],['Heavy Clothing',30,'−1 damage from melee attacks (minimum 1).'],['Heavy Protective Gear',15,'−2 melee damage (minimum 1); −1 to injury rolls from melee.'],['Helmet',5,'−1 to injury rolls. Can be worn with other protection.'],['Improvised Shield',0.25,'Reroll a reaction to avoid a melee attack; breaks on a 1. Cost varies.']]),
+ ...G('Useful items',[['Climbing Gear (hook and line)',5,'+1 to climbing rolls.'],['Climbing Gear (mountain kit)',20,'+1 to climbing rolls; a fall stops at the last piton.'],['Field Surgeon Kit',25,'Uses 3. +2 successes when healing.'],['First Aid Kit',3,'Uses 2. +1 success when healing.'],['General Tool Kit',5,'Uses 3. Repairs; once per session add a die to a related action.'],['Habitual Item',1,'Once per session, a simple action removes 1 horror. $1.00 per use.'],['Handcuffs',1.75,'Escaping takes 3 successes (Agility or Athletics).'],['Candle',0.1,'Light: one small room.'],['Torch',0.5,'Light: 20 ft.'],['Flashlight',3,'Light: 40 ft beam.'],['Lantern',5,'Light source.'],['Religious Symbol',3,'Once per session, +1 success on a Lore or Presence action.'],['Specialty Tool Kit',15,'Uses 4. Pick a trade; once per session add a die.'],['Textbook',3.75,'Pick a subject; consult it for advantage on a related action.']]),
+ ...G('Tools and personal',[['Affordable Clothing',6],['Bag (Large)',15],['Bag (Medium)',10],['Bag (Small)',4],['Bandolier',2,'Holds up to three extra reloads.'],['Belt and Holster',3,'Holds a firearm and one reload.'],['Camera',23.4],['Dissection Kit',10],['Durable Clothing',25],['Fine Clothing',75],['Fingerprint Kit',3],['Folding Camera',9.4],['Gold Pocket Watch',25],['Hat',4.95],['Lockpicks',2],['Magnifying Glass',0.5],['Monocular (2x)',5],['Binoculars (4x)',10],['Binoculars (8x)',22],['Roll of Film',0.4],['Wristwatch',10]]),
+ ...G('Outdoors',[['Camping Blanket',4],['Camping Mess Kit',4],['Compass',3],['Field Rations (1 day)',0.2],['Fishing Rod',2.17,'Price varies up to $39.25.'],['Fishing Tacklebox',4],['Rain Slicker and Hat',3.79],['Road Atlas',1],['Rope, Heavy (10 ft)',5],['Rope, Line (10 ft)',1],['Survival Kit',3],['Two-Person Tent',11]]),
+ ...G('Transport',[['Bicycle',24],['Motorcycle',100,'Price varies up to $300.'],['Rowboat',35],['Touring Car (used)',250],['Touring Car (new)',900],['Truck (used)',550]]),
+];
+
+const SK=[['agility','Agility'],['athletics','Athletics'],['wits','Wits'],['presence','Presence'],['intuition','Intuition'],['knowledge','Knowledge'],['resolve','Resolve'],['melee','Melee Combat'],['ranged','Ranged Combat'],['lore','Lore']];
+const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=v=>'$'+(Number(v)||0).toFixed(2);
+
+// Printable two-page Letter sheet, same look as the paper-style sheet.
+function sheetHtml(c){
+ const knRows=[];const byT={1:[],2:[],3:[],4:[]};(c.knacks||[]).forEach(k=>{(byT[k.tier]||byT[1]).push(k);});
+ [[1,3],[2,2],[3,2],[4,1]].forEach(([t,n])=>{const have=byT[t];for(let i=0;i<Math.max(n,have.length);i++){const k=have[i];knRows.push('<div class="kr"><span class="tl">Tier '+['I','II','III','IV'][t-1]+'</span><span>'+(k?'<b>'+e(k.name||'')+'.</b> '+e(k.text||''):'')+'</span></div>');}});
+ const w=(c.weapons||[]).slice(0,4);while(w.length<3)w.push(null);
+ const pips=n=>{let s='';for(let i=0;i<n;i++)s+='<i class="pip"></i>';return s||'—';};
+ const skills=SK.map(([k,n])=>{const s=(c.skills||{})[k]||{r:6,max:''};return '<div class="sk"><span class="sn">'+n+'</span><span class="rt">'+s.r+'+</span><span class="mx"><small>max</small><em>'+(s.max?s.max+'+':'')+'</em></span></div>';}).join('');
+ const lines=n=>'<div class="ln"></div>'.repeat(n);
+ const f=(l,v,n)=>'<div class="fd"><span class="lb">'+l+'</span>'+(v?'<div class="val">'+e(v)+'</div>':'')+lines(v?Math.max(0,(n||1)-1):(n||1))+'</div>';
+ const eq=(c.items||[]).map(it=>'<div class="eq"><b>'+e(it.name)+'</b>'+(it.note?' — '+e(it.note):'')+'</div>').join('');
+ const hab=c.habitual&&c.habitual.name?'<div class="eq"><b>'+e(c.habitual.name)+'</b> (habitual) — once per session, a simple action removes 1 horror.</div>':'';
+ const txt=v=>e(v||'').replace(/\n/g,'<br>');
+ return '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>'+e(c.name||'Investigator')+' — Arkham investigator sheet</title>'+
+ '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Marcellus+SC&display=swap">'+
+ '<style>@page{size:letter;margin:0}*{box-sizing:border-box}body{margin:0;background:#8a8478;font-family:"EB Garamond",Georgia,serif;color:#1f1a14;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+ '.bar{position:sticky;top:0;background:#1f1a14;color:#f4eedf;padding:10px 16px;font:14px/1.4 system-ui,sans-serif;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}.bar button{font:inherit;padding:6px 14px;border:0;border-radius:4px;background:#f4eedf;color:#1f1a14;cursor:pointer}'+
+ '.page{width:8.5in;height:11in;margin:20px auto;background:#f4eedf;padding:.42in;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;page-break-after:always;break-after:page}'+
+ '.page::before{content:"";position:absolute;inset:.18in;border:1px solid #b9a986;pointer-events:none}'+
+ '.panel{background:#fbf7ec;border:1.5px solid #3a3226;box-shadow:inset 0 0 0 3px #fbf7ec,inset 0 0 0 4px #b9a986;padding:10px 14px}'+
+ '.h{font-family:"Marcellus SC",Georgia,serif;font-size:14px;letter-spacing:3px;color:#7b2d26;display:flex;align-items:center;gap:10px;margin:0 0 8px}.h::before,.h::after{content:"";flex:1;height:1px;background:#b9a986}'+
+ '.lb{font-family:"Marcellus SC",Georgia,serif;font-size:11px;letter-spacing:1.4px;color:#5a4f40}.ln{border-bottom:1px solid #8a7a5c;height:20px}'+
+ '.top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px}.nm{font-family:"Marcellus SC",Georgia,serif;font-size:40px;line-height:1.05}.sub{font-style:italic;font-size:16px}.kick{font-family:"Marcellus SC",serif;font-size:11px;letter-spacing:4px;color:#7b2d26}'+
+ '.xp{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;width:220px}.xp div{display:flex;flex-direction:column}.xp b{font-family:"Marcellus SC",serif;font-size:20px;border-bottom:1px solid #8a7a5c;min-height:24px}'+
+ '.row{display:flex;gap:12px}.sks{display:grid;grid-template-columns:1fr 1fr;column-gap:20px}.sk{display:flex;align-items:center;gap:8px;height:40px;border-bottom:1px dotted #b9a986}.sn{flex:1;font-size:16px;font-weight:500}'+
+ '.rt{width:36px;height:36px;border-radius:50%;border:2px solid #1f1a14;display:flex;align-items:center;justify-content:center;font-family:"Marcellus SC",serif;font-size:17px;background:#fff}.mx{display:flex;flex-direction:column;align-items:center;width:32px}.mx small{font-family:"Marcellus SC",serif;font-size:10px;color:#5a4f40}.mx em{font-style:normal;width:28px;height:20px;border:1px solid #8a7a5c;border-radius:10px;text-align:center;font-size:13px;color:#7b2d26;font-weight:600}'+
+ '.dice{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.dice i{height:26px;border:1.5px solid #3a3226;border-radius:4px;background:#fff}.box2{display:flex;gap:8px}.box2 div{flex:1;border:1.5px solid #3a3226;border-radius:18px;text-align:center;padding:2px 0}.box2 b{display:block;font-family:"Marcellus SC",serif;font-size:20px;min-height:24px}'+
+ '.kr{display:flex;gap:10px;align-items:baseline;min-height:24px;border-bottom:1px solid #b9a986;padding:2px 0;font-size:13.5px;line-height:1.3}.kr:last-child{border-bottom:0}.tl{font-family:"Marcellus SC",serif;font-size:11px;letter-spacing:1px;color:#7b2d26;width:48px;flex:none}'+
+ 'table{width:100%;border-collapse:collapse;font-size:13.5px}th{font-family:"Marcellus SC",serif;font-weight:400;font-size:10.5px;letter-spacing:1px;color:#5a4f40;text-align:left;padding:0 4px 3px}td{border-bottom:1px solid #b9a986;padding:4px;height:28px;vertical-align:middle}.pip{display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid #3a3226;margin-right:3px}'+
+ '.fd{display:flex;flex-direction:column;gap:1px}.val{font-size:15px;border-bottom:1px solid #8a7a5c;min-height:20px}.eq{font-size:13.5px;border-bottom:1px solid #b9a986;padding:3px 0;line-height:1.3}.qr{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;font-size:12.5px;line-height:1.35}.tx{font-size:13.5px;line-height:1.35;min-height:40px}'+
+ '@media print{body{background:none}.bar{display:none}.page{margin:0}}</style></head><body>'+
+ '<div class="bar">Print this page on Letter paper at 100% scale, with background graphics on.<button onclick="print()">Print</button></div>'+
+ // page 1
+ '<section class="page"><div class="top"><div><div class="kick">Arkham Investigator</div><div class="nm">'+e(c.name||'')+'</div><div class="sub">'+e([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · '))+'</div></div>'+
+ '<div class="xp"><div><span class="lb">Total XP</span><b>'+(c.xpTotal||0)+'</b></div><div><span class="lb">Unused XP</span><b>'+(c.xpUnused||0)+'</b></div></div></div>'+
+ '<div class="row"><div class="panel" style="flex:1"><div class="h">Skills</div><div class="sks">'+skills+'</div></div>'+
+ '<div style="width:2.45in;display:flex;flex-direction:column;gap:12px"><div class="panel"><div class="h">Dice Pool</div><div class="dice">'+'<i></i>'.repeat(c.poolMax||6)+'</div><div class="fd" style="margin-top:8px"><span class="lb">Horror dice limit</span><div class="val">'+(c.horrorLimit||'')+'</div></div></div>'+
+ '<div class="panel" style="flex:1"><div class="h">Insight</div><div class="box2"><div><span class="lb">Limit</span><b>'+(c.insightLimit||1)+'</b></div><div><span class="lb">Remaining</span><b></b></div></div></div></div></div>'+
+ '<div class="panel"><div class="h">Personality</div><div class="row"><div class="fd" style="width:1.6in"><span class="lb">Trait</span><div class="val">'+e(c.personality||'')+'</div></div><div class="fd" style="flex:1"><span class="lb">Positive</span><div class="val" style="font-size:13px">'+e(c.positive||'')+'</div></div><div class="fd" style="flex:1"><span class="lb">Negative</span><div class="val" style="font-size:13px">'+e(c.negative||'')+'</div></div></div></div>'+
+ '<div class="panel"><div class="h">Knacks</div>'+knRows.join('')+'</div>'+
+ '<div class="panel"><div class="h">Weapons</div><table><thead><tr><th style="width:26%">Weapon</th><th>Skill</th><th>Range</th><th>Dmg</th><th>Injury</th><th>Ammo</th><th style="width:28%">Special</th></tr></thead><tbody>'+
+ w.map(x=>x?'<tr><td><b>'+e(x.name)+'</b></td><td>'+e((x.skill||'').replace(' Combat',''))+'</td><td>'+e(x.range)+'</td><td>'+e(x.dmg)+'</td><td>'+e(x.inj)+'</td><td>'+pips(Number(x.ammoMax)||0)+'</td><td style="font-size:12px">'+e(x.special)+'</td></tr>':'<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('')+'</tbody></table></div>'+
+ '<div class="row" style="flex:1"><div class="panel" style="flex:1"><div class="h">Injuries</div>'+lines(3)+'</div><div class="panel" style="flex:1"><div class="h">Traumas &amp; Effects</div>'+lines(3)+'</div></div></section>'+
+ // page 2
+ '<section class="page"><div class="top"><div class="nm" style="font-size:28px">'+e(c.name||'')+'</div><div class="kick">Background &amp; Resources</div></div>'+
+ '<div class="panel" style="display:flex;flex-direction:column;gap:6px"><div class="h">Background</div>'+f('Place of origin',c.bg&&c.bg.origin)+f('Family &amp; friends',c.bg&&c.bg.family,2)+
+ '<div class="row"><div style="flex:2">'+f('Employment',c.bg&&c.bg.employment)+'</div><div style="flex:1">'+f('Weekly salary',c.bg&&c.bg.salary)+'</div></div>'+f('First supernatural encounter',c.bg&&c.bg.encounter,2)+f('Notable enemies',c.bg&&c.bg.enemies)+'</div>'+
+ '<div class="row"><div class="panel" style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="h">Mundane Resources</div><div class="fd"><span class="lb">Money</span><div class="val" style="font-family:\'Marcellus SC\',serif;font-size:20px">'+$(c.money)+'</div></div>'+
+ '<span class="lb">Equipment</span>'+hab+eq+(c.reloads?'<div class="eq"><b>Spare reloads</b> × '+c.reloads+'</div>':'')+lines(Math.max(2,6-(c.items||[]).length))+f('Vehicle',c.bg&&c.bg.vehicle)+f('Lodging',c.bg&&c.bg.lodging)+'</div>'+
+ '<div class="panel" style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="h">Supernatural Resources</div><span class="lb">Tomes</span><div class="tx">'+txt(c.tomes)+'</div>'+lines(1)+'<span class="lb">Relics</span><div class="tx">'+txt(c.relics)+'</div>'+lines(1)+'<span class="lb">Eldritch debts or favors</span><div class="tx">'+txt(c.debts)+'</div>'+lines(1)+'</div></div>'+
+ '<div class="panel" style="flex:1"><div class="h">Quick Reference</div><div class="qr">'+
+ '<div><b>Tests.</b> Spend dice and roll. Any die at or above the skill rating is a success.</div><div><b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.</div>'+
+ '<div><b>Damage.</b> Each point lowers the pool limit by 1. At 0 you are wounded.</div><div><b>Strain.</b> Restore the pool limit to max, then suffer an injury at the end of your turn.</div>'+
+ '<div><b>Injury.</b> More successes than a weapon’s injury rating also inflicts an injury (1d6 + 1 per injury).</div><div><b>Horror.</b> Refill horror dice first, up to your limit. A 1 on a horror die means a trauma.</div>'+
+ '<div><b>Insight.</b> Refills each session. Spend for +1 success, advantage, a clue, or a handy detail.</div><div><b>Ammo.</b> Mark one off only when an attack rolls a 1. Reloading is a simple action.</div></div></div></section></body></html>';
+}
+return {ARCH,knacksFor,maxFor,TRAITS,WEAPONS,GEAR,sheetHtml};
+})();
+</script>
+
+<script>
+(function(){
+const SLOTS=['p1','p2','p3','p4'];
+const SEED={"p1": {"archetype": "Seeker", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "Stick of Gum", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [{"id": "i1", "name": "Lockpicks", "note": ""}], "knacks": [{"id": "k1", "name": "Scientific", "text": "When performing a complex action using Knowledge to conduct an experiment or scientific analysis, add 1 to the result of each die rolled.", "tier": 1}, {"id": "k2", "name": "Brilliant Insight", "text": "On a complex Knowledge or Lore action that rolls two or more 6s, you or one ally within earshot immediately regains 1 insight (up to the insight limit).", "tier": 1}], "log": [{"m": "Refilled dice pool", "t": 1790404667653}, {"m": "Bought Colt Police Revolver for $30.00", "t": 1790404660204}, {"m": "Gained $5.00", "t": 1790404654074}, {"m": "Gained $5.00", "t": 1790404653898}, {"m": "Gained $5.00", "t": 1790404653348}, {"m": "Gained $5.00", "t": 1790404653206}, {"m": "Gained $5.00", "t": 1790404653058}, {"m": "Gained $5.00", "t": 1790404652874}, {"m": "Gained $5.00", "t": 1790404652540}, {"m": "Gained $5.00", "t": 1790404652315}, {"m": "Refilled dice pool", "t": 1790403386024}, {"m": "Rested: pool limit restored", "t": 1790403188043}], "money": 13.75, "name": "Wallace Morrow", "negative": "", "personality": "", "player": "Dan", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 4, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "2", "r": 5}, "lore": {"max": "3", "r": 5}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "3", "r": 4}, "resolve": {"max": "", "r": 5}, "wits": {"max": "3", "r": 5}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [{"ammo": 2, "ammoMax": 2, "dmg": "2", "id": "w1", "inj": "3", "name": "Colt 1911 Pistol", "range": "75 ft", "rc": 1, "skill": "Ranged Combat", "special": "None"}, {"ammo": 0, "ammoMax": 0, "dmg": "1", "id": "w2", "inj": "4", "name": "Pocketknife", "range": "Engaged", "skill": "Melee Combat", "special": "Very Hard to Find (3 successes to spot)"}], "xpTotal": 12, "xpUnused": 7}, "p2": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667655}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 2", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p3": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 3", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p4": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386026}], "money": 0, "name": "Investigator 4", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}};
+const SKILLS=[['agility','Agility'],['athletics','Athletics'],['wits','Wits'],['presence','Presence'],['intuition','Intuition'],['knowledge','Knowledge'],['resolve','Resolve'],['melee','Melee Combat'],['ranged','Ranged Combat'],['lore','Lore']];
+const ARCH=['Adventurer','Believer','Guardian','Hunter','Mystic','Rogue','Seeker','Survivor'];
+const SKILL_COST={6:2,5:4,4:7,3:12};
+const KNACK_COST={1:3,2:6,3:10,4:15};
+const KNACK_CAP={1:3,2:2,3:2,4:1};
+const INJURIES=[null,
+ ['Heavy Blow','Knocked prone. Next turn, spend 1 die to clear your head before any other action.'],
+ ['Slowed','You move at half speed.'],
+ ['Nasty Cut','Bleeding. Your pool limit can’t rise (rest, healing or straining) until healed.'],
+ ['Concussed','−1 on each die for complex actions with Wits, Intuition, Knowledge or Lore.'],
+ ['Injured Arm','Simple actions with that arm become complex; −1 per die on Athletics, Agility, Ranged and Melee.'],
+ ['Injured Leg','Simple actions with that leg (moving too) become complex; −1 per die on Athletics, Agility and Melee.'],
+ ['Loss of a Sense','Lose sight, smell or hearing (1d3). Takes 2 successes to heal.'],
+ ['Severely Injured','−2 on each die for every complex action. Takes 2 successes to heal.'],
+ ['Comatose','Pool limit drops to 0 until healed. Takes 2 successes to heal.'],
+ ['Dire','Pool limit drops to 0. Takes 3 successes to heal. Without medical care within an hour, you die.'],
+ ['Dead','You are dead — unless you permanently lower your insight limit by 2 to survive.']];
+function injuryFor(n){return INJURIES[Math.min(Math.max(n,1),11)];}
+function traumaFor(n){
+ if(n<=2)return['Subtle Strangeness','Something odd at the edge of your senses. No further effect.'];
+ if(n===3)return['Shocked','Discard 1 die. If you have none, add 1 to trauma rolls for the rest of the session.'];
+ if(n===4)return['Stunned','Discard all dice. If you have none, add 1 to trauma rolls for the rest of the session.'];
+ if(n<=7)return['Overcome by Horror','Spend 1 insight or trigger the negative side of your personality trait.'];
+ if(n<=10)return['Mind Undone','Spend 2 insight or trigger your negative trait, with its effects lasting longer. Add 1 to trauma rolls for the rest of the session.'];
+ return['Lost Forever','Your investigator is lost — unless you permanently lower your insight limit by 2 to survive.'];
+}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>'$'+(Number(v)||0).toFixed(2);
+const d6=()=>1+Math.floor(Math.random()*6);
+
+function blank(i){
+ const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
+ return {name:'Investigator '+i,player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
+  poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false},reloads:0,
+  bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
+}
+function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});return o;}
+
+let db=null, chars={}, active='party', pending=false, localMode=false;
+let lastRoll={};
+try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||SLOTS.includes(t)))active=t;}catch(e){}
+SLOTS.forEach((s,i)=>chars[s]=blank(i+1));
+
+const toastEl=document.getElementById('toast');let toastT;
+function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
+
+async function save(slot,patch,logMsg){
+ const c=chars[slot];
+ Object.assign(c,patch);
+ if(logMsg){c.log=[{t:Date.now(),m:logMsg},...(c.log||[])].slice(0,12);patch.log=c.log;}
+ render();
+ if(!db)return;
+ try{await db.doc('characters/'+slot).update(patch);}
+ catch(e){
+  try{await db.doc('characters/'+slot).set(JSON.parse(JSON.stringify(c)));}catch(e2){toast('Couldn’t save that change. Check your connection and try again.');}
+ }
+}
+
+// ---------- rules ----------
+function clampPool(c){
+ c.poolLimit=Math.max(0,Math.min(c.poolLimit,c.poolMax));
+ let total=c.regular+c.horror;
+ while(total>c.poolLimit){ if(c.regular>0)c.regular--; else c.horror--; total--; }
+}
+const R={
+ spend(s,kind){const c=chars[s];if(kind==='hor'&&c.horror>0)return save(s,{horror:c.horror-1});if(kind==='reg'&&c.regular>0)return save(s,{regular:c.regular-1});},
+ refill(s){const c=chars[s];const h=Math.min(c.horrorLimit,c.poolLimit);save(s,{horror:h,regular:c.poolLimit-h},'Refilled dice pool');},
+ damage(s,n){const c=chars[s];c.poolLimit-=n;clampPool(c);save(s,{poolLimit:c.poolLimit,regular:c.regular,horror:c.horror},'Took '+n+' damage'+(c.poolLimit===0?' — wounded':''));},
+ heal(s,n){const c=chars[s];if(c.injuries.some(j=>j.name==='Comatose'||j.name==='Dire'))return toast('Comatose or Dire: heal that injury first.');
+  if(c.injuries.some(j=>j.name==='Nasty Cut'))return toast('Nasty Cut: the pool limit can’t rise until that injury is healed.');
+  const v=Math.min(c.poolMax,c.poolLimit+n);save(s,{poolLimit:v},'Healed '+(v-c.poolLimit)+' damage');},
+ rest(s){const c=chars[s];if(c.injuries.some(j=>['Comatose','Dire','Nasty Cut'].includes(j.name)))return toast('An injury is stopping the pool limit from rising.');save(s,{poolLimit:c.poolMax},'Rested: pool limit restored');},
+ strain(s){const c=chars[s];if(c.poolLimit>=c.poolMax)return toast('You can only strain when your pool limit is below its maximum.');
+  if(c.injuries.some(j=>['Nasty Cut','Comatose','Dire'].includes(j.name)))return toast('An injury is stopping the pool limit from rising.');
+  save(s,{poolLimit:c.poolMax},'Strained: pool limit restored, injury due at end of turn');toast('Pool limit restored. Roll an injury at the end of your turn.');},
+ horror(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.poolMax,c.horrorLimit+n));save(s,{horrorLimit:v},(n>0?'Suffered ':'Removed ')+Math.abs(v-c.horrorLimit)+' horror');},
+ habitual(s){const c=chars[s];if(c.habitual.used)return toast('Already used a habitual item this session.');if(c.horrorLimit<=0)return toast('No horror to remove.');
+  const m=Math.round(((Number(c.money)||0)-1)*100)/100;save(s,{horrorLimit:c.horrorLimit-1,habitual:{name:c.habitual.name,used:true},money:m},'Used '+(c.habitual.name||'habitual item')+': removed 1 horror');},
+ insight(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.insightLimit,c.insight+n));save(s,{insight:v},n<0?'Spent 1 insight':null);},
+ rollInjury(s){const c=chars[s];const d=d6(),tot=d+c.injuries.length;const [nm,ef]=injuryFor(tot);lastRoll[s]={type:'Injury',d,mod:c.injuries.length,tot,nm,ef};
+  const inj=[...c.injuries,{id:uid(),name:nm,note:''}];const p={injuries:inj};
+  if(nm==='Comatose'||nm==='Dire'){c.poolLimit=0;clampPool(c);Object.assign(p,{poolLimit:0,regular:c.regular,horror:c.horror});}
+  save(s,p,'Injury: '+nm+' (rolled '+tot+')');},
+ rollTrauma(s,ones){const c=chars[s];const d=d6(),mod=ones+c.traumaMod,tot=d+mod;const [nm,ef]=traumaFor(tot);lastRoll[s]={type:'Trauma',d,mod,tot,nm,ef};
+  const p={traumas:[{id:uid(),name:nm,note:''},...c.traumas].slice(0,10)};
+  if(nm==='Mind Undone')p.traumaMod=c.traumaMod+1;
+  if(nm==='Shocked'){if(c.regular+c.horror>0){if(c.regular>0)p.regular=c.regular-1;else p.horror=c.horror-1;}else p.traumaMod=c.traumaMod+1;}
+  if(nm==='Stunned'){if(c.regular+c.horror>0){p.regular=0;p.horror=0;}else p.traumaMod=c.traumaMod+1;}
+  save(s,p,'Trauma: '+nm+' (rolled '+tot+')');},
+ newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{name:c.habitual.name,used:false},traumaMod:0},quiet?null:'New session: insight refilled');},
+ improve(s,k){const c=chars[s];const sk=c.skills[k];const cost=SKILL_COST[sk.r];if(!cost)return;
+  const floor=sk.max?Number(sk.max):4;if(sk.r-1<floor)return toast(sk.max?'This skill is already at its max.':'Set this skill’s max (from your archetype) to go past 4+.');
+  if(c.xpUnused<cost)return toast('Needs '+cost+' XP.');const sks=JSON.parse(JSON.stringify(c.skills));sks[k].r=sk.r-1;
+  save(s,{skills:sks,xpUnused:c.xpUnused-cost},SKILLS.find(x=>x[0]===k)[1]+' improved to '+(sk.r-1)+'+ ('+cost+' XP)');},
+ buyInsight(s){const c=chars[s];if(c.xpUnused<1)return toast('Needs 1 XP.');if(c.insightLimit>=10)return toast('Insight limit can’t go above 10.');
+  save(s,{insightLimit:c.insightLimit+1,xpUnused:c.xpUnused-1},'Insight limit raised to '+(c.insightLimit+1)+' (1 XP)');},
+ addXp(s,n){const c=chars[s];save(s,{xpTotal:c.xpTotal+n,xpUnused:c.xpUnused+n},'Earned '+n+' XP');},
+ buyKnack(s,tier){const c=chars[s];const have=c.knacks.filter(k=>Number(k.tier)===tier).length;
+  if(have>=KNACK_CAP[tier])return toast('Limit reached: '+KNACK_CAP[tier]+' tier '+tier+' knack'+(KNACK_CAP[tier]>1?'s':'')+'.');
+  for(let t=1;t<tier;t++)if(!c.knacks.some(k=>Number(k.tier)===t))return toast('You need a tier '+t+' knack first.');
+  if(c.xpUnused<KNACK_COST[tier])return toast('Needs '+KNACK_COST[tier]+' XP.');
+  save(s,{knacks:[...c.knacks,{id:uid(),tier,name:'',text:''}],xpUnused:c.xpUnused-KNACK_COST[tier]},'Bought a tier '+tier+' knack ('+KNACK_COST[tier]+' XP)');},
+ ammo(s,id,i){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);w.ammo=(i<w.ammo)?i:i+1;save(s,{weapons:ws});},
+ reload(s,id){const c=chars[s];if(c.reloads<=0)return toast('No spare reloads left.');const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);
+  if(w.ammo>=w.ammoMax)return toast('Already fully loaded.');w.ammo=w.ammoMax;save(s,{weapons:ws,reloads:c.reloads-1},'Reloaded '+(w.name||'weapon'));},
+ money(s,d){const c=chars[s];const v=Math.round(((Number(c.money)||0)+d)*100)/100;if(v<0)return toast('Not enough money.');save(s,{money:v},(d<0?'Spent ':'Gained ')+money(Math.abs(d)));},
+};
+
+// ---------- render ----------
+function status(c){
+ if(c.injuries.some(j=>j.name==='Dead'))return['bad','Dead'];
+ if(c.traumas.some(j=>j.name==='Lost Forever'))return['bad','Lost forever'];
+ if(c.injuries.some(j=>j.name==='Dire'))return['bad','Dire'];
+ if(c.poolLimit===0)return['bad','Wounded'];
+ if(c.horrorLimit>=Math.max(3,c.poolMax/2))return['warn','Shaken'];
+ if(c.poolLimit<c.poolMax||c.injuries.length)return['warn','Hurt'];
+ return['ok','Steady'];
+}
+function poolHtml(c,mini){
+ let h='';for(let i=0;i<c.horror;i++)h+='<span class="die hor" title="Horror die"></span>';
+ for(let i=0;i<c.regular;i++)h+='<span class="die reg" title="Regular die"></span>';
+ for(let i=c.regular+c.horror;i<c.poolLimit;i++)h+='<span class="die empty" title="Spent"></span>';
+ for(let i=c.poolLimit;i<c.poolMax;i++)h+='<span class="die lost" title="Lost to damage"></span>';
+ return '<div class="pool'+(mini?' mini':'')+'" aria-label="'+(c.regular+c.horror)+' dice in pool">'+h+'</div>';
+}
+function renderTabs(){
+ const t=document.getElementById('tabs');
+ t.innerHTML=['party',...SLOTS,'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':(chars[s].name||'Investigator'))+'</button>').join('');
+}
+function renderParty(){
+ let h='<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div><div class="party">';
+ SLOTS.forEach(s=>{const c=chars[s];const [cls,lab]=status(c);const lr=(c.log||[])[0];
+  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · ')||'Unassigned')+'</div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
+  poolHtml(c,true)+
+  '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
+  (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
+ h+='</div><section class="sec"><div class="sec-head"><h2>Game master</h2></div><div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual items and clears trauma roll penalties.</p></section>';
+ return h;
+}
+function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
+function renderChar(s){
+ const c=chars[s];const [cls,lab]=status(c);const rl=lastRoll[s];
+ let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><div class="row"><span class="chip '+cls+'">'+lab+'</span><button class="btn sm" data-act="printc">Download printable sheet</button></div></div>'+
+ '<div class="grid2">'+fld('player','Player',c.player)+'<label class="field"><span class="lbl">Archetype</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===c.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label></div>'+
+ '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="stepper"><button class="btn sm" data-act="xp" data-n="1">+1 XP</button><button class="btn sm" data-act="xp" data-n="4">+4 XP</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+
+ (edit.xp?'<div class="row">'+fld('xpTotal','Total XP',c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused','Unused XP',c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
+ '</section>';
+
+ // condition
+ h+='<section class="sec"><div class="sec-head"><h2>Dice pool</h2><span class="note num">'+(c.regular+c.horror)+' in pool · limit '+c.poolLimit+' of '+c.poolMax+'</span></div>'+poolHtml(c)+
+ '<div class="legend"><span>■ regular</span><span style="color:var(--horror)">■ horror</span><span>□ spent</span><span style="color:var(--danger)">▨ lost to damage</span></div>'+
+ '<div class="row"><button class="btn" data-act="spend" data-k="reg" '+(c.regular?'':'disabled')+'>Spend regular die</button><button class="btn hor" data-act="spend" data-k="hor" '+(c.horror?'':'disabled')+'>Spend horror die</button><button class="btn pri" data-act="refill">Refill pool</button></div>'+
+ '<div class="row"><button class="btn dng" data-act="dmg" data-n="1">Take 1 damage</button><button class="btn dng" data-act="dmg" data-n="2">Take 2</button><button class="btn" data-act="heal" data-n="1">Heal 1</button><button class="btn" data-act="rest">Full rest</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Strain</button></div>'+
+ '<p class="note" style="margin:0">Damage lowers the pool limit. At 0 you’re wounded. Straining restores the limit, then you roll an injury at the end of your turn.</p></section>';
+
+ // horror & insight
+ h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
+ '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit?'disabled':'')+'>'+(c.habitual.used?'Used this session':'Use it (−1 horror, $1)')+'</button></div>'+
+ '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
+ '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
+ '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
+ '<div class="grid2">'+fld('personality','Personality trait',c.personality)+fld('positive','Positive',c.positive)+'</div>'+fld('negative','Negative',c.negative)+'</div></div></section>';
+
+ // injuries & trauma
+ h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2><div class="row"><button class="btn dng" data-act="rinj">Roll injury</button><label class="row note" for="ones-'+s+'">1s on horror dice <input id="ones-'+s+'" type="number" min="1" max="6" value="1" class="maxsel"></label><button class="btn hor" data-act="rtra">Roll trauma</button></div></div>'+
+ (rl?'<div class="roll" role="status"><span class="lbl">'+rl.type+' roll</span><b>'+esc(rl.nm)+'</b><span class="num note">d6 '+rl.d+(rl.mod?' + '+rl.mod:'')+' = '+rl.tot+'</span><span>'+esc(rl.ef)+'</span></div>':'')+
+ '<div class="grid2"><div><span class="lbl">Injuries (add 1 per injury to the next roll)</span><div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
+ '<div><span class="lbl">Recent traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span><div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(({"Subtle Strangeness":1,"Shocked":3,"Stunned":4,"Overcome by Horror":5,"Mind Undone":8,"Lost Forever":11})[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
+
+ // skills
+ h+='<section class="sec"><div class="sec-head"><h2>Skills</h2><span class="note">Success on a roll at or above the rating. Lower is better.</span></div><div class="skills">'+
+ SKILLS.map(([k,n])=>{const sk=c.skills[k];const cost=SKILL_COST[sk.r];return '<div class="skill"><span class="nm">'+n+'</span><label class="note" for="mx-'+k+'-'+s+'">max</label><select class="maxsel" id="mx-'+k+'-'+s+'" data-skmax="'+k+'"><option value="">–</option>'+[4,3,2].map(v=>'<option value="'+v+'"'+(String(sk.max)===String(v)?' selected':'')+'>'+v+'+</option>').join('')+'</select><span class="rate">'+sk.r+'+</span><button class="btn sm" data-act="imp" data-k="'+k+'" '+(cost?'':'disabled')+' aria-label="Improve '+n+'">'+(cost?'↑ '+cost+' XP':'Best')+'</button></div>';}).join('')+
+ '</div><details><summary class="note" style="cursor:pointer">Set ratings by hand</summary><div class="wgrid" style="margin-top:8px">'+SKILLS.map(([k,n])=>'<label class="field"><span class="lbl">'+n+'</span><select class="f" id="sr-'+k+'-'+s+'" data-skr="'+k+'">'+[6,5,4,3,2].map(v=>'<option value="'+v+'"'+(c.skills[k].r===v?' selected':'')+'>'+v+'+</option>').join('')+'</select></label>').join('')+'</div></details></section>';
+
+ // knacks
+ h+='<section class="sec"><div class="sec-head"><h2>Knacks</h2></div>'+knackPicker(c)+
+ '<div class="list">'+(c.knacks.length?c.knacks.map(k=>'<div class="item"><span class="tier">T'+k.tier+'</span><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="name" value="'+esc(k.name)+'" placeholder="Knack name" style="font-weight:600"><textarea class="f" id="kt-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="text" placeholder="What it does">'+esc(k.text)+'</textarea></div><button class="btn sm icon" data-act="del" data-list="knacks" data-id="'+k.id+'" aria-label="Remove knack">×</button></div>').join(''):'<p class="note">No knacks yet.</p>')+'</div>'+
+ 
+ '<div class="costs"><span>Skill 6+ → 5+</span><span>2 XP</span><span>Skill 5+ → 4+</span><span>4 XP</span><span>Skill 4+ → 3+ (archetype skills)</span><span>7 XP</span><span>Skill 3+ → 2+ (archetype skills)</span><span>12 XP</span><span>+1 insight limit (after a momentous session)</span><span>1 XP</span></div>'+
+ '<div class="row"><button class="btn sm" data-act="buyins">Raise insight limit · 1 XP</button></div></section>';
+
+ // weapons
+ h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2><div class="row"><span class="note">Spare reloads</span><div class="stepper"><button class="btn sm icon" data-act="rel" data-n="-1" aria-label="One fewer reload">−</button><b class="num">'+c.reloads+'</b><button class="btn sm icon" data-act="rel" data-n="1" aria-label="One more reload">+</button></div></div></div>'+
+ '<p class="note" style="margin:0">Mark off ammo only when an attack rolls one or more 1s. Reloading is a simple action, or complex (Ranged Combat) under pressure.</p><div class="list">'+
+ (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="Ammo '+(i+1)+(i<w.ammo?' loaded':' spent')+'"></button>';
+  return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(w.name)+'" placeholder="Weapon" style="font-weight:600">'+
+  '<div class="wgrid">'+[['skill','Skill'],['range','Range'],['dmg','Damage'],['inj','Injury rating'],['ammoMax','Ammo'],['special','Special']].map(([k,l])=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="w'+k+'-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="'+k+'" value="'+esc(w[k])+'" '+(k==='ammoMax'?'type="number" min="0" max="12"':'')+'></label>').join('')+'</div>'+
+  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'">Reload (uses 1 spare)</button>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy spare reload '+money(w.rc)+'</button>':'')+'</div>':'')+
+  '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
+ '</div><div class="row"><button class="btn sm" data-act="addw">Add weapon</button></div></section>';
+
+ // resources
+ h+='<section class="sec"><div class="sec-head"><h2>Money &amp; equipment</h2></div><div class="row"><div class="stat"><span class="lbl">Money</span><b class="num">'+money(c.money)+'</b></div>'+
+ [-1,-0.25,0.25,1,5].map(d=>'<button class="btn sm" data-act="cash" data-n="'+d+'">'+(d<0?'−':'+')+money(Math.abs(d))+'</button>').join('')+
+ '</div>'+gearPicker(s)+'<div class="row"><label class="row note" for="cash-'+s+'">Amount <input id="cash-'+s+'" class="maxsel" style="width:80px" type="number" step="0.01" min="0" placeholder="0.00"></label><button class="btn sm" data-act="cashin">Add</button><button class="btn sm" data-act="cashout">Spend</button></div>'+
+ '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(it.name)+'" placeholder="Item" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(it.note)+'" placeholder="Notes or rules"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="Remove item">×</button></div>').join(''):'<p class="note">No equipment.</p>')+
+ '</div><div class="row"><button class="btn sm" data-act="addi">Add item</button></div><div class="grid2">'+fld('bg.vehicle','Vehicle',c.bg.vehicle)+fld('bg.lodging','Lodging',c.bg.lodging)+'</div></section>';
+
+ // supernatural + background
+ h+='<details class="sec"><summary><h2>Tomes, relics &amp; debts</h2></summary><div class="grid2"><label class="field"><span class="lbl">Tomes</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">Relics</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">Eldritch debts or favors</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
+ h+='<details class="sec"><summary><h2>Background</h2></summary><div class="grid2">'+fld('bg.origin','Place of origin',c.bg.origin)+fld('bg.family','Family & friends',c.bg.family)+fld('bg.employment','Employment',c.bg.employment)+fld('bg.salary','Weekly salary',c.bg.salary)+fld('bg.encounter','First supernatural encounter',c.bg.encounter)+fld('bg.enemies','Notable enemies',c.bg.enemies)+'</div></details>';
+
+ h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><button class="btn sm" data-act="session">New session</button></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span>'+new Date(l.t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})+' — '+esc(l.m)+'</span>').join(''):'Nothing yet.')+'</div></section>';
+ return h;
+}
+const edit={xp:false};
+function knackPicker(c){
+ const kn=A.knacksFor(c.archetype);
+ if(!kn.length)return '<p class="note" style="margin:0">Choose an archetype at the top to pick knacks from its list.</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">Add a knack by hand</button></div>';
+ const owned=c.knacks.map(k=>k.name);
+ return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+esc(c.archetype)+' knacks (\u2605 unique)</span><select class="f" id="kpick-'+active+'">'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' \u00b7 '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'">'+(k.unique?'\u2605 ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">Buy with XP</button><button class="btn" data-act="kgrant">Add free</button></div>';
+}
+function gearPicker(s){
+ const cats=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment</span><select class="f" id="gpick-'+s+'"><optgroup label="Weapons">'+A.WEAPONS.map((w,i)=>'<option value="w:'+i+'">'+esc(w.n)+' \u2014 '+money(w.c)+'</option>').join('')+'</optgroup>'+cats.map(ct=>'<optgroup label="'+ct+'">'+A.GEAR.map((g,i)=>g.cat===ct?'<option value="g:'+i+'">'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+}
+function addGear(s,val,pay){
+ const c=chars[s];const [t,i]=val.split(':');const it=t==='w'?A.WEAPONS[Number(i)]:A.GEAR[Number(i)];if(!it)return;
+ const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast('Not enough money. '+it.n+' costs '+money(it.c)+'.');
+ const p={money:m};
+ if(t==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,rc:it.rc,special:it.sp}];
+ else if(it.n==='Habitual Item'&&!c.habitual.name)p.habitual={name:'Habitual item',used:false};
+ else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
+ save(s,p,(pay?'Bought ':'Added ')+it.n+(pay?' for '+money(it.c):''));
+}
+function render(){
+ const ae=document.activeElement;
+ if(ae&&ae.closest&&ae.closest('#app')&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)){pending=true;renderTabs();return;}
+ pending=false;renderTabs();
+ const app=document.getElementById('app');
+ app.innerHTML=active==='party'?renderParty():active==='create'?renderCreator():renderChar(active);
+}
+
+// ---------- creator ----------
+const A=window.APL;
+const CR_KEY='apl-creator-v1';
+function crBlank(){return {name:'',player:'',trait:'',archetype:'',five:[],four:'',bonus:'',freeKnack:'',ups:{},bought:[],cart:[],bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:''},cat:'Weapons',slot:'',confirm:false};}
+let cr=crBlank();
+try{const t=JSON.parse(localStorage.getItem(CR_KEY)||'null');if(t)cr=Object.assign(crBlank(),t);}catch(e){}
+function crSave(){try{localStorage.setItem(CR_KEY,JSON.stringify(cr));}catch(e){}}
+function crSkill(k){let r=6;if(cr.five.includes(k))r=5;if(cr.four===k)r=4;return r;}
+function crUpCost(k){let r=crSkill(k),cost=0;for(let i=0;i<(cr.ups[k]||0);i++){cost+=SKILL_COST[r];r--;}return cost;}
+function crRating(k){return crSkill(k)-(cr.ups[k]||0);}
+function crFloor(k){return cr.archetype?A.maxFor(cr.archetype,k):4;}
+function crXpBudget(){return cr.bonus==='xp'?5:0;}
+function crKnackCost(){return cr.bought.reduce((s,n)=>{const k=A.knacksFor(cr.archetype).find(x=>x.name===n);return s+(k?KNACK_COST[k.tier]:0);},0);}
+function crXpSpent(){return SKILLS.reduce((s,[k])=>s+crUpCost(k),0)+crKnackCost();}
+function crMoneyBudget(){return 50+(cr.bonus==='money'?100:0);}
+function crCost(it){return it.type==='reload'?it.c:it.c;}
+function crMoneySpent(){return Math.round(cr.cart.reduce((s,it)=>s+it.c,0)*100)/100;}
+function crKnackList(){const all=[];if(cr.freeKnack)all.push(cr.freeKnack);return all.concat(cr.bought);}
+function crTierCount(t){return crKnackList().filter(n=>{const k=A.knacksFor(cr.archetype).find(x=>x.name===n);return k&&k.tier===t;}).length;}
+function crChecks(){
+ const c=[];
+ c.push([!!cr.name.trim(),'Name the investigator']);
+ c.push([!!cr.trait,'Choose a personality trait']);
+ c.push([!!cr.archetype,'Choose an archetype']);
+ c.push([cr.five.length===3,'Raise three skills to 5+ ('+cr.five.length+' of 3)']);
+ c.push([!!cr.four,'Raise one skill to 4+']);
+ c.push([!!cr.bonus,'Pick an extra advancement']);
+ c.push([!!cr.freeKnack,'Choose the free tier 1 knack']);
+ c.push([crXpSpent()<=crXpBudget(),'Stay within your XP']);
+ c.push([crMoneySpent()<=crMoneyBudget(),'Stay within your gear budget']);
+ return c;
+}
+function crBuild(){
+ const skills={};SKILLS.forEach(([k])=>{const f=crFloor(k);skills[k]={r:crRating(k),max:f<4?String(f):''};});
+ const t=A.TRAITS[cr.trait]||['',''];
+ const kn=A.knacksFor(cr.archetype);
+ const knacks=crKnackList().map(n=>{const k=kn.find(x=>x.name===n);return {id:uid(),tier:k?k.tier:1,name:n,text:''};});
+ const weapons=[],items=[];let reloads=0,habitual={name:'',used:false};
+ cr.cart.forEach(it=>{
+  if(it.type==='w'){const w=A.WEAPONS.find(x=>x.n===it.n);if(w)weapons.push({id:uid(),name:w.n,skill:w.s,range:w.r,dmg:w.d,inj:w.i,ammoMax:w.a,ammo:w.a,rc:w.rc,special:w.sp});}
+  else if(it.type==='reload')reloads++;
+  else if(it.n==='Habitual Item'&&!habitual.name)habitual={name:'Habitual item',used:false};
+  else{const g=A.GEAR.find(x=>x.n===it.n);items.push({id:uid(),name:it.n,note:g?g.note:''});}
+ });
+ const xp=crXpBudget();
+ const b=blank(1);
+ return Object.assign(b,{name:cr.name.trim(),player:cr.player,archetype:cr.archetype,personality:cr.trait,positive:t[0],negative:t[1],
+  xpTotal:xp,xpUnused:xp-crXpSpent(),skills,insightLimit:cr.bonus==='insight'?2:1,insight:cr.bonus==='insight'?2:1,
+  knacks,weapons,items,reloads,habitual,money:Math.round((crMoneyBudget()-crMoneySpent())*100)/100,
+  bg:Object.assign(b.bg,cr.bg),log:[{t:Date.now(),m:'Created in the ledger'}]});
+}
+function renderCreator(){
+ const kn=A.knacksFor(cr.archetype);const arch=A.ARCH[cr.archetype];
+ const xpB=crXpBudget(),xpS=crXpSpent(),mB=crMoneyBudget(),mS=crMoneySpent();
+ const cf=(p,l,v,ph)=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="cr-'+p.replace('.','-')+'" data-cf="'+p+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></label>';
+ const sname=k=>SKILLS.find(x=>x[0]===k)[1];
+ let h='<div class="banner">Build a new investigator step by step, following the corebook’s character creation. Costs come off the gear budget and XP as you choose. When it’s done, put them in a party slot or download a sheet to print.</div>';
+ // 1
+ h+='<section class="sec"><h2>1 · Background</h2><div class="grid2">'+cf('name','Investigator name',cr.name)+cf('player','Player',cr.player)+cf('bg.origin','Place of origin',cr.bg.origin)+cf('bg.family','Family & friends',cr.bg.family)+cf('bg.employment','Employment',cr.bg.employment)+cf('bg.salary','Weekly salary',cr.bg.salary)+cf('bg.encounter','First supernatural encounter',cr.bg.encounter)+cf('bg.enemies','Notable enemies',cr.bg.enemies)+'</div></section>';
+ // 2
+ const tr=A.TRAITS[cr.trait];
+ h+='<section class="sec"><h2>2 · Personality trait</h2><label class="field"><span class="lbl">Trait</span><select class="f" id="cr-trait" data-cf="trait"><option value="">Choose…</option>'+Object.keys(A.TRAITS).map(t=>'<option'+(t===cr.trait?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'+
+ (tr?'<div class="grid2"><div><span class="lbl">Positive</span><p style="margin:4px 0 0">'+esc(tr[0])+'</p></div><div><span class="lbl">Negative (when triggered)</span><p style="margin:4px 0 0">'+esc(tr[1])+'</p></div></div>':'')+'</section>';
+ // 3
+ h+='<section class="sec"><h2>3 · Archetype</h2><label class="field"><span class="lbl">Archetype</span><select class="f" id="cr-arch" data-cf="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===cr.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label>'+
+ (arch?'<p class="note" style="margin:0">Can improve '+arch.three.map(sname).join(', ')+' up to 3+, and '+sname(arch.two)+' up to 2+. Everything else stops at 4+.</p>':'')+'</section>';
+ // 4
+ h+='<section class="sec"><div class="sec-head"><h2>4 · Starting skills</h2><span class="note">All skills start at 6+. Raise three to 5+ and one to 4+ for free.</span></div><div class="skills">'+
+ SKILLS.map(([k,n])=>{const r=crRating(k),up=cr.ups[k]||0,f=crFloor(k),next=SKILL_COST[r];
+  return '<div class="skill"><span class="nm">'+n+(f<4?' <span class="tier">max '+f+'+</span>':'')+'</span>'+
+  '<button class="btn sm" data-cact="five" data-k="'+k+'" aria-pressed="'+cr.five.includes(k)+'" style="'+(cr.five.includes(k)?'background:var(--ink);color:var(--surface)':'')+'">5+</button>'+
+  '<button class="btn sm" data-cact="four" data-k="'+k+'" aria-pressed="'+(cr.four===k)+'" style="'+(cr.four===k?'background:var(--ink);color:var(--surface)':'')+'">4+</button>'+
+  '<span class="rate">'+r+'+</span>'+
+  (xpB?'<span class="stepper"><button class="btn sm icon" data-cact="down" data-k="'+k+'" '+(up?'':'disabled')+' aria-label="Undo improvement">−</button><button class="btn sm" data-cact="up" data-k="'+k+'" '+(next&&r-1>=f?'':'disabled')+'>'+(next&&r-1>=f?'↑ '+next+' XP':'Max')+'</button></span>':'')+'</div>';}).join('')+'</div></section>';
+ // 5
+ const opt=(v,l,d)=>'<label class="item" style="cursor:pointer" for="cr-b-'+v+'"><input type="radio" name="crbonus" id="cr-b-'+v+'" data-cbonus="'+v+'"'+(cr.bonus===v?' checked':'')+'><div class="grow"><b>'+l+'</b><span class="effect">'+d+'</span></div></label>';
+ h+='<section class="sec"><h2>5 · Extra advancement</h2><div class="list">'+opt('money','An extra $100 of gear','Gear budget becomes $150. Unspent money is kept as cash.')+opt('xp','5 experience points','Spend on skills or knacks now, or save it.')+opt('insight','Insight limit of 2','Instead of the usual 1.')+'</div></section>';
+ // 6
+ h+='<section class="sec"><div class="sec-head"><h2>6 · Knacks</h2>'+(cr.archetype?'<span class="note">★ = unique to the '+esc(cr.archetype)+'</span>':'')+'</div>';
+ if(!cr.archetype)h+='<p class="note" style="margin:0">Choose an archetype to see its knacks.</p>';
+ else{
+  h+='<label class="field"><span class="lbl">Free tier 1 knack</span><select class="f" id="cr-free" data-cf="freeKnack"><option value="">Choose…</option>'+kn.filter(k=>k.tier===1).map(k=>'<option value="'+esc(k.name)+'"'+(k.name===cr.freeKnack?' selected':'')+'>'+(k.unique?'★ ':'')+esc(k.name)+'</option>').join('')+'</select></label>';
+  if(xpB){
+   const owned=crKnackList();
+   h+='<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">Buy another knack with XP</span><select class="f" id="cr-kbuy">'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' · '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'">'+(k.unique?'★ ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-cact="kbuy">Buy</button></div>';
+   if(cr.bought.length)h+='<div class="list">'+cr.bought.map(n=>{const k=kn.find(x=>x.name===n);return '<div class="item"><span class="tier">T'+(k?k.tier:'?')+'</span><div class="grow"><b>'+esc(n)+'</b></div><span class="num note">'+(k?KNACK_COST[k.tier]:0)+' XP</span><button class="btn sm icon" data-cact="kdel" data-n="'+esc(n)+'" aria-label="Remove">×</button></div>';}).join('')+'</div>';
+  }
+  h+='<p class="note" style="margin:0">Only knacks on the '+esc(cr.archetype)+' table can be taken. Write each knack’s effect from the book on the sheet afterwards.</p>';
+ }
+ h+='</section>';
+ // 7
+ const cats=['Weapons','Protection','Useful items','Tools and personal','Outdoors','Transport'];
+ const left=mB-mS;
+ h+='<section class="sec"><div class="sec-head"><h2>7 · Equipment</h2><span class="num" style="font-weight:600;color:'+(left<0?'var(--danger)':'var(--ink)')+'">'+money(left)+' left of '+money(mB)+'</span></div>'+
+ '<div class="tabs" role="tablist">'+cats.map(c=>'<button class="tab" role="tab" data-cact="cat" data-n="'+c+'" aria-selected="'+(cr.cat===c)+'">'+c+'</button>').join('')+'</div><div class="list" style="max-height:420px;overflow:auto">';
+ if(cr.cat==='Weapons')h+=A.WEAPONS.map((w,i)=>'<div class="item"><div class="grow"><b>'+esc(w.n)+'</b><span class="effect">'+esc(w.s.replace(' Combat',''))+' · dmg '+w.d+' · injury '+w.i+' · '+esc(w.r)+(w.a?' · ammo '+w.a:'')+' · '+esc(w.sp)+'</span></div><span class="num">'+money(w.c)+'</span><button class="btn sm" data-cact="addw" data-n="'+i+'">Add</button></div>').join('');
+ else h+=A.GEAR.map((g,i)=>g.cat===cr.cat?'<div class="item"><div class="grow"><b>'+esc(g.n)+'</b>'+(g.note?'<span class="effect">'+esc(g.note)+'</span>':'')+'</div><span class="num">'+money(g.c)+'</span><button class="btn sm" data-cact="addg" data-n="'+i+'">Add</button></div>':'').join('');
+ h+='</div><span class="lbl">Bought</span><div class="list">'+(cr.cart.length?cr.cart.map((it,i)=>{const w=it.type==='w'&&A.WEAPONS.find(x=>x.n===it.n);return '<div class="item"><div class="grow"><b>'+esc(it.type==='reload'?'Spare reload — '+it.n:it.n)+'</b></div><span class="num">'+money(it.c)+'</span>'+(w&&w.rc?'<button class="btn sm" data-cact="addr" data-n="'+i+'">+ reload '+money(w.rc)+'</button>':'')+'<button class="btn sm icon" data-cact="rm" data-n="'+i+'" aria-label="Remove">×</button></div>';}).join(''):'<p class="note">Nothing yet.</p>')+'</div></section>';
+ // 8
+ const checks=crChecks();const ok=checks.every(x=>x[0]);
+ h+='<section class="sec"><h2>8 · Finish</h2><div class="row"><div class="stat"><span class="lbl">XP left</span><b class="num">'+(xpB-xpS)+'</b></div><div class="stat"><span class="lbl">Cash left</span><b class="num">'+money(left)+'</b></div><div class="stat"><span class="lbl">Insight limit</span><b class="num">'+(cr.bonus==='insight'?2:1)+'</b></div></div>'+
+ '<div class="list">'+checks.map(([g,l])=>'<div class="item" style="padding:6px 0"><span class="chip '+(g?'ok':'warn')+'">'+(g?'Done':'To do')+'</span><span>'+esc(l)+'</span></div>').join('')+'</div>'+
+ '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in party slot</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+SLOTS.map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Slot '+(i+1)+' — '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
+ (cr.slot?'<label class="row note" for="cr-confirm"><input type="checkbox" id="cr-confirm" data-cconfirm="1"'+(cr.confirm?' checked':'')+'> Replace '+esc(chars[cr.slot].name)+'’s sheet with this one</label>':'')+
+ '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&cr.confirm?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Download printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
+ return h;
+}
+function creatorClick(b){
+ const a=b.dataset.cact,k=b.dataset.k,n=b.dataset.n;
+ switch(a){
+  case 'five':if(cr.five.includes(k))cr.five=cr.five.filter(x=>x!==k);else{if(cr.five.length>=3)return toast('Only three skills start at 5+. Tap one to unselect it first.');if(cr.four===k)cr.four='';cr.five=[...cr.five,k];}cr.ups={};break;
+  case 'four':cr.four=cr.four===k?'':k;cr.five=cr.five.filter(x=>x!==k);cr.ups={};break;
+  case 'up':{const r=crRating(k),cost=SKILL_COST[r];if(!cost||r-1<crFloor(k))return;if(crXpSpent()+cost>crXpBudget())return toast('Not enough XP. That costs '+cost+'.');cr.ups={...cr.ups,[k]:(cr.ups[k]||0)+1};break;}
+  case 'down':cr.ups={...cr.ups,[k]:Math.max(0,(cr.ups[k]||0)-1)};break;
+  case 'kbuy':{const sel=document.getElementById('cr-kbuy');if(!sel||!sel.value)return;const kk=A.knacksFor(cr.archetype).find(x=>x.name===sel.value);if(!kk)return;
+   if(crTierCount(kk.tier)>=KNACK_CAP[kk.tier])return toast('Limit reached for tier '+kk.tier+'.');
+   for(let t=1;t<kk.tier;t++)if(!crTierCount(t))return toast('You need a tier '+t+' knack first.');
+   if(crXpSpent()+KNACK_COST[kk.tier]>crXpBudget())return toast('Not enough XP. That costs '+KNACK_COST[kk.tier]+'.');
+   cr.bought=[...cr.bought,kk.name];break;}
+  case 'kdel':cr.bought=cr.bought.filter(x=>x!==n);break;
+  case 'cat':cr.cat=n;break;
+  case 'addw':{const w=A.WEAPONS[Number(n)];if(crMoneySpent()+w.c>crMoneyBudget())return toast('Over budget. '+w.n+' costs '+money(w.c)+'.');cr.cart=[...cr.cart,{type:'w',n:w.n,c:w.c}];break;}
+  case 'addg':{const g=A.GEAR[Number(n)];if(crMoneySpent()+g.c>crMoneyBudget())return toast('Over budget. '+g.n+' costs '+money(g.c)+'.');cr.cart=[...cr.cart,{type:'g',n:g.n,c:g.c}];break;}
+  case 'addr':{const it=cr.cart[Number(n)];const w=A.WEAPONS.find(x=>x.n===it.n);if(crMoneySpent()+w.rc>crMoneyBudget())return toast('Over budget.');cr.cart=[...cr.cart,{type:'reload',n:w.n,c:w.rc}];break;}
+  case 'rm':cr.cart=cr.cart.filter((x,i)=>i!==Number(n));break;
+  case 'reset':cr=crBlank();break;
+  case 'place':{const c=crBuild();const s=cr.slot;chars[s]=norm(c,SLOTS.indexOf(s)+1);if(db)db.doc('characters/'+s).set(JSON.parse(JSON.stringify(chars[s]))).catch(()=>toast('Couldn’t save the new investigator. Try again.'));
+   cr.confirm=false;crSave();toast(c.name+' joined the party.');go(s);return;}
+  case 'print':downloadSheet(crBuild());return;
+ }
+ crSave();render();
+}
+function downloadSheet(c){
+ const blob=new Blob([A.sheetHtml(c)],{type:'text/html'});const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=(c.name||'Investigator').replace(/[^\w .-]/g,'')+' - Arkham sheet.html';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Sheet downloaded. Open it and print on Letter paper.');
+}
+
+// ---------- events ----------
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;go(b.dataset.tab);});
+function go(t){active=t;try{localStorage.setItem('apl-tab',t);}catch(e){}render();window.scrollTo(0,0);}
+const app=document.getElementById('app');
+app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
+app.addEventListener('click',e=>{
+ const card=e.target.closest('.pcard');if(card){go(card.dataset.tab);return;}
+ if(active==='create'){const cb=e.target.closest('[data-cact]');if(cb&&!cb.disabled)creatorClick(cb);return;}
+ const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const s=active,a=b.dataset.act,n=Number(b.dataset.n),c=chars[s];
+ switch(a){
+  case 'sessionAll':SLOTS.forEach(x=>R.newSession(x,true));toast('New session started for everyone.');break;
+  case 'refillAll':SLOTS.forEach(x=>R.refill(x));toast('All pools refilled.');break;
+  case 'spend':R.spend(s,b.dataset.k);break;
+  case 'refill':R.refill(s);break;
+  case 'dmg':R.damage(s,n);break;
+  case 'heal':R.heal(s,n);break;
+  case 'rest':R.rest(s);break;
+  case 'strain':R.strain(s);break;
+  case 'hor':R.horror(s,n);break;
+  case 'habit':R.habitual(s);break;
+  case 'ins':R.insight(s,n);break;
+  case 'rinj':R.rollInjury(s);break;
+  case 'rtra':R.rollTrauma(s,Math.max(1,Number(document.getElementById('ones-'+s).value)||1));break;
+  case 'healinj':save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},'Healed an injury');break;
+  case 'deltra':save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)});break;
+  case 'imp':R.improve(s,b.dataset.k);break;
+  case 'xp':R.addXp(s,n);break;
+  case 'xpfix':edit.xp=!edit.xp;render();break;
+  case 'printc':downloadSheet(c);break;
+  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast('No knacks left to choose.');const k=A.knacksFor(c.archetype).find(x=>x.name===sel.value);if(!k)return;
+   if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:''}]},'Added knack '+k.name);break;}
+   const have=c.knacks.filter(x=>Number(x.tier)===k.tier).length;if(have>=KNACK_CAP[k.tier])return toast('Limit reached: '+KNACK_CAP[k.tier]+' tier '+k.tier+' knack'+(KNACK_CAP[k.tier]>1?'s':'')+'.');
+   for(let t=1;t<k.tier;t++)if(!c.knacks.some(x=>Number(x.tier)===t))return toast('You need a tier '+t+' knack first.');
+   if(c.xpUnused<KNACK_COST[k.tier])return toast('Needs '+KNACK_COST[k.tier]+' XP.');
+   save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:''}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},'Bought '+k.name+' ('+KNACK_COST[k.tier]+' XP)');break;}
+  case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(sel)addGear(s,sel.value,a==='gbuy');break;}
+  case 'buyrel':{const w=c.weapons.find(x=>x.id===b.dataset.id);if(!w||!w.rc)return;const m=Math.round(((Number(c.money)||0)-w.rc)*100)/100;if(m<0)return toast('Not enough money.');save(s,{money:m,reloads:c.reloads+1},'Bought a spare reload for '+money(w.rc));break;}
+  case 'buyins':R.buyInsight(s);break;
+  case 'addfree':save(s,{knacks:[...c.knacks,{id:uid(),tier:1,name:'',text:''}]});break;
+  case 'del':{const l=b.dataset.list;save(s,{[l]:c[l].filter(x=>x.id!==b.dataset.id)});break;}
+  case 'addw':save(s,{weapons:[...c.weapons,{id:uid(),name:'',skill:'',range:'',dmg:'',inj:'',ammoMax:0,ammo:0,special:''}]});break;
+  case 'addi':save(s,{items:[...c.items,{id:uid(),name:'',note:''}]});break;
+  case 'ammo':R.ammo(s,b.dataset.id,n);break;
+  case 'reload':R.reload(s,b.dataset.id);break;
+  case 'rel':save(s,{reloads:Math.max(0,c.reloads+n)});break;
+  case 'cash':R.money(s,n);break;
+  case 'cashin':case 'cashout':{const el=document.getElementById('cash-'+s);const v=Math.abs(Number(el.value)||0);if(!v)return toast('Enter an amount first.');R.money(s,a==='cashin'?v:-v);break;}
+  case 'session':R.newSession(s);toast('New session: insight refilled, habitual item ready.');break;
+ }
+});
+app.addEventListener('change',e=>{
+ const el=e.target,s=active;
+ if(s==='create'){
+  if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}
+  else if(el.dataset.cbonus){cr.bonus=el.dataset.cbonus;if(cr.bonus!=='xp'){cr.ups={};cr.bought=[];}if(cr.bonus!=='money'&&crMoneySpent()>crMoneyBudget())toast('Your gear now costs more than $50. Remove something.');}
+  else if(el.dataset.cconfirm){cr.confirm=el.checked;}
+  else return;
+  crSave();render();return;
+ }
+ const c=chars[s];if(!c)return;
+ if(el.dataset.f){const p=el.dataset.f;let v=el.value;
+  if(p==='xpTotal'||p==='xpUnused')v=Math.max(0,parseInt(v)||0);
+  if(p==='archetype'&&v){const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([k])=>{const f=A.maxFor(v,k);sks[k].max=f<4?String(f):'';});save(s,{archetype:v,skills:sks});return;}
+  if(p.includes('.')){const [a,k]=p.split('.');const o={...c[a],[k]:v};save(s,{[a]:o});}else save(s,{[p]:v});return;}
+ if(el.dataset.skmax){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skmax].max=el.value;save(s,{skills:sks});return;}
+ if(el.dataset.skr){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skr].r=Number(el.value);save(s,{skills:sks});return;}
+ if(el.dataset.list){const l=el.dataset.list;const arr=c[l].map(x=>({...x}));const it=arr.find(x=>x.id===el.dataset.id);if(!it)return;let v=el.value;
+  if(el.dataset.key==='ammoMax'){v=Math.max(0,Math.min(12,parseInt(v)||0));it.ammo=Math.min(it.ammo,v);if(it.ammoMax===0)it.ammo=v;}
+  it[el.dataset.key]=v;save(s,{[l]:arr});}
+});
+
+// ---------- boot ----------
+render();
+(async()=>{
+ const syncEl=document.getElementById('sync');
+ const cfg=window.FIREBASE_CONFIG;
+ if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
+ try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
+ syncEl.textContent='Live · synced for the party';
+ SLOTS.forEach((s,i)=>{
+  const ref=db.doc('characters/'+s);let created=false;
+  ref.onSnapshot(snap=>{
+   if(!snap.exists){ if(!created&&!snap.metadata.fromCache){created=true;ref.set(SEED[s]||blank(i+1)).catch(()=>{});} return; }
+   chars[s]=norm(JSON.parse(JSON.stringify(snap.data())),i+1);render();
+  },err=>{syncEl.textContent='Sync paused — reload to reconnect';});
+ });
+})();
+})();
+</script>
+
+</body>
+</html>

@@ -42,6 +42,13 @@ service cloud.firestore {
         && request.resource.data.code == get(lockDoc(slot)).data.code;
     }
 
+    // Party settings (house rules on/off): everyone can read, only the master key can change.
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if isMaster() && doc == 'house' && request.resource.data.keys().hasOnly(['on'])
+        && request.resource.data.on is bool;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

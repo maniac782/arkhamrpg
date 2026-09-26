@@ -33,6 +33,9 @@ To change the master key later, edit that `code` field. Every device using the o
 
 Open the site. The top right should say **Live · synced for the party**. The first time it loads, it fills slot 1 with Wallace Morrow and leaves the other three slots blank.
 
+## House rules
+Extra weapons and gear live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. They stay hidden until someone with the master key turns them on in the Game master section of the Party tab. The switch is shared with the whole party.
+
 ## Good to know
 - Anyone with the link can view every sheet. A player can lock their own sheet with a passcode at the top of it; after that, only devices that entered the passcode (or the master key on the Party tab) can edit it. Firebase enforces this, not just the page.
 - Unlocking is remembered on that device and browser. **Lock this device** makes it ask again.

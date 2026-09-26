@@ -426,7 +426,7 @@ function renderParty(){
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
 function lockPanel(s){
- const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?'Locked \u00b7 unlocked here':'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'This device can edit this sheet.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Download printable sheet</button></div>';
+ const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?'Locked \u00b7 unlocked here':'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'This device can edit this sheet.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  if(!db)return h+'</section>';
  const inp=(id,ph)=>'<input class="maxsel" style="width:150px" type="password" id="'+id+'-'+s+'" autocomplete="off" placeholder="'+ph+'" aria-label="'+ph+'">';
  if(!c.locked)h+='<div class="row">'+inp('lockset','New passcode')+'<button class="btn sm" data-act="lockset">Lock with passcode</button></div>';
@@ -585,7 +585,7 @@ function renderCreator(){
  const xpB=crXpBudget(),xpS=crXpSpent(),mB=crMoneyBudget(),mS=crMoneySpent();
  const cf=(p,l,v,ph)=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="cr-'+p.replace('.','-')+'" data-cf="'+p+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></label>';
  const sname=k=>SKILLS.find(x=>x[0]===k)[1];
- let h='<div class="banner">Build a new investigator step by step, following the corebook’s character creation. Costs come off the gear budget and XP as you choose. When it’s done, put them in a party slot or download a sheet to print.</div>';
+ let h='<div class="banner">Build a new investigator step by step, following the corebook’s character creation. Costs come off the gear budget and XP as you choose. When it’s done, put them in a party slot or open a sheet to print.</div>';
  // 1
  h+='<section class="sec"><h2>1 · Background</h2><div class="grid2">'+cf('name','Investigator name',cr.name)+cf('player','Player',cr.player)+cf('bg.origin','Place of origin',cr.bg.origin)+cf('bg.family','Family & friends',cr.bg.family)+cf('bg.employment','Employment',cr.bg.employment)+cf('bg.salary','Weekly salary',cr.bg.salary)+cf('bg.encounter','First supernatural encounter',cr.bg.encounter)+cf('bg.enemies','Notable enemies',cr.bg.enemies)+'</div></section>';
  // 2
@@ -633,7 +633,7 @@ function renderCreator(){
  '<div class="list">'+checks.map(([g,l])=>'<div class="item" style="padding:6px 0"><span class="chip '+(g?'ok':'warn')+'">'+(g?'Done':'To do')+'</span><span>'+esc(l)+'</span></div>').join('')+'</div>'+
  '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in party slot</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+SLOTS.map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Slot '+(i+1)+' — '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
  (cr.slot?'<label class="row note" for="cr-confirm"><input type="checkbox" id="cr-confirm" data-cconfirm="1"'+(cr.confirm?' checked':'')+'> Replace '+esc(chars[cr.slot].name)+'’s sheet with this one</label>':'')+
- '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&cr.confirm?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Download printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
+ '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&cr.confirm?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Open printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
  return h;
 }
 function creatorClick(b){
@@ -663,8 +663,11 @@ function creatorClick(b){
 }
 function downloadSheet(c){
  const blob=new Blob([A.sheetHtml(c)],{type:'text/html'});const url=URL.createObjectURL(blob);
+ const w=window.open(url,'_blank');
+ if(w){toast('Sheet opened in a new tab. Use its Print button.');setTimeout(()=>URL.revokeObjectURL(url),60000);return;}
+ // Pop-up blocked: fall back to saving the file.
  const a=document.createElement('a');a.href=url;a.download=(c.name||'Investigator').replace(/[^\w .-]/g,'')+' - Arkham sheet.html';document.body.appendChild(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Sheet downloaded. Open it and print on Letter paper.');
+ setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Your browser blocked the new tab, so the sheet was downloaded instead.');
 }
 
 // ---------- events ----------
@@ -754,7 +757,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v8 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v9 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -769,7 +772,7 @@ render();
  try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
- syncEl.textContent='Live · synced for the party · v8';
+ syncEl.textContent='Live · synced for the party · v9';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

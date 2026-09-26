@@ -38,5 +38,5 @@ Open the site. The top right should say **Live · synced for the party**. The fi
 - Unlocking is remembered on that device and browser. **Lock this device** makes it ask again.
 - If a player forgets their passcode, use the master key to open their sheet and set a new one or remove it.
 - Firebase's free plan covers far more than a four-player table uses.
-- **Download printable sheet** saves an HTML file. Open it and print on Letter paper with background graphics on.
+- **Open printable sheet** opens the sheet in a new tab. Print it on Letter paper with background graphics on.
 - Knack names and tiers follow each archetype's table in the corebook. Write each knack's effect in from the book.

@@ -77,6 +77,12 @@ main{max-width:980px;margin:0 auto;padding-block:18px 60px;padding-inline:16px;d
 input.f,select.f,textarea.f{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 2px;border-radius:0}
 .avatar{flex:none;border-radius:50%;object-fit:cover;background:var(--surface2);border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--display);font-weight:700;overflow:hidden}
 .avatar.lg{width:88px;height:88px;font-size:34px}.avatar.sm{width:48px;height:48px;font-size:20px}
+.crop-bg{position:fixed;inset:0;z-index:20;background:rgba(10,12,16,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.crop{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:14px;align-items:center;width:min(340px,100%)}
+.crop h2{margin:0;font-family:var(--display);font-size:20px}
+.crop canvas{width:260px;height:260px;max-width:100%;border-radius:50%;touch-action:none;cursor:grab;background:var(--surface2);box-shadow:0 0 0 3px var(--brass)}
+.crop canvas:active{cursor:grabbing}
+.crop input[type=range]{width:100%;accent-color:var(--brass)}
 .pic-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 select{background-color:var(--surface);color:var(--ink)}
 select option,select optgroup{background-color:var(--surface);color:var(--ink)}
@@ -455,6 +461,40 @@ function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();
   g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);URL.revokeObjectURL(url);
   let q=0.82,d=cv.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej();};img.src=url;});}
+function openCrop(file,slot){
+ const url=URL.createObjectURL(file);const img=new Image();
+ img.onerror=()=>{URL.revokeObjectURL(url);toast('Couldn\u2019t read that image. Try a JPG or PNG.');};
+ img.onload=()=>{
+  const V=260,OUT=320;const base=Math.max(V/img.width,V/img.height);let zoom=1,ox=0,oy=0;
+  const bg=document.createElement('div');bg.className='crop-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Position portrait');
+  bg.innerHTML='<div class="crop"><h2>Position your portrait</h2><canvas width="520" height="520" tabindex="0" aria-label="Drag to move the picture. Arrow keys also move it."></canvas><label class="field" style="width:100%" for="crop-zoom"><span class="lbl">Zoom</span><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1"></label><p class="note" style="margin:0;text-align:center">Drag the picture to center it in the circle.</p><div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel">Cancel</button><button class="btn pri" data-c="save">Save picture</button></div></div>';
+  document.body.appendChild(bg);
+  const cv=bg.querySelector('canvas'),g=cv.getContext('2d'),zr=bg.querySelector('#crop-zoom');
+  const clamp=()=>{const sc=base*zoom,mx=Math.max(0,(img.width*sc-V)/2),my=Math.max(0,(img.height*sc-V)/2);ox=Math.min(mx,Math.max(-mx,ox));oy=Math.min(my,Math.max(-my,oy));};
+  const draw=(ctx,size)=>{const k=size/V,sc=base*zoom*k,w=img.width*sc,h=img.height*sc;ctx.clearRect(0,0,size,size);ctx.drawImage(img,size/2-w/2+ox*k,size/2-h/2+oy*k,w,h);};
+  const paint=()=>{clamp();draw(g,520);};paint();
+  let drag=null;const pts=new Map();
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});drag={x:e.clientX,y:e.clientY,ox,oy,zoom,dist:null};
+   if(pts.size===2){const [a,b]=[...pts.values()];drag.dist=Math.hypot(a.x-b.x,a.y-b.y);}});
+  cv.addEventListener('pointermove',e=>{if(!drag||!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});const scale=V/cv.getBoundingClientRect().width;
+   if(pts.size>=2&&drag.dist){const [a,b]=[...pts.values()];zoom=Math.min(4,Math.max(1,drag.zoom*Math.hypot(a.x-b.x,a.y-b.y)/drag.dist));zr.value=zoom;}
+   else{ox=drag.ox+(e.clientX-drag.x)*scale;oy=drag.oy+(e.clientY-drag.y)*scale;}paint();});
+  const up=e=>{pts.delete(e.pointerId);if(!pts.size)drag=null;else{const [a]=[...pts.values()];drag={x:a.x,y:a.y,ox,oy,zoom,dist:null};}};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(4,Math.max(1,zoom*(e.deltaY<0?1.08:1/1.08)));zr.value=zoom;paint();},{passive:false});
+  cv.addEventListener('keydown',e=>{const m={ArrowLeft:[8,0],ArrowRight:[-8,0],ArrowUp:[0,8],ArrowDown:[0,-8]}[e.key];if(m){e.preventDefault();ox+=m[0];oy+=m[1];paint();}});
+  zr.addEventListener('input',()=>{zoom=Number(zr.value);paint();});
+  const close=()=>{bg.remove();URL.revokeObjectURL(url);document.removeEventListener('keydown',esc2);};
+  const esc2=e=>{if(e.key==='Escape')close();};document.addEventListener('keydown',esc2);
+  bg.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(e.target===bg)return close();if(!b)return;
+   if(b.dataset.c==='cancel')return close();
+   const out=document.createElement('canvas');out.width=OUT;out.height=OUT;const og=out.getContext('2d');og.fillStyle='#ffffff';og.fillRect(0,0,OUT,OUT);draw(og,OUT);
+   let q=0.82,d=out.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=out.toDataURL('image/jpeg',q);}
+   close();save(slot,{portrait:d},'Changed portrait');});
+  cv.focus();
+ };
+ img.src=url;
+}
 function lockPanel(s){
  const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?'Locked \u00b7 unlocked here':'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'This device can edit this sheet.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  if(!db)return h+'</section>';
@@ -769,7 +809,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
-  shrinkImage(f).then(d=>save(s,{portrait:d},'Changed portrait')).catch(()=>toast('Couldn\u2019t read that image. Try a JPG or PNG.'));el.value='';return;}
+  openCrop(f,s);el.value='';return;}
  if(s==='create'){
   if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}
   else if(el.dataset.cbonus){cr.bonus=el.dataset.cbonus;if(cr.bonus!=='xp'){cr.ups={};cr.bought=[];}if(cr.bonus!=='money'&&crMoneySpent()>crMoneyBudget())toast('Your gear now costs more than $50. Remove something.');}
@@ -802,7 +842,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v18 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v19 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -818,7 +858,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v18';
+ syncEl.textContent='Live · synced for the party · v19';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

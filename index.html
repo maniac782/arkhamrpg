@@ -507,12 +507,12 @@ function openCrop(file,slot){
  img.src=url;
 }
 function lockPanel(s){
- const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?'Locked \u00b7 unlocked here':'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'This device can edit this sheet.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
+ const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'warn')+'">'+(c.locked?(canEdit(s)?'Passcode protected':'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'Others need the passcode to edit. You can edit with the master key.':'Others need the passcode to edit. This device already entered it, so you can edit.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet. Add a passcode to protect it.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  if(!db)return h+'</section>';
  const inp=(id,ph)=>'<input class="maxsel" style="width:150px" type="password" id="'+id+'-'+s+'" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
  if(!c.locked)h+='<div class="row">'+inp('lockset','New passcode')+'<button class="btn sm" data-act="lockset">Lock with passcode</button></div>';
  else if(!canEdit(s))h+='<div class="row">'+inp('unlock','Passcode')+'<button class="btn sm pri" data-act="unlock">Unlock</button></div>';
- else h+='<div class="row">'+inp('lockset','New passcode')+'<button class="btn sm" data-act="lockset">Change passcode</button><button class="btn sm" data-act="lockoff">Remove passcode</button>'+(keys[s]?'<button class="btn sm" data-act="forget">Lock this device</button>':'')+'</div>';
+ else h+='<div class="row">'+inp('lockset','New passcode')+'<button class="btn sm" data-act="lockset">Change passcode</button><button class="btn sm" data-act="lockoff">Remove passcode</button>'+(keys[s]?'<button class="btn sm" data-act="forget">Forget passcode on this device</button>':'')+'</div>';
  return h+'</section>';
 }
 function renderChar(s){ const body=renderCharBody(s); return lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>'); }
@@ -870,9 +870,9 @@ async function lockAction(a,s){
   else if(a==='lockset'){const code=val('lockset-'+s);if(code.length<4)return toast('Use at least 4 characters.');
    await db.doc('locks/'+s).set({code});await grant(s,code);if(!chars[s].locked)await db.doc('characters/'+s).update({locked:true});toast(chars[s].locked?'Passcode set.':'Passcode changed.');}
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
-  else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
+  else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device will ask for the passcode again.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v41 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v42 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -888,7 +888,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v41';
+ syncEl.textContent='Live · synced for the party · v42';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

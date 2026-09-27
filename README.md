@@ -45,7 +45,7 @@ Extra weapons and gear live in the `window.HOUSE_RULES` block near the top of `i
 
 ## Good to know
 - Anyone with the link can view every sheet. A player can lock their own sheet with a passcode at the top of it; after that, only devices that entered the passcode (or the master key on the Party tab) can edit it. Firebase enforces this, not just the page.
-- Unlocking is remembered on that device and browser. **Lock** locks it again on that device.
+- Unlocking is remembered on that device and browser. **Lock this device** makes it ask again.
 - If a player forgets their passcode, use the master key to open their sheet and set a new one or remove it.
 - Firebase's free plan covers far more than a four-player table uses.
 - **Open printable sheet** opens the sheet in a new tab. Print it on Letter paper with background graphics on.

@@ -259,7 +259,7 @@ function sheetHtml(c){
  const f=(l,v,n)=>'<div class="fd"><span class="lb">'+l+'</span>'+(v?'<div class="val">'+e(v)+'</div>':'')+lines(v?Math.max(0,(n||1)-1):(n||1))+'</div>';
  const eq=(c.items||[]).map(it=>'<div class="eq"><b>'+e(it.name)+'</b>'+(it.note?' — '+e(it.note):'')+'</div>').join('');
  const luck=c.lucky&&c.lucky.name?'<div class="eq"><b>'+e(c.lucky.name)+'</b> (lucky item) \u2014 once per session, a simple action recovers 1 insight.</div>':'';
- const hab=c.habitual&&c.habitual.name?'<div class="eq"><b>'+e(c.habitual.name)+'</b> (habitual) — once per session, a simple action removes 1 horror.</div>':'';
+ const hab=c.habitual&&c.habitual.name?'<div class="eq"><b>'+e(c.habitual.name)+'</b>'+(c.habitual.uses>1?' \u00d7 '+c.habitual.uses:'')+' (habitual) \u2014 once per session, a simple action uses one to remove 1 horror.</div>':'';
  const txt=v=>e(v||'').replace(/\n/g,'<br>');
  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="color-scheme" content="light only"><meta name="viewport" content="width=880"><title>'+e(c.name||'Investigator')+' — Arkham investigator sheet</title>'+
  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Marcellus+SC&family=IM+Fell+English+SC&display=swap">'+
@@ -348,10 +348,10 @@ function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
  return {name:'Investigator '+i,player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
-  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false},lucky:{name:'',used:false},reloads:0,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
-function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});o.lucky=Object.assign({name:'',used:false},o.lucky||{});return o;}
+function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});return o;}
 
 let db=null, chars={}, active='party', pending=false, localMode=false, authUid=null;
 const keys={};// slot or 'master' -> this device holds a key
@@ -395,7 +395,10 @@ const R={
   save(s,{poolLimit:c.poolMax},'Strained: pool limit restored, injury due at end of turn');toast('Pool limit restored. Roll an injury at the end of your turn.');},
  horror(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.poolMax,c.horrorLimit+n));save(s,{horrorLimit:v},(n>0?'Suffered ':'Removed ')+Math.abs(v-c.horrorLimit)+' horror');if(n>0&&v>c.horror)toast('Horror dice limit is now '+v+'. Tap Refill pool to swap in horror dice.');},
  habitual(s){const c=chars[s];if(c.habitual.used)return toast('Already used a habitual item this session.');if(c.horrorLimit<=0)return toast('No horror to remove.');
-  const m=Math.round(((Number(c.money)||0)-1)*100)/100;save(s,{horrorLimit:c.horrorLimit-1,habitual:{name:c.habitual.name,used:true},money:m},'Used '+(c.habitual.name||'habitual item')+': removed 1 horror');},
+  if(c.habitual.uses<=0)return toast('None left. Buy another for $1.00.');
+  save(s,{horrorLimit:c.horrorLimit-1,habitual:{...c.habitual,used:true,uses:c.habitual.uses-1}},'Used '+(c.habitual.name||'habitual item')+': removed 1 horror ('+(c.habitual.uses-1)+' left)');},
+ buyHabit(s){const c=chars[s];const m=Math.round(((Number(c.money)||0)-1)*100)/100;if(m<0)return toast('Not enough money. Each one costs $1.00.');
+  save(s,{money:m,habitual:{...c.habitual,uses:c.habitual.uses+1}},'Bought another '+(c.habitual.name||'habitual item')+' for $1.00');},
  insight(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.insightLimit,c.insight+n));save(s,{insight:v},n<0?'Spent 1 insight':null);},
  rollInjury(s){const c=chars[s];const d=d6(),tot=d+c.injuries.length;const [nm,ef]=injuryFor(tot);lastRoll[s]={type:'Injury',d,mod:c.injuries.length,tot,nm,ef};
   const inj=[...c.injuries,{id:uid(),name:nm,note:''}];const p={injuries:inj};
@@ -409,7 +412,7 @@ const R={
   save(s,p,'Trauma: '+nm+' (rolled '+tot+')');},
  lucky(s){const c=chars[s];if(c.lucky.used)return toast('Already used a lucky item this session.');if(c.insight>=c.insightLimit)return toast('Insight is already full.');
   save(s,{insight:c.insight+1,lucky:{name:c.lucky.name,used:true}},'Used '+(c.lucky.name||'lucky item')+': recovered 1 insight');},
- newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{name:c.habitual.name,used:false},lucky:{name:c.lucky.name,used:false},traumaMod:0},quiet?null:'New session: insight refilled');},
+ newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{...c.habitual,used:false},lucky:{name:c.lucky.name,used:false},traumaMod:0},quiet?null:'New session: insight refilled');},
  improve(s,k){const c=chars[s];const sk=c.skills[k];const cost=SKILL_COST[sk.r];if(!cost)return;
   const floor=sk.max?Number(sk.max):4;if(sk.r-1<floor)return toast(sk.max?'This skill is already at its max.':'Set this skill’s max (from your archetype) to go past 4+.');
   if(c.xpUnused<cost)return toast('Needs '+cost+' XP.');const sks=JSON.parse(JSON.stringify(c.skills));sks[k].r=sk.r-1;
@@ -528,7 +531,7 @@ function renderCharBody(s){
 
  // horror & insight
  h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
- '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit?'disabled':'')+'>'+(c.habitual.used?'Used this session':'Use it (−1 horror, $1)')+'</button></div>'+
+ '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<span class="num" title="How many you have" style="white-space:nowrap">\u00d7 '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?'Used this session':c.habitual.uses<=0?'None left':'Use one (\u22121 horror)')+'</button><button class="btn sm" data-act="buyhabit">Buy another $1</button></div>'+
  '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
  '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
  '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
@@ -612,7 +615,7 @@ function addGear(s,val,pay){
  const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast('Not enough money. '+it.n+' costs '+money(it.c)+'.');
  const p={money:m};
  if(t==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,rc:it.rc,fr:!!it.fr,special:it.sp}];
- else if(it.n==='Habitual Item'&&!c.habitual.name)p.habitual={name:'Habitual item',used:false};
+ else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||'Habitual item',used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
  save(s,p,(pay?'Bought ':'Added ')+it.n+(pay?' for '+money(it.c):''));
 }
@@ -661,11 +664,11 @@ function crBuild(){
  const t=A.TRAITS[cr.trait]||['',''];
  const kn=A.knacksFor(cr.archetype);
  const knacks=crKnackList().map(n=>{const k=kn.find(x=>x.name===n);return {id:uid(),tier:k?k.tier:1,name:n,text:''};});
- const weapons=[],items=[];let reloads=0,habitual={name:'',used:false};
+ const weapons=[],items=[];let reloads=0,habitual={name:'',used:false,uses:0};
  cr.cart.forEach(it=>{
   if(it.type==='w'){const w=W().find(x=>x.n===it.n);if(w)weapons.push({id:uid(),name:w.n,skill:w.s,range:w.r,dmg:w.d,inj:w.i,ammoMax:w.a,ammo:w.a,rc:w.rc,fr:!!w.fr,special:w.sp});}
   else if(it.type==='reload')reloads++;
-  else if(it.n==='Habitual Item'&&!habitual.name)habitual={name:'Habitual item',used:false};
+  else if(it.n==='Habitual Item')habitual={name:'Habitual item',used:false,uses:habitual.uses+1};
   else{const g=GR().find(x=>x.n===it.n);items.push({id:uid(),name:it.n,note:g?g.note:''});}
  });
  const xp=crXpBudget();
@@ -785,6 +788,7 @@ app.addEventListener('click',e=>{
   case 'strain':R.strain(s);break;
   case 'hor':R.horror(s,n);break;
   case 'habit':R.habitual(s);break;
+  case 'buyhabit':R.buyHabit(s);break;
   case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
   case 'rinj':R.rollInjury(s);break;
@@ -861,7 +865,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v35 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v36 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -877,7 +881,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v35';
+ syncEl.textContent='Live · synced for the party · v36';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

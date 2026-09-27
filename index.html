@@ -3,12 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="theme-color" content="#1b2230">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#1b2230">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
@@ -863,7 +859,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v30 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v31 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -879,7 +875,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v30';
+ syncEl.textContent='Live · synced for the party · v31';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

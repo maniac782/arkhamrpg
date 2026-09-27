@@ -1,4 +1,4 @@
-# Arkham Party Ledger
+# Arkham RPG Player Ledger
 
 Live character sheets for our Arkham Horror RPG group, plus a character creator and printable sheets. Hosted free on GitHub Pages, with Firebase keeping everyone's sheets in sync.
 

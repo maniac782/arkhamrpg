@@ -259,7 +259,7 @@ function sheetHtml(c){
  const f=(l,v,n)=>'<div class="fd"><span class="lb">'+l+'</span>'+(v?'<div class="val">'+e(v)+'</div>':'')+lines(v?Math.max(0,(n||1)-1):(n||1))+'</div>';
  const eq=(c.items||[]).map(it=>'<div class="eq"><b>'+e(it.name)+'</b>'+(it.note?' — '+e(it.note):'')+'</div>').join('');
  const luck=c.lucky&&c.lucky.name?'<div class="eq"><b>'+e(c.lucky.name)+'</b> (lucky item) \u2014 once per session, a simple action recovers 1 insight.</div>':'';
- const hab=c.habitual&&c.habitual.name?'<div class="eq"><b>'+e(c.habitual.name)+'</b>'+(c.habitual.uses>1?' \u00d7 '+c.habitual.uses:'')+' (habitual) \u2014 once per session, a simple action uses one to remove 1 horror.</div>':'';
+ const hab=c.habitual&&c.habitual.name?'<div class="eq"><b>'+e(c.habitual.name)+'</b>'+' \u00d7 '+(typeof c.habitual.uses==='number'?c.habitual.uses:1)+' (habitual) \u2014 once per session, a simple action uses one to remove 1 horror.</div>':'';
  const txt=v=>e(v||'').replace(/\n/g,'<br>');
  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="color-scheme" content="light only"><meta name="viewport" content="width=880"><title>'+e(c.name||'Investigator')+' — Arkham investigator sheet</title>'+
  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Marcellus+SC&family=IM+Fell+English+SC&display=swap">'+
@@ -870,7 +870,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v37 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v38 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -886,7 +886,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v37';
+ syncEl.textContent='Live · synced for the party · v38';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

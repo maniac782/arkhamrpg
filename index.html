@@ -767,10 +767,19 @@ function creatorClick(b){
  crSave();render();
 }
 function downloadSheet(c){
- const blob=new Blob([A.sheetHtml(c)],{type:'text/html'});const url=URL.createObjectURL(blob);
- const w=window.open(url,'_blank');
- if(w){toast('Sheet opened in a new tab. Use its Print button.');setTimeout(()=>URL.revokeObjectURL(url),60000);return;}
- // Pop-up blocked: fall back to saving the file.
+ const html=A.sheetHtml(c);
+ // Hand the sheet to print.html on this same (secure) site through this browser's storage.
+ let id=null;
+ try{
+  const now=Date.now();
+  for(let k=localStorage.length-1;k>=0;k--){const key=localStorage.key(k);if(key&&key.indexOf('apl-print:')===0&&now-Number(key.split(':')[1]||0)>86400000)localStorage.removeItem(key);}
+  id=String(now);localStorage.setItem('apl-print:'+id,html);
+ }catch(e){id=null;}
+ if(id){const w=window.open('print.html#'+id,'_blank');if(w){toast('Sheet opened in a new tab. Use its Print button.');return;}}
+ // Fallback: blob tab, then download.
+ const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);
+ const w2=window.open(url,'_blank');
+ if(w2){toast('Sheet opened in a new tab. Use its Print button.');setTimeout(()=>URL.revokeObjectURL(url),60000);return;}
  const a=document.createElement('a');a.href=url;a.download=(c.name||'Investigator').replace(/[^\w .-]/g,'')+' - Arkham sheet.html';document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Your browser blocked the new tab, so the sheet was downloaded instead.');
 }
@@ -872,7 +881,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v45 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v46 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -888,7 +897,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v45';
+ syncEl.textContent='Live · synced for the party · v46';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

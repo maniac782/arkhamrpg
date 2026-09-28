@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=880">
+<title>Printable sheet</title>
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+</head>
+<body style="margin:0;font:16px Georgia,serif;background:#dcd6c8;color:#1f1a14">
+<p id="msg" style="padding:24px">Loading the sheet…</p>
+<script>
+(function(){
+  var id=(location.hash||'').slice(1),html=null;
+  try{ if(id) html=localStorage.getItem('apl-print:'+id); }catch(e){}
+  if(!html){
+    document.getElementById('msg').textContent='This sheet is no longer available here. Go back to the ledger and tap “Open printable sheet” again.';
+    return;
+  }
+  window.addEventListener('load',function(){ document.open(); document.write(html); document.close(); });
+})();
+</script>
+</body>
+</html>

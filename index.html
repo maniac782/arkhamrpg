@@ -390,11 +390,11 @@ function clampPool(c){
 const R={
  spend(s,kind){const c=chars[s];if(kind==='hor'&&c.horror>0)return save(s,{horror:c.horror-1});if(kind==='reg'&&c.regular>0)return save(s,{regular:c.regular-1});},
  refill(s){const c=chars[s];const h=Math.min(c.horrorLimit,c.poolLimit);save(s,{horror:h,regular:c.poolLimit-h},'Refilled dice pool');},
- damage(s,n){const c=chars[s];c.poolLimit-=n;clampPool(c);save(s,{poolLimit:c.poolLimit,regular:c.regular,horror:c.horror},'Took '+n+' damage'+(c.poolLimit===0?' — wounded':''));},
- heal(s,n){const c=chars[s];if(c.injuries.some(j=>j.name==='Comatose'||j.name==='Dire'))return toast('Comatose or Dire: heal that injury first.');
+ damage(s,n){const c=chars[s];if(c.poolLimit<=0)return;c.poolLimit-=n;clampPool(c);save(s,{poolLimit:c.poolLimit,regular:c.regular,horror:c.horror},'Took '+n+' damage'+(c.poolLimit===0?' — wounded':''));},
+ heal(s,n){const c=chars[s];if(c.poolLimit>=c.poolMax)return;if(c.injuries.some(j=>j.name==='Comatose'||j.name==='Dire'))return toast('Comatose or Dire: heal that injury first.');
   if(c.injuries.some(j=>j.name==='Nasty Cut'))return toast('Nasty Cut: the pool limit can’t rise until that injury is healed.');
   const v=Math.min(c.poolMax,c.poolLimit+n);save(s,{poolLimit:v},'Healed '+(v-c.poolLimit)+' damage');},
- rest(s){const c=chars[s];if(c.injuries.some(j=>['Comatose','Dire','Nasty Cut'].includes(j.name)))return toast('An injury is stopping the pool limit from rising.');save(s,{poolLimit:c.poolMax},'Rested: pool limit restored');},
+ rest(s){const c=chars[s];if(c.poolLimit>=c.poolMax)return;if(c.injuries.some(j=>['Comatose','Dire','Nasty Cut'].includes(j.name)))return toast('An injury is stopping the pool limit from rising.');save(s,{poolLimit:c.poolMax},'Rested: pool limit restored');},
  strain(s){const c=chars[s];if(c.poolLimit>=c.poolMax)return toast('You can only strain when your pool limit is below its maximum.');
   if(c.injuries.some(j=>['Nasty Cut','Comatose','Dire'].includes(j.name)))return toast('An injury is stopping the pool limit from rising.');
   save(s,{poolLimit:c.poolMax},'Strained: pool limit restored, injury due at end of turn');toast('Pool limit restored. Roll an injury at the end of your turn.');},
@@ -531,7 +531,7 @@ function renderCharBody(s){
  h+='<section class="sec"><div class="sec-head"><h2>Dice pool</h2><span class="note num">'+(c.regular+c.horror)+' in pool · limit '+c.poolLimit+' of '+c.poolMax+'</span></div>'+poolHtml(c)+
  '<div class="legend"><span>■ regular</span><span style="color:var(--horror)">■ horror</span><span>□ spent</span><span style="color:var(--danger)">▨ lost to damage</span><span style="color:var(--horror)">▢ green ring = becomes horror on refill</span></div>'+
  '<div class="row"><button class="btn" data-act="spend" data-k="reg" '+(c.regular?'':'disabled')+'>Spend regular die</button><button class="btn hor" data-act="spend" data-k="hor" '+(c.horror?'':'disabled')+'>Spend horror die</button><button class="btn pri" data-act="refill">Refill pool</button></div>'+
- '<div class="row"><button class="btn dng" data-act="dmg" data-n="1" title="Lowers the pool limit by 1. Tap once per point of damage.">Take damage</button><button class="btn" data-act="heal" data-n="1" title="Raises the pool limit by 1.">Heal</button><button class="btn" data-act="rest">Full rest</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Strain</button></div>'+
+ '<div class="row"><button class="btn dng" data-act="dmg" data-n="1" title="Lowers the pool limit by 1. Tap once per point of damage." '+(c.poolLimit>0?'':'disabled')+'>Take damage</button><button class="btn" data-act="heal" data-n="1" title="Raises the pool limit by 1." '+(c.poolLimit<c.poolMax?'':'disabled')+'>Heal</button><button class="btn" data-act="rest" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Full rest</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Strain</button></div>'+
  '<p class="note" style="margin:0">Damage lowers the pool limit. At 0 you’re wounded. Straining restores the limit, then you roll an injury at the end of your turn.</p></section>';
 
  // horror & insight
@@ -889,7 +889,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v50 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v51 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -905,7 +905,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v50';
+ syncEl.textContent='Live · synced for the party · v51';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

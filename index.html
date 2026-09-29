@@ -341,6 +341,8 @@ function traumaFor(n){
  if(n<=10)return['Mind Undone','Spend 2 insight or trigger your negative trait, with its effects lasting longer. Add 1 to trauma rolls for the rest of the session.'];
  return['Lost Forever','Your investigator is lost — unless you permanently lower your insight limit by 2 to survive.'];
 }
+const TRAUMA_AT={'Subtle Strangeness':1,'Shocked':3,'Stunned':4,'Overcome by Horror':5,'Mind Undone':8,'Lost Forever':11};
+const TRAUMA_ROLL={'Subtle Strangeness':'1–2','Shocked':'3','Stunned':'4','Overcome by Horror':'5–7','Mind Undone':'8–10','Lost Forever':'11+'};
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>'$'+(Number(v)||0).toFixed(2);
@@ -402,16 +404,16 @@ const R={
  buyHabit(s){const c=chars[s];const m=Math.round(((Number(c.money)||0)-1)*100)/100;if(m<0)return toast('Not enough money. Each one costs $1.00.');
   save(s,{money:m,habitual:{...c.habitual,uses:c.habitual.uses+1}},'Bought another '+(c.habitual.name||'habitual item')+' for $1.00');},
  insight(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.insightLimit,c.insight+n));save(s,{insight:v},n<0?'Spent 1 insight':null);},
- rollInjury(s){const c=chars[s];const d=d6(),tot=d+c.injuries.length;const [nm,ef]=injuryFor(tot);lastRoll[s]={type:'Injury',d,mod:c.injuries.length,tot,nm,ef};
-  const inj=[...c.injuries,{id:uid(),name:nm,note:''}];const p={injuries:inj};
+ addInjury(s,nm){const c=chars[s];if(!INJURIES.some(x=>x&&x[0]===nm))return;
+  const p={injuries:[...c.injuries,{id:uid(),name:nm,note:''}]};
   if(nm==='Comatose'||nm==='Dire'){c.poolLimit=0;clampPool(c);Object.assign(p,{poolLimit:0,regular:c.regular,horror:c.horror});}
-  save(s,p,'Injury: '+nm+' (rolled '+tot+')');},
- rollTrauma(s,ones){const c=chars[s];const d=d6(),mod=ones+c.traumaMod,tot=d+mod;const [nm,ef]=traumaFor(tot);lastRoll[s]={type:'Trauma',d,mod,tot,nm,ef};
+  save(s,p,'Injury: '+nm);},
+ addTrauma(s,nm){const c=chars[s];if(!(nm in TRAUMA_AT))return;
   const p={traumas:[{id:uid(),name:nm,note:''},...c.traumas].slice(0,10)};
   if(nm==='Mind Undone')p.traumaMod=c.traumaMod+1;
   if(nm==='Shocked'){if(c.regular+c.horror>0){if(c.regular>0)p.regular=c.regular-1;else p.horror=c.horror-1;}else p.traumaMod=c.traumaMod+1;}
   if(nm==='Stunned'){if(c.regular+c.horror>0){p.regular=0;p.horror=0;}else p.traumaMod=c.traumaMod+1;}
-  save(s,p,'Trauma: '+nm+' (rolled '+tot+')');},
+  save(s,p,'Trauma: '+nm);},
  lucky(s){const c=chars[s];if(c.lucky.used)return toast('Already used a lucky item this session.');if(c.insight>=c.insightLimit)return toast('Insight is already full.');
   save(s,{insight:c.insight+1,lucky:{name:c.lucky.name,used:true}},'Used '+(c.lucky.name||'lucky item')+': recovered 1 insight');},
  newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{...c.habitual,used:false},lucky:{name:c.lucky.name,used:false},traumaMod:0},quiet?null:'New session: insight refilled');},
@@ -541,10 +543,15 @@ function renderCharBody(s){
  traitField(s,c)+'</div></div></section>';
 
  // injuries & trauma
- h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2><div class="row"><button class="btn dng" data-act="rinj">Roll injury</button><label class="row note" for="ones-'+s+'">1s on horror dice <input id="ones-'+s+'" type="number" min="1" max="6" value="1" class="maxsel"></label><button class="btn hor" data-act="rtra">Roll trauma</button></div></div>'+
- (rl?'<div class="roll" role="status"><span class="lbl">'+rl.type+' roll</span><b>'+esc(rl.nm)+'</b><span class="num note">d6 '+rl.d+(rl.mod?' + '+rl.mod:'')+' = '+rl.tot+'</span><span>'+esc(rl.ef)+'</span></div>':'')+
- '<div class="grid2"><div><span class="lbl">Injuries (add 1 per injury to the next roll)</span><div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
- '<div><span class="lbl">Recent traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span><div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(({"Subtle Strangeness":1,"Shocked":3,"Stunned":4,"Overcome by Horror":5,"Mind Undone":8,"Lost Forever":11})[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2></div>'+
+ '<div class="grid2"><div><span class="lbl">Injuries</span>'+
+ '<div class="row"><select class="maxsel" id="injsel-'+s+'" aria-label="Injury to add" style="flex:1;min-width:0"><option value="">Choose an injury…</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(x[0])+'</option>').join('')+'</select><button class="btn dng" data-act="addinj">Add</button></div>'+
+ '<p class="note" style="margin:6px 0">Roll 1d6'+(c.injuries.length?' + '+c.injuries.length:'')+' at the table'+(c.injuries.length?' (+1 for each injury you already have)':'')+', then pick the result.</p>'+
+ '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
+ '<div><span class="lbl">Traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span>'+
+ '<div class="row"><select class="maxsel" id="trasel-'+s+'" aria-label="Trauma to add" style="flex:1;min-width:0"><option value="">Choose a trauma…</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(k)+'</option>').join('')+'</select><button class="btn hor" data-act="addtra">Add</button></div>'+
+ '<p class="note" style="margin:6px 0">Roll 1d6 + the number of 1s on your horror dice'+(c.traumaMod?' + '+c.traumaMod:'')+' at the table, then pick the result.</p>'+
+ '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
 
  // skills
  h+='<section class="sec"><div class="sec-head"><h2>Skills</h2><span class="note">Success on a roll at or above the rating. Lower is better.</span></div><div class="skills">'+
@@ -807,8 +814,8 @@ app.addEventListener('click',e=>{
   case 'buyhabit':R.buyHabit(s);break;
   case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
-  case 'rinj':R.rollInjury(s);break;
-  case 'rtra':R.rollTrauma(s,Math.max(1,Number(document.getElementById('ones-'+s).value)||1));break;
+  case 'addinj':{const v=document.getElementById('injsel-'+s).value;if(!v)return toast('Choose an injury first.');R.addInjury(s,v);break;}
+  case 'addtra':{const v=document.getElementById('trasel-'+s).value;if(!v)return toast('Choose a trauma first.');R.addTrauma(s,v);break;}
   case 'healinj':save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},'Healed an injury');break;
   case 'deltra':save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)});break;
   case 'imp':R.improve(s,b.dataset.k);break;
@@ -881,7 +888,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v46 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v47 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -897,7 +904,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v46';
+ syncEl.textContent='Live · synced for the party · v47';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

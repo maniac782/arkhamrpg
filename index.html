@@ -837,8 +837,8 @@ app.addEventListener('click',e=>{
   case 'buyhabit':R.buyHabit(s);break;
   case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
-  case 'healinj':save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},'Healed an injury');break;
-  case 'deltra':save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)});break;
+  case 'healinj':{const x=c.injuries.find(j=>j.id===b.dataset.id);save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},'Healed injury'+(x?': '+x.name:''));break;}
+  case 'deltra':{const x=c.traumas.find(j=>j.id===b.dataset.id);save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)},'Cleared trauma'+(x?': '+x.name:''));break;}
   case 'imp':R.improve(s,b.dataset.k);break;
   case 'xp':R.addXp(s,n);break;
   case 'xpfix':edit.xp=!edit.xp;render();break;
@@ -862,7 +862,7 @@ app.addEventListener('click',e=>{
   case 'buyrel':{const w=c.weapons.find(x=>x.id===b.dataset.id);if(!w||!w.rc)return;const m=Math.round(((Number(c.money)||0)-w.rc)*100)/100;if(m<0)return toast('Not enough money.');save(s,{money:m,weapons:c.weapons.map(x=>x.id===w.id?{...x,reloads:(x.reloads||0)+1}:x)},'Bought an extra reload for '+(w.name||'a gun')+' ('+money(w.rc)+')');break;}
   case 'buyins':R.buyInsight(s);break;
   case 'addfree':save(s,{knacks:[...c.knacks,{id:uid(),tier:1,name:'',text:''}]});break;
-  case 'del':{const l=b.dataset.list;save(s,{[l]:c[l].filter(x=>x.id!==b.dataset.id)});break;}
+  case 'del':{const l=b.dataset.list;const x=c[l].find(y=>y.id===b.dataset.id);if(!x)break;const kind={weapons:'weapon',knacks:'knack',items:'item'}[l]||'entry';save(s,{[l]:c[l].filter(y=>y.id!==x.id)},'Removed '+kind+(x.name?': '+x.name:''));break;}
   case 'addw':save(s,{weapons:[...c.weapons,{id:uid(),name:'',skill:'',range:'',dmg:'',inj:'',ammoMax:0,ammo:0,reloads:0,special:''}]});break;
   case 'addi':save(s,{items:[...c.items,{id:uid(),name:'',note:''}]});break;
   case 'ammo':R.ammo(s,b.dataset.id,n);break;
@@ -913,7 +913,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v54 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v55 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -929,7 +929,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v54';
+ syncEl.textContent='Live · synced for the party · v55';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

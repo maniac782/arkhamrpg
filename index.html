@@ -370,7 +370,7 @@ let db=null, chars={}, active='party', pending=false, localMode=false, authUid=n
 const keys={};// slot or 'master' -> this device holds a key
 function canEdit(s){if(!db)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
-let kpickSel={},pickSel={};
+let kpickSel={},pickSel={},xpAmt={};
 try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||SLOTS.includes(t)))active=t;}catch(e){}
 SLOTS.forEach((s,i)=>chars[s]=blank(i+1));
 
@@ -538,7 +538,7 @@ function renderCharBody(s){
  const c=chars[s];const [cls,lab]=status(c);const rl=lastRoll[s];
  let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div></div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+
  '<div class="grid2">'+fld('player','Player',c.player)+'<label class="field"><span class="lbl">Archetype</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===c.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label></div>'+
- '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="stepper"><button class="btn sm" data-act="xp" data-n="1">+1 XP</button><button class="btn sm" data-act="xp" data-n="4">+4 XP</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+
+ '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="row" style="gap:6px;align-items:center"><span class="note">Award XP</span><div class="stepper"><button class="btn sm icon" data-act="xpamt" data-n="-1" aria-label="One less XP">−</button><input id="xpamt-'+s+'" data-xpamt="1" class="maxsel num" type="number" inputmode="numeric" min="1" max="30" value="'+(xpAmt[s]||1)+'" aria-label="XP to award" style="width:56px;text-align:center"><button class="btn sm icon" data-act="xpamt" data-n="1" aria-label="One more XP">+</button></div><button class="btn sm pri" data-act="xpaward">Add</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+'<p class="note" style="margin:4px 0 0">The book suggests 1 XP per hour played, plus 1–3 for big moments.</p>'+
  (edit.xp?'<div class="row">'+fld('xpTotal','Total XP',c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused','Unused XP',c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
  '</section>';
 
@@ -840,7 +840,8 @@ app.addEventListener('click',e=>{
   case 'healinj':{const x=c.injuries.find(j=>j.id===b.dataset.id);save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},'Healed injury'+(x?': '+x.name:''));break;}
   case 'deltra':{const x=c.traumas.find(j=>j.id===b.dataset.id);save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)},'Cleared trauma'+(x?': '+x.name:''));break;}
   case 'imp':R.improve(s,b.dataset.k);break;
-  case 'xp':R.addXp(s,n);break;
+  case 'xpamt':{const el=document.getElementById('xpamt-'+s);const v=Math.round(Number(el&&el.value)||xpAmt[s]||1);xpAmt[s]=Math.max(1,Math.min(30,v+n));render();break;}
+  case 'xpaward':{const el=document.getElementById('xpamt-'+s);const v=Math.max(1,Math.min(30,Math.round(Number(el&&el.value)||1)));xpAmt[s]=1;R.addXp(s,v);break;}
   case 'xpfix':edit.xp=!edit.xp;render();break;
   case 'printc':downloadSheet(c);break;
   case 'traitxp':if(edit.trait&&c.xpUnused>=2)setTrait(s,edit.trait.t,2);break;
@@ -877,6 +878,7 @@ app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
   openCrop(f,s);el.value='';return;}
+ if(el.dataset.xpamt){xpAmt[s]=Math.max(1,Math.min(30,Math.round(Number(el.value)||1)));return;}
  if(el.dataset.pick){pickSel[el.dataset.pick+s]=el.value;return;}
  if(el.dataset.kpick){kpickSel[el.dataset.kpick==='cr'?'cr':s]=el.value;return;}
  if(s==='create'){
@@ -913,7 +915,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v56 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v57 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -929,7 +931,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v56';
+ syncEl.textContent='Live · synced for the party · v57';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

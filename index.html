@@ -27,6 +27,9 @@ window.HOUSE_RULES = {
   weapons: [
     {n:'Slingshot', s:'Ranged Combat', d:'1', i:'\u2013', r:'40 ft', a:2, rc:0, fr:true, c:0, sp:'House rule. Free reloads.'}
   ],
+  rules: [
+    {id:'universalAmmo', n:'Universal ammo', note:'Reloads are shared: any gun can use any gun\u2019s extra reloads.'}
+  ],
   gear: [
     {cat:'Protection', n:'Fine Heavy Clothes', c:105, note:'House rule. Counts as heavy clothing and fine clothing: \u22121 damage from melee attacks (minimum 1).'},
     {cat:'Protection', n:'Cape', c:15, note:'House rule. Counts as flowing clothing: reroll a reaction to avoid a ranged attack once.'}
@@ -292,14 +295,14 @@ function sheetHtml(c){
  :'<div class="row"><div class="fd" style="width:1.6in"><span class="lb">Trait</span><div class="ln"></div></div><div class="fd" style="flex:1"><span class="lb">Positive</span><div class="ln"></div></div><div class="fd" style="flex:1"><span class="lb">Negative</span><div class="ln"></div></div></div>')+'</div>'+
  '<div class="panel"><div class="h">Knacks</div>'+knRows.join('')+'</div>'+
  '<div class="panel"><div class="h">Weapons</div><table><thead><tr><th style="width:26%">Weapon</th><th>Skill</th><th>Range</th><th>Dmg</th><th>Injury</th><th>Ammo</th><th style="width:28%">Special</th></tr></thead><tbody>'+
- w.map(x=>x?'<tr><td><b>'+e(x.name)+'</b></td><td>'+e((x.skill||'').replace(' Combat',''))+'</td><td>'+e(x.range)+'</td><td>'+e(x.dmg)+'</td><td>'+e(x.inj)+'</td><td>'+pips(Number(x.ammoMax)||0)+'</td><td style="font-size:12px">'+e(x.special)+'</td></tr>':'<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('')+'</tbody></table></div>'+
+ w.map(x=>x?'<tr><td><b>'+e(x.name)+'</b></td><td>'+e((x.skill||'').replace(' Combat',''))+'</td><td>'+e(x.range)+'</td><td>'+e(x.dmg)+'</td><td>'+e(x.inj)+'</td><td>'+pips(Number(x.ammoMax)||0)+(x.reloads>0?'<div style="font-size:11px;white-space:nowrap">+'+x.reloads+' reload'+(x.reloads===1?'':'s')+'</div>':'')+'</td><td style="font-size:12px">'+e(x.special)+'</td></tr>':'<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('')+'</tbody></table></div>'+
  '<div class="row" style="flex:1"><div class="panel" style="flex:1;display:flex;flex-direction:column"><div class="h">Injuries</div><div class="ruled"></div></div><div class="panel" style="flex:1;display:flex;flex-direction:column"><div class="h">Traumas &amp; Effects</div><div class="ruled"></div></div></div></section>'+
  // page 2
  '<section class="page"><div class="top"><div class="nm" style="font-size:28px">'+e(c.name||'')+'</div><div class="kick">Background &amp; Resources</div></div>'+
  '<div class="panel" style="display:flex;flex-direction:column;gap:6px"><div class="h">Background</div>'+f('Place of origin',c.bg&&c.bg.origin)+f('Family &amp; friends',c.bg&&c.bg.family,2)+
  '<div class="row"><div style="flex:2">'+f('Employment',c.bg&&c.bg.employment)+'</div><div style="flex:1">'+f('Weekly salary',c.bg&&c.bg.salary)+'</div></div>'+f('First supernatural encounter',c.bg&&c.bg.encounter,2)+f('Notable enemies',c.bg&&c.bg.enemies)+'</div>'+
  '<div class="row"><div class="panel" style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="h">Mundane Resources</div><div class="fd"><span class="lb">Money</span><div class="val" style="font-family:\'Marcellus SC\',serif;font-size:20px">'+$(c.money)+'</div></div>'+
- '<span class="lb">Equipment</span>'+hab+luck+eq+(c.reloads?'<div class="eq"><b>Spare reloads</b> × '+c.reloads+'</div>':'')+lines(Math.max(2,6-(c.items||[]).length))+f('Vehicle',c.bg&&c.bg.vehicle)+f('Lodging',c.bg&&c.bg.lodging)+'</div>'+
+ '<span class="lb">Equipment</span>'+hab+luck+eq+(c.reloads?'<div class="eq"><b>Extra reloads</b> × '+c.reloads+'</div>':'')+lines(Math.max(2,6-(c.items||[]).length))+f('Vehicle',c.bg&&c.bg.vehicle)+f('Lodging',c.bg&&c.bg.lodging)+'</div>'+
  '<div class="panel" style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="h">Supernatural Resources</div><span class="lb">Tomes</span><div class="tx">'+txt(c.tomes)+'</div>'+lines(1)+'<span class="lb">Relics</span><div class="tx">'+txt(c.relics)+'</div>'+lines(1)+'<span class="lb">Eldritch debts or favors</span><div class="tx">'+txt(c.debts)+'</div>'+lines(1)+'</div></div>'+
  '<div class="panel" style="flex:1"><div class="h">Quick Reference</div><div class="qr">'+
  '<div><b>Tests.</b> Spend dice and roll. Any die at or above the skill rating is a success.</div><div><b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.</div>'+
@@ -355,7 +358,12 @@ function blank(i){
   injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
-function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});return o;}
+function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});
+ o.weapons=(o.weapons||[]).map(w=>({...w}));
+ if(o.reloads>0&&!o.weapons.some(w=>typeof w.reloads==='number')){const g=o.weapons.find(w=>Number(w.ammoMax)>0&&!w.fr);if(g){g.reloads=o.reloads;o.reloads=0;legacyRel.add('p'+i);}}
+ o.weapons.forEach(w=>{if(typeof w.reloads!=='number')w.reloads=0;});
+ return o;}
+const legacyRel=new Set();
 
 let db=null, chars={}, active='party', pending=false, localMode=false, authUid=null;
 const keys={};// slot or 'master' -> this device holds a key
@@ -371,6 +379,7 @@ function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT
 async function save(slot,patch,logMsg){
  if(!canEdit(slot)){toast(chars[slot].name+'’s sheet is locked. Unlock it to make changes.');return;}
  const c=chars[slot];
+ if(patch.weapons&&legacyRel.has(slot)){patch.reloads=0;legacyRel.delete(slot);}
  Object.assign(c,patch);
  if(logMsg){c.log=[{t:Date.now(),m:logMsg},...(c.log||[])].slice(0,12);patch.log=c.log;}
  render();
@@ -431,8 +440,13 @@ const R={
   if(c.xpUnused<KNACK_COST[tier])return toast('Needs '+KNACK_COST[tier]+' XP.');
   save(s,{knacks:[...c.knacks,{id:uid(),tier,name:'',text:''}],xpUnused:c.xpUnused-KNACK_COST[tier]},'Bought a tier '+tier+' knack ('+KNACK_COST[tier]+' XP)');},
  ammo(s,id,i){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);w.ammo=(i<w.ammo)?i:i+1;save(s,{weapons:ws});},
- reload(s,id){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w.fr&&c.reloads<=0)return toast('No spare reloads left.');
-  if(w.ammo>=w.ammoMax)return toast('Already fully loaded.');w.ammo=w.ammoMax;save(s,w.fr?{weapons:ws}:{weapons:ws,reloads:c.reloads-1},'Reloaded '+(w.name||'weapon'));},
+ reload(s,id){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w)return;
+  if(w.ammo>=w.ammoMax)return toast('Already fully loaded.');
+  let src=null;
+  if(!w.fr){if(w.reloads>0)src=w;else if(sharedAmmo())src=ws.find(x=>x.reloads>0);
+   if(!src)return toast(sharedAmmo()?'No extra reloads left on any gun.':'No extra reloads left for '+(w.name||'this gun')+'.');src.reloads-=1;}
+  w.ammo=w.ammoMax;save(s,{weapons:ws},'Reloaded '+(w.name||'weapon')+(src&&src!==w?' using a reload from '+(src.name||'another gun'):''));},
+ wrel(s,id,n){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w)return;w.reloads=Math.max(0,(w.reloads||0)+n);save(s,{weapons:ws});},
  money(s,d){const c=chars[s];const v=Math.round(((Number(c.money)||0)+d)*100)/100;if(v<0)return toast('Not enough money.');save(s,{money:v},(d<0?'Spent ':'Gained ')+money(Math.abs(d)));},
 };
 
@@ -567,12 +581,14 @@ function renderCharBody(s){
  '<div class="row"><button class="btn sm" data-act="buyins">Raise insight limit · 1 XP</button></div></section>';
 
  // weapons
- h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2><div class="row"><span class="note">Spare reloads</span><div class="stepper"><button class="btn sm icon" data-act="rel" data-n="-1" aria-label="One fewer reload">−</button><b class="num">'+c.reloads+'</b><button class="btn sm icon" data-act="rel" data-n="1" aria-label="One more reload">+</button></div></div></div>'+
+ const shared=sharedAmmo(),totRel=c.weapons.reduce((a,w)=>a+(w.fr?0:(w.reloads||0)),0);
+ h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2>'+(shared?'<span class="chip ok" title="House rule">Universal ammo · '+totRel+' reload'+(totRel===1?'':'s')+' shared</span>':'')+'</div>'+
  '<p class="note" style="margin:0">Mark off ammo only when an attack rolls one or more 1s. Reloading is a simple action, or complex (Ranged Combat) under pressure.</p><div class="list">'+
  (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="Ammo '+(i+1)+(i<w.ammo?' loaded':' spent')+'"></button>';
   return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(w.name)+'" placeholder="Weapon" style="font-weight:600">'+
   '<div class="wgrid">'+[['skill','Skill'],['range','Range'],['dmg','Damage'],['inj','Injury rating'],['ammoMax','Ammo'],['special','Special']].map(([k,l])=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="w'+k+'-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="'+k+'" value="'+esc(w[k])+'" '+(k==='ammoMax'?'type="number" min="0" max="12"':'')+'></label>').join('')+'</div>'+
-  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'">'+(w.fr?'Reload (free)':'Reload (uses 1 spare)')+'</button>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy spare reload '+money(w.rc)+'</button>':'')+'</div>':'')+
+  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(w.reloads>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?'Reload (free)':'Reload')+'</button>'+
+   (w.fr?'':'<span class="note">Extra reloads</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="One fewer reload for '+esc(w.name||'this gun')+'">−</button><b class="num">'+(w.reloads||0)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="One more reload for '+esc(w.name||'this gun')+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy one · '+money(w.rc)+'</button>':''))+'</div>':'')+
   '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
  '</div><div class="row"><button class="btn sm" data-act="addw">Add weapon</button></div></section>';
 
@@ -593,10 +609,11 @@ function renderCharBody(s){
 }
 const edit={xp:false};
 let house={on:false};
+function sharedAmmo(){return !!(house.on&&((window.HOUSE_RULES||{}).rules||[]).some(r=>r.id==='universalAmmo'));}
 function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
 function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
 function houseToggle(){
- const hr=window.HOUSE_RULES||{};const names=[...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
+ const hr=window.HOUSE_RULES||{};const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
  if(!names.length)return '';
  const can=!db||!!keys.master;
  return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>House rules '+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' Only the master key can change this.')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
@@ -624,7 +641,7 @@ function addGear(s,val,pay){
  const c=chars[s];const [t,i]=val.split(':');const it=t==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return;
  const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast('Not enough money. '+it.n+' costs '+money(it.c)+'.');
  const p={money:m};
- if(t==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,rc:it.rc,fr:!!it.fr,special:it.sp}];
+ if(t==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
  else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||'Habitual item',used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
  save(s,p,(pay?'Bought ':'Added ')+it.n+(pay?' for '+money(it.c):''));
@@ -681,8 +698,8 @@ function crBuild(){
  const knacks=crKnackList().map(n=>{const k=kn.find(x=>x.name===n);return {id:uid(),tier:k?k.tier:1,name:n,text:''};});
  const weapons=[],items=[];let reloads=0,habitual={name:'',used:false,uses:0};
  cr.cart.forEach(it=>{
-  if(it.type==='w'){const w=W().find(x=>x.n===it.n);if(w)weapons.push({id:uid(),name:w.n,skill:w.s,range:w.r,dmg:w.d,inj:w.i,ammoMax:w.a,ammo:w.a,rc:w.rc,fr:!!w.fr,special:w.sp});}
-  else if(it.type==='reload')reloads++;
+  if(it.type==='w'){const w=W().find(x=>x.n===it.n);if(w)weapons.push({id:uid(),name:w.n,skill:w.s,range:w.r,dmg:w.d,inj:w.i,ammoMax:w.a,ammo:w.a,reloads:0,rc:w.rc,fr:!!w.fr,special:w.sp});}
+  else if(it.type==='reload'){const g=weapons.find(x=>x.name===it.n);if(g)g.reloads++;else reloads++;}
   else if(it.n==='Habitual Item')habitual={name:'Habitual item',used:false,uses:habitual.uses+1};
   else{const g=GR().find(x=>x.n===it.n);items.push({id:uid(),name:it.n,note:g?g.note:''});}
  });
@@ -739,7 +756,7 @@ function renderCreator(){
  '<div class="tabs" role="tablist">'+cats.map(c=>'<button class="tab" role="tab" data-cact="cat" data-n="'+c+'" aria-selected="'+(cr.cat===c)+'">'+c+'</button>').join('')+'</div><div class="list" style="max-height:420px;overflow:auto">';
  if(cr.cat==='Weapons')h+=W().map((w,i)=>'<div class="item"><div class="grow"><b>'+esc(w.n)+(w.house?' <span class="tier">House</span>':'')+'</b><span class="effect">'+esc(w.s.replace(' Combat',''))+' · dmg '+w.d+' · injury '+w.i+' · '+esc(w.r)+(w.a?' · ammo '+w.a:'')+' · '+esc(w.sp)+'</span></div><span class="num">'+money(w.c)+'</span><button class="btn sm" data-cact="addw" data-n="'+i+'">Add</button></div>').join('');
  else h+=GR().map((g,i)=>g.cat===cr.cat?'<div class="item"><div class="grow"><b>'+esc(g.n)+(g.house?' <span class="tier">House</span>':'')+'</b>'+(g.note?'<span class="effect">'+esc(g.note)+'</span>':'')+'</div><span class="num">'+money(g.c)+'</span><button class="btn sm" data-cact="addg" data-n="'+i+'">Add</button></div>':'').join('');
- h+='</div><span class="lbl">Bought</span><div class="list">'+(cr.cart.length?cr.cart.map((it,i)=>{const w=it.type==='w'&&W().find(x=>x.n===it.n);return '<div class="item"><div class="grow"><b>'+esc(it.type==='reload'?'Spare reload — '+it.n:it.n)+'</b></div><span class="num">'+money(it.c)+'</span>'+(w&&w.rc?'<button class="btn sm" data-cact="addr" data-n="'+i+'">+ reload '+money(w.rc)+'</button>':'')+'<button class="btn sm icon" data-cact="rm" data-n="'+i+'" aria-label="Remove">×</button></div>';}).join(''):'<p class="note">Nothing yet.</p>')+'</div></section>';
+ h+='</div><span class="lbl">Bought</span><div class="list">'+(cr.cart.length?cr.cart.map((it,i)=>{const w=it.type==='w'&&W().find(x=>x.n===it.n);return '<div class="item"><div class="grow"><b>'+esc(it.type==='reload'?'Extra reload — '+it.n:it.n)+'</b></div><span class="num">'+money(it.c)+'</span>'+(w&&w.rc?'<button class="btn sm" data-cact="addr" data-n="'+i+'">+ reload '+money(w.rc)+'</button>':'')+'<button class="btn sm icon" data-cact="rm" data-n="'+i+'" aria-label="Remove">×</button></div>';}).join(''):'<p class="note">Nothing yet.</p>')+'</div></section>';
  // 8
  const checks=crChecks();const ok=checks.every(x=>x[0]);
  h+='<section class="sec"><h2>8 · Finish</h2><div class="row"><div class="stat"><span class="lbl">XP left</span><b class="num">'+(xpB-xpS)+'</b></div><div class="stat"><span class="lbl">Cash left</span><b class="num">'+money(left)+'</b></div><div class="stat"><span class="lbl">Insight limit</span><b class="num">'+(cr.bonus==='insight'?2:1)+'</b></div></div>'+
@@ -836,15 +853,15 @@ app.addEventListener('click',e=>{
    if(c.xpUnused<KNACK_COST[k.tier])return toast('Needs '+KNACK_COST[k.tier]+' XP.');
    save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:''}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},'Bought '+k.name+' ('+KNACK_COST[k.tier]+' XP)');break;}
   case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(sel)addGear(s,sel.value,a==='gbuy');break;}
-  case 'buyrel':{const w=c.weapons.find(x=>x.id===b.dataset.id);if(!w||!w.rc)return;const m=Math.round(((Number(c.money)||0)-w.rc)*100)/100;if(m<0)return toast('Not enough money.');save(s,{money:m,reloads:c.reloads+1},'Bought a spare reload for '+money(w.rc));break;}
+  case 'buyrel':{const w=c.weapons.find(x=>x.id===b.dataset.id);if(!w||!w.rc)return;const m=Math.round(((Number(c.money)||0)-w.rc)*100)/100;if(m<0)return toast('Not enough money.');save(s,{money:m,weapons:c.weapons.map(x=>x.id===w.id?{...x,reloads:(x.reloads||0)+1}:x)},'Bought an extra reload for '+(w.name||'a gun')+' ('+money(w.rc)+')');break;}
   case 'buyins':R.buyInsight(s);break;
   case 'addfree':save(s,{knacks:[...c.knacks,{id:uid(),tier:1,name:'',text:''}]});break;
   case 'del':{const l=b.dataset.list;save(s,{[l]:c[l].filter(x=>x.id!==b.dataset.id)});break;}
-  case 'addw':save(s,{weapons:[...c.weapons,{id:uid(),name:'',skill:'',range:'',dmg:'',inj:'',ammoMax:0,ammo:0,special:''}]});break;
+  case 'addw':save(s,{weapons:[...c.weapons,{id:uid(),name:'',skill:'',range:'',dmg:'',inj:'',ammoMax:0,ammo:0,reloads:0,special:''}]});break;
   case 'addi':save(s,{items:[...c.items,{id:uid(),name:'',note:''}]});break;
   case 'ammo':R.ammo(s,b.dataset.id,n);break;
   case 'reload':R.reload(s,b.dataset.id);break;
-  case 'rel':save(s,{reloads:Math.max(0,c.reloads+n)});break;
+  case 'wrel':R.wrel(s,b.dataset.id,n);break;
   case 'cash':R.money(s,n);break;
   case 'cashin':case 'cashout':{const el=document.getElementById('cash-'+s);const v=Math.abs(Number(el.value)||0);if(!v)return toast('Enter an amount first.');R.money(s,a==='cashin'?v:-v);break;}
   case 'session':R.newSession(s);toast('New session: insight refilled, habitual and lucky items ready.');break;
@@ -889,7 +906,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v51 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v52 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -905,7 +922,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v51';
+ syncEl.textContent='Live · synced for the party · v52';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

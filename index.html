@@ -370,7 +370,7 @@ let db=null, chars={}, active='party', pending=false, localMode=false, authUid=n
 const keys={};// slot or 'master' -> this device holds a key
 function canEdit(s){if(!db)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
-let kpickSel={};
+let kpickSel={},pickSel={};
 try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||SLOTS.includes(t)))active=t;}catch(e){}
 SLOTS.forEach((s,i)=>chars[s]=blank(i+1));
 
@@ -591,7 +591,7 @@ function renderCharBody(s){
   (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(w.reloads>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?'Reload (free)':'Reload')+'</button>'+
    (w.fr?'':'<span class="note">Extra reloads</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="One fewer reload for '+esc(w.name||'this gun')+'">−</button><b class="num">'+(w.reloads||0)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="One more reload for '+esc(w.name||'this gun')+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy one · '+money(w.rc)+'</button>':''))+'</div>':'')+
   '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
- '</div><div class="row"><button class="btn sm" data-act="addw">Add weapon</button></div></section>';
+ '</div>'+weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">Add a custom weapon</button></div></section>';
 
  // resources
  h+='<section class="sec"><div class="sec-head"><h2>Money &amp; equipment</h2></div><div class="row"><div class="stat"><span class="lbl">Money</span><b class="num">'+money(c.money)+'</b></div>'+
@@ -636,7 +636,11 @@ function knackPicker(c){
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment</span><select class="f" id="gpick-'+s+'"><optgroup label="Weapons">'+W().map((w,i)=>'<option value="w:'+i+'">'+esc(w.n)+' \u2014 '+money(w.c)+'</option>').join('')+'</optgroup>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'">'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+}
+function weaponPicker(s){
+ const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(w.n)+(w.house?' (house rule)':'')+' \u2014 '+money(w.c)+'</option>':'').join('')+'</optgroup>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Get a weapon</span><select class="f" id="wpick-'+s+'" data-pick="w"><option value="">Add a weapon…</option>'+grp('Ranged','Ranged Combat')+grp('Melee','Melee Combat')+'</select></label><button class="btn" data-act="wbuy">Buy</button><button class="btn" data-act="wfree">Add free</button></div>';
 }
 function addGear(s,val,pay){
  const c=chars[s];const [t,i]=val.split(':');const it=t==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return;
@@ -853,7 +857,8 @@ app.addEventListener('click',e=>{
    for(let t=1;t<k.tier;t++)if(!c.knacks.some(x=>Number(x.tier)===t))return toast('You need a tier '+t+' knack first.');
    if(c.xpUnused<KNACK_COST[k.tier])return toast('Needs '+KNACK_COST[k.tier]+' XP.');
    save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:''}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},'Bought '+k.name+' ('+KNACK_COST[k.tier]+' XP)');break;}
-  case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(sel)addGear(s,sel.value,a==='gbuy');break;}
+  case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(!sel||!sel.value)return toast('Choose something to add first.');pickSel['g'+s]='';addGear(s,sel.value,a==='gbuy');break;}
+  case 'wbuy':case 'wfree':{const sel=document.getElementById('wpick-'+s);if(!sel||!sel.value)return toast('Choose a weapon first.');pickSel['w'+s]='';addGear(s,sel.value,a==='wbuy');break;}
   case 'buyrel':{const w=c.weapons.find(x=>x.id===b.dataset.id);if(!w||!w.rc)return;const m=Math.round(((Number(c.money)||0)-w.rc)*100)/100;if(m<0)return toast('Not enough money.');save(s,{money:m,weapons:c.weapons.map(x=>x.id===w.id?{...x,reloads:(x.reloads||0)+1}:x)},'Bought an extra reload for '+(w.name||'a gun')+' ('+money(w.rc)+')');break;}
   case 'buyins':R.buyInsight(s);break;
   case 'addfree':save(s,{knacks:[...c.knacks,{id:uid(),tier:1,name:'',text:''}]});break;
@@ -872,6 +877,7 @@ app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
   openCrop(f,s);el.value='';return;}
+ if(el.dataset.pick){pickSel[el.dataset.pick+s]=el.value;return;}
  if(el.dataset.kpick){kpickSel[el.dataset.kpick==='cr'?'cr':s]=el.value;return;}
  if(s==='create'){
   if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}
@@ -907,7 +913,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v53 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v54 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -923,7 +929,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v53';
+ syncEl.textContent='Live · synced for the party · v54';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

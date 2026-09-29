@@ -545,11 +545,11 @@ function renderCharBody(s){
  // injuries & trauma
  h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2></div>'+
  '<div class="grid2"><div><span class="lbl">Injuries</span>'+
- '<div class="row"><select class="maxsel" id="injsel-'+s+'" aria-label="Injury to add" style="flex:1;min-width:0"><option value="">Choose an injury…</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(x[0])+'</option>').join('')+'</select><button class="btn dng" data-act="addinj">Add</button></div>'+
+ '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="Add an injury" style="flex:1;min-width:0"><option value="">Add an injury…</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(x[0])+'</option>').join('')+'</select></div>'+
  '<p class="note" style="margin:6px 0">Roll 1d6'+(c.injuries.length?' + '+c.injuries.length:'')+' at the table'+(c.injuries.length?' (+1 for each injury you already have)':'')+', then pick the result.</p>'+
  '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
  '<div><span class="lbl">Traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span>'+
- '<div class="row"><select class="maxsel" id="trasel-'+s+'" aria-label="Trauma to add" style="flex:1;min-width:0"><option value="">Choose a trauma…</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(k)+'</option>').join('')+'</select><button class="btn hor" data-act="addtra">Add</button></div>'+
+ '<div class="row"><select class="maxsel" id="trasel-'+s+'" data-addtra="1" aria-label="Add a trauma" style="flex:1;min-width:0"><option value="">Add a trauma…</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(k)+'</option>').join('')+'</select></div>'+
  '<p class="note" style="margin:6px 0">Roll 1d6 + the number of 1s on your horror dice'+(c.traumaMod?' + '+c.traumaMod:'')+' at the table, then pick the result.</p>'+
  '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
 
@@ -814,8 +814,6 @@ app.addEventListener('click',e=>{
   case 'buyhabit':R.buyHabit(s);break;
   case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
-  case 'addinj':{const v=document.getElementById('injsel-'+s).value;if(!v)return toast('Choose an injury first.');R.addInjury(s,v);break;}
-  case 'addtra':{const v=document.getElementById('trasel-'+s).value;if(!v)return toast('Choose a trauma first.');R.addTrauma(s,v);break;}
   case 'healinj':save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},'Healed an injury');break;
   case 'deltra':save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)});break;
   case 'imp':R.improve(s,b.dataset.k);break;
@@ -862,6 +860,7 @@ app.addEventListener('change',e=>{
   else return;
   crSave();render();return;
  }
+ if(el.dataset.addinj||el.dataset.addtra){const v=el.value;if(!v||!chars[s])return;if(el.dataset.addinj)R.addInjury(s,v);else R.addTrauma(s,v);el.value='';return;}
  const c=chars[s];if(!c)return;
  if(el.dataset.trait){const t=el.value;if(c.personality&&A.TRAITS[c.personality]&&t&&t!==c.personality){edit.trait={s,t};render();}else setTrait(s,t,0);return;}
  if(el.dataset.f){const p=el.dataset.f;let v=el.value;
@@ -888,7 +887,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v47 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v48 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -904,7 +903,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v47';
+ syncEl.textContent='Live · synced for the party · v48';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

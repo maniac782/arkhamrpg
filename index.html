@@ -28,7 +28,8 @@ window.HOUSE_RULES = {
     {n:'Slingshot', s:'Ranged Combat', d:'1', i:'\u2013', r:'40 ft', a:2, rc:0, fr:true, c:0, sp:'House rule. Free reloads.'}
   ],
   rules: [
-    {id:'universalAmmo', n:'Universal ammo', note:'Reloads are shared: any gun can use any gun\u2019s extra reloads.'}
+    // Uncomment to let any gun use any gun's extra reloads:
+    // {id:'universalAmmo', n:'Universal ammo', note:'Reloads are shared: any gun can use any gun\u2019s extra reloads.'}
   ],
   gear: [
     {cat:'Protection', n:'Fine Heavy Clothes', c:105, note:'House rule. Counts as heavy clothing and fine clothing: \u22121 damage from melee attacks (minimum 1).'},
@@ -906,7 +907,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v52 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v53 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -922,7 +923,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v52';
+ syncEl.textContent='Live · synced for the party · v53';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

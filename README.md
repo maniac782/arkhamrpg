@@ -41,7 +41,7 @@ The repo also deploys to Firebase Hosting through `.github/workflows/deploy-fire
 Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps working.
 
 ## House rules
-Extra weapons, gear and rule changes (like **Universal ammo**, where any gun can use any gun's extra reloads) live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. They stay hidden until someone with the master key turns them on in the Game master section of the Party tab. The switch is shared with the whole party.
+Extra weapons, gear and rule changes live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game master section of the Party tab. The switch is shared with the whole party.
 
 ## Good to know
 - Anyone with the link can view every sheet. A player can lock their own sheet with a passcode at the top of it; after that, only devices that entered the passcode (or the master key on the Party tab) can edit it. Firebase enforces this, not just the page.

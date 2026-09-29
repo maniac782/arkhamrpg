@@ -361,6 +361,7 @@ let db=null, chars={}, active='party', pending=false, localMode=false, authUid=n
 const keys={};// slot or 'master' -> this device holds a key
 function canEdit(s){if(!db)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
+let kpickSel={};
 try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||SLOTS.includes(t)))active=t;}catch(e){}
 SLOTS.forEach((s,i)=>chars[s]=blank(i+1));
 
@@ -613,7 +614,7 @@ function knackPicker(c){
  const kn=A.knacksFor(c.archetype);
  if(!kn.length)return '<p class="note" style="margin:0">Choose an archetype at the top to pick knacks from its list.</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">Add a knack by hand</button></div>';
  const owned=c.knacks.map(k=>k.name);
- return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+esc(c.archetype)+' knacks (\u2605 unique)</span><select class="f" id="kpick-'+active+'">'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' \u00b7 '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'">'+(k.unique?'\u2605 ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">Buy with XP</button><button class="btn" data-act="kgrant">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+esc(c.archetype)+' knacks (\u2605 unique)</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">Add a knack…</option>'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' \u00b7 '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'\u2605 ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">Buy with XP</button><button class="btn" data-act="kgrant">Add free</button></div>';
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
@@ -725,7 +726,7 @@ function renderCreator(){
   h+='<label class="field"><span class="lbl">Free tier 1 knack</span><select class="f" id="cr-free" data-cf="freeKnack"><option value="">Choose…</option>'+kn.filter(k=>k.tier===1).map(k=>'<option value="'+esc(k.name)+'"'+(k.name===cr.freeKnack?' selected':'')+'>'+(k.unique?'★ ':'')+esc(k.name)+'</option>').join('')+'</select></label>';
   if(xpB){
    const owned=crKnackList();
-   h+='<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">Buy another knack with XP</span><select class="f" id="cr-kbuy">'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' · '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'">'+(k.unique?'★ ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-cact="kbuy">Buy</button></div>';
+   h+='<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">Buy another knack with XP</span><select class="f" id="cr-kbuy" data-kpick="cr"><option value="">Add a knack…</option>'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' · '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel.cr===k.name?' selected':'')+'>'+(k.unique?'★ ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-cact="kbuy">Buy</button></div>';
    if(cr.bought.length)h+='<div class="list">'+cr.bought.map(n=>{const k=kn.find(x=>x.name===n);return '<div class="item"><span class="tier">T'+(k?k.tier:'?')+'</span><div class="grow"><b>'+esc(n)+'</b></div><span class="num note">'+(k?KNACK_COST[k.tier]:0)+' XP</span><button class="btn sm icon" data-cact="kdel" data-n="'+esc(n)+'" aria-label="Remove">×</button></div>';}).join('')+'</div>';
   }
   h+='<p class="note" style="margin:0">Only knacks on the '+esc(cr.archetype)+' table can be taken. Write each knack’s effect from the book on the sheet afterwards.</p>';
@@ -755,7 +756,7 @@ function creatorClick(b){
   case 'four':cr.four=cr.four===k?'':k;cr.five=cr.five.filter(x=>x!==k);cr.ups={};break;
   case 'up':{const r=crRating(k),cost=SKILL_COST[r];if(!cost||r-1<crFloor(k))return;if(crXpSpent()+cost>crXpBudget())return toast('Not enough XP. That costs '+cost+'.');cr.ups={...cr.ups,[k]:(cr.ups[k]||0)+1};break;}
   case 'down':cr.ups={...cr.ups,[k]:Math.max(0,(cr.ups[k]||0)-1)};break;
-  case 'kbuy':{const sel=document.getElementById('cr-kbuy');if(!sel||!sel.value)return;const kk=A.knacksFor(cr.archetype).find(x=>x.name===sel.value);if(!kk)return;
+  case 'kbuy':{const sel=document.getElementById('cr-kbuy');if(!sel||!sel.value)return toast('Choose a knack first.');kpickSel.cr='';const kk=A.knacksFor(cr.archetype).find(x=>x.name===sel.value);if(!kk)return;
    if(crTierCount(kk.tier)>=KNACK_CAP[kk.tier])return toast('Limit reached for tier '+kk.tier+'.');
    for(let t=1;t<kk.tier;t++)if(!crTierCount(t))return toast('You need a tier '+t+' knack first.');
    if(crXpSpent()+KNACK_COST[kk.tier]>crXpBudget())return toast('Not enough XP. That costs '+KNACK_COST[kk.tier]+'.');
@@ -828,7 +829,7 @@ app.addEventListener('click',e=>{
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master)return;save(s,{log:[]});toast('Recent history cleared.');break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':lockAction(a,s);break;
-  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast('No knacks left to choose.');const k=A.knacksFor(c.archetype).find(x=>x.name===sel.value);if(!k)return;
+  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast('Choose a knack first.');const k=A.knacksFor(c.archetype).find(x=>x.name===sel.value);if(!k)return;
    if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:''}]},'Added knack '+k.name);break;}
    const have=c.knacks.filter(x=>Number(x.tier)===k.tier).length;if(have>=KNACK_CAP[k.tier])return toast('Limit reached: '+KNACK_CAP[k.tier]+' tier '+k.tier+' knack'+(KNACK_CAP[k.tier]>1?'s':'')+'.');
    for(let t=1;t<k.tier;t++)if(!c.knacks.some(x=>Number(x.tier)===t))return toast('You need a tier '+t+' knack first.');
@@ -853,6 +854,7 @@ app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
   openCrop(f,s);el.value='';return;}
+ if(el.dataset.kpick){kpickSel[el.dataset.kpick==='cr'?'cr':s]=el.value;return;}
  if(s==='create'){
   if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}
   else if(el.dataset.cbonus){cr.bonus=el.dataset.cbonus;if(cr.bonus!=='xp'){cr.ups={};cr.bought=[];}if(cr.bonus!=='money'&&crMoneySpent()>crMoneyBudget())toast('Your gear now costs more than $50. Remove something.');}
@@ -887,7 +889,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v49 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v50 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -903,7 +905,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v49';
+ syncEl.textContent='Live · synced for the party · v50';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

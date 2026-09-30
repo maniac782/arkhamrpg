@@ -45,6 +45,18 @@ Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps w
 - Only the master key can remove an investigator: open their sheet and use **Remove this investigator from the party…** at the bottom.
 - This needs the current `firestore.rules`. If you set the site up before this was added, paste the new rules into Firebase → Firestore → Rules, press **Publish**, then reload the site.
 
+## Game master tools
+The **GM** tab appears on devices that have entered the master key. It has:
+- **Scene and turn tracker.** Name the scene, start a fight (with an optional surprise round), and step through the investigators' and adversaries' turns. Every player sees the current scene, round and whose turn it is at the top of their sheet. Pools refill automatically at the start of each side's turn.
+- **Encounter builder.** Add enemies from the corebook's Chapter 8 profiles (or a custom enemy), optionally scaled up for the party size, then track each one's dice pool, injuries, traumas and strain. The pool sizes are suggestions, because the book prints them in the profile art. Choose **Show to players** to put an enemy on the Journal tab.
+- **Handouts and clues.** Write a clue, attach an image, and reveal it to everyone or to one player. A clue for one player only stays private if that player's sheet has a passcode.
+- **Campaign tracker.** The in-game date, open threads, NPCs and locations. Players see it on the Journal tab.
+- **End of session.** Award XP to everyone at once and mark the session as momentous, which lets each player buy Insight. It also moves the session counter on.
+- **Session recap.** Builds a summary of any session from everyone's activity.
+- **GM notes and hidden roller.** Private notes and a dice roller only the GM sees.
+
+These need the current `firestore.rules` (paste into Firebase → Firestore → Rules, **Publish**, reload).
+
 ## House rules
 Extra weapons, gear and rule changes live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game master section of the Party tab. The switch is shared with the whole party.
 

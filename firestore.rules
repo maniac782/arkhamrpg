@@ -52,6 +52,37 @@ service cloud.firestore {
         && request.resource.data.on is bool;
     }
 
+    // GM tools. Turn tracker and campaign: everyone reads, only the master key writes.
+    match /table/{doc} {
+      allow read: if true;
+      allow write: if isMaster() && doc == 'state';
+    }
+    match /campaign/{doc} {
+      allow read: if true;
+      allow write: if isMaster();
+    }
+    // Enemies and handouts: players only see what the GM has revealed (a handout to one player needs that sheet's key).
+    match /enemies/{id} {
+      allow read: if isMaster() || resource.data.shown == true;
+      allow write: if isMaster();
+    }
+    match /clues/{id} {
+      allow read: if isMaster() || (resource.data.shown == true
+        && (resource.data.to == 'all' || (isSlot(resource.data.to) && canEdit(resource.data.to))));
+      allow write: if isMaster();
+    }
+    // Private GM notes.
+    match /gm/{doc} {
+      allow read, write: if isMaster();
+    }
+    // Activity history for session recaps: anyone who can edit a sheet can add to its history.
+    match /history/{id} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.slot is string
+        && isSlot(request.resource.data.slot) && canEdit(request.resource.data.slot);
+      allow delete: if isMaster();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

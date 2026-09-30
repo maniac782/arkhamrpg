@@ -46,7 +46,12 @@ Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps w
 - This needs the current `firestore.rules`. If you set the site up before this was added, paste the new rules into Firebase → Firestore → Rules, press **Publish**, then reload the site.
 
 ## Game master tools
-The **GM** tab appears on devices that have entered the master key. It has:
+The GM has their own **GM PIN**, separate from the master key:
+- In the Game master section of the Party tab, the GM presses **I'm the GM** and chooses a PIN. After that, only devices that enter that PIN can run the **GM** tab.
+- The GM PIN can also award XP, start sessions and refill pools on locked sheets, but it can't make any other changes to them.
+- The master key still does everything it did before (edit every sheet, house rules, remove investigators, reset passcodes). It can **view** the GM tab, including hidden enemies, clues and GM notes, but can't change anything there. If the GM forgets their PIN, the master key can **Reset GM PIN** so they can choose a new one.
+
+The GM tab has:
 - **Scene and turn tracker.** Name the scene, start a fight (with an optional surprise round), and step through the investigators' and adversaries' turns. Every player sees the current scene, round and whose turn it is at the top of their sheet. Pools refill automatically at the start of each side's turn.
 - **Encounter builder.** Add enemies from the corebook's Chapter 8 profiles (or a custom enemy), optionally scaled up for the party size, then track each one's dice pool, injuries, traumas and strain. The pool sizes are suggestions, because the book prints them in the profile art. Choose **Show to players** to put an enemy on the Journal tab.
 - **Handouts and clues.** Write a clue, attach an image, and reveal it to everyone or to one player. A clue for one player only stays private if that player's sheet has a passcode.

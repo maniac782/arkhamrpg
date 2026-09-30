@@ -14,6 +14,9 @@ service cloud.firestore {
         && get(grantDoc(s)).data.code == get(lockDoc(s)).data.code;
     }
     function isMaster() { return holdsKey('master'); }
+    // The GM chooses their own PIN (locks/gm). It runs the GM tools; the master key can view them and reset the PIN.
+    function isGM() { return holdsKey('gm'); }
+    function gmView() { return isGM() || isMaster(); }
     function canEdit(s) { return isMaster() || !exists(lockDoc(s)) || holdsKey(s); }
 
     // Character sheets: everyone can view; editing a locked sheet needs its passcode or the master key.
@@ -22,17 +25,21 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if isSlot(slot) && signedIn() && canEdit(slot);
       allow delete: if isSlot(slot) && isMaster();
+      // The GM can award XP, start sessions and refill pools on any sheet, but nothing else.
+      allow update: if isSlot(slot) && isGM() && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log']);
     }
 
     // Passcodes: nobody can read them. Set one on an open sheet; change or remove it with the passcode or master key.
     // The master key (locks/master) can only be set in the Firebase console.
+    // locks/gm is the GM PIN: anyone can set it while none exists; the GM or the master key can change or clear it.
     match /locks/{slot} {
       allow read: if false;
-      allow create: if isSlot(slot) && signedIn() && request.resource.data.code is string
+      allow create: if (isSlot(slot) || slot == 'gm') && signedIn() && request.resource.data.code is string
         && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64;
-      allow update: if isSlot(slot) && (isMaster() || holdsKey(slot)) && request.resource.data.code is string
+      allow update: if (isSlot(slot) || slot == 'gm') && (isMaster() || holdsKey(slot)) && request.resource.data.code is string
         && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64;
-      allow delete: if isSlot(slot) && (isMaster() || holdsKey(slot));
+      allow delete: if (isSlot(slot) || slot == 'gm') && (isMaster() || holdsKey(slot));
     }
 
     // A device's saved keys: grants/{device}/keys/{slot or 'master'}.
@@ -40,7 +47,7 @@ service cloud.firestore {
     match /grants/{owner}/keys/{slot} {
       allow read, delete: if signedIn() && request.auth.uid == owner;
       allow create, update: if signedIn() && request.auth.uid == owner
-        && (isSlot(slot) || slot == 'master')
+        && (isSlot(slot) || slot == 'master' || slot == 'gm')
         && exists(lockDoc(slot))
         && request.resource.data.code == get(lockDoc(slot)).data.code;
     }
@@ -50,37 +57,41 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isMaster() && doc == 'house' && request.resource.data.keys().hasOnly(['on'])
         && request.resource.data.on is bool;
+      // settings/gm just says whether a GM PIN is set, so the page knows what to show.
+      allow write: if doc == 'gm' && (isGM() || isMaster()) && request.resource.data.keys().hasOnly(['set'])
+        && request.resource.data.set is bool;
     }
 
-    // GM tools. Turn tracker and campaign: everyone reads, only the master key writes.
+    // GM tools. Turn tracker and campaign: everyone reads, only the GM writes.
     match /table/{doc} {
       allow read: if true;
-      allow write: if isMaster() && doc == 'state';
+      allow write: if isGM() && doc == 'state';
     }
     match /campaign/{doc} {
       allow read: if true;
-      allow write: if isMaster();
+      allow write: if isGM();
     }
     // Enemies and handouts: players only see what the GM has revealed (a handout to one player needs that sheet's key).
     match /enemies/{id} {
-      allow read: if isMaster() || resource.data.shown == true;
-      allow write: if isMaster();
+      allow read: if gmView() || resource.data.shown == true;
+      allow write: if isGM();
     }
     match /clues/{id} {
-      allow read: if isMaster() || (resource.data.shown == true
+      allow read: if gmView() || (resource.data.shown == true
         && (resource.data.to == 'all' || (isSlot(resource.data.to) && canEdit(resource.data.to))));
-      allow write: if isMaster();
+      allow write: if isGM();
     }
     // Private GM notes.
     match /gm/{doc} {
-      allow read, write: if isMaster();
+      allow read: if gmView();
+      allow write: if isGM();
     }
     // Activity history for session recaps: anyone who can edit a sheet can add to its history.
     match /history/{id} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.slot is string
-        && isSlot(request.resource.data.slot) && canEdit(request.resource.data.slot);
-      allow delete: if isMaster();
+        && isSlot(request.resource.data.slot) && (canEdit(request.resource.data.slot) || isGM());
+      allow delete: if gmView();
     }
 
     match /{document=**} {

@@ -523,7 +523,11 @@ function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Obje
 const legacyRel=new Set();
 
 let db=null, chars={}, active='party', pending=false, localMode=false, authUid=null;
-const keys={};// slot or 'master' -> this device holds a key
+const keys={};// slot, 'master' or 'gm' -> this device holds a key
+// fields the GM PIN may change on any sheet (XP awards, session start, pool refills)
+const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log'];
+let gmClaimed=false;
+const gmCan=s=>canEdit(s)||isGM();
 function canEdit(s){if(!db)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
@@ -534,7 +538,7 @@ const toastEl=document.getElementById('toast');let toastT;
 function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 
 async function save(slot,patch,logMsg){
- if(!canEdit(slot)){toast(chars[slot].name+'’s sheet is locked. Unlock it to make changes.');return;}
+ if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(chars[slot].name+'’s sheet is locked. Unlock it to make changes.');return;}
  const c=chars[slot];
  if(patch.weapons&&legacyRel.has(slot)){patch.reloads=0;legacyRel.delete(slot);}
  Object.assign(c,patch);
@@ -628,7 +632,7 @@ function poolHtml(c,mini){
 }
 function renderTabs(){
  const t=document.getElementById('tabs');
- t.innerHTML=['party',...SLOTS,'journal',...(isGM()?['gm']:[]),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
+ t.innerHTML=['party',...SLOTS,'journal',...(isGMView()?['gm']:[]),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
 }
 function renderParty(){
  let h=turnBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
@@ -639,7 +643,7 @@ function renderParty(){
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
- h+='</div><section class="sec"><div class="sec-head"><h2>Game master</h2></div>'+houseToggle()+'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. Locked sheets you haven\u2019t unlocked are skipped.</p>'+(db?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
+ h+='</div><section class="sec"><div class="sec-head"><h2>Game master</h2></div>'+houseToggle()+'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. Locked sheets you haven\u2019t unlocked are skipped, unless this device has the GM PIN.</p>'+gmPinHtml()+(db?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
@@ -795,6 +799,15 @@ function gunPool(ws,w){return sameGuns(ws,w).reduce((a,x)=>a+(x.reloads||0),0);}
 function sharedAmmo(){return !!(house.on&&((window.HOUSE_RULES||{}).rules||[]).some(r=>r.id==='universalAmmo'));}
 function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
 function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
+function gmPinHtml(){
+ if(!db)return '';
+ const inp=(ph)=>'<input class="maxsel" style="width:170px" type="password" id="gmpin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
+ let h='<div class="item" style="padding:8px 0;flex-wrap:wrap;gap:8px"><div class="grow"><b>GM PIN '+(gmClaimed?(isGM()?'<span class="chip ok">Active on this device</span>':'<span class="chip">Set</span>'):'<span class="chip warn">Not set</span>')+'</b><span class="effect">';
+ if(!gmClaimed)h+='The GM chooses a PIN here. After that only devices with the PIN can run the GM tab.</span></div><div class="row">'+inp('Choose a GM PIN')+'<button class="btn sm pri" data-act="gmset">I\u2019m the GM</button></div>';
+ else if(isGM())h+='This device runs the GM tab.</span></div><div class="row">'+inp('New GM PIN')+'<button class="btn sm" data-act="gmset">Change PIN</button><button class="btn sm" data-act="gmforget">Remove from this device</button></div>';
+ else h+='Enter it to run the GM tab on this device.'+(keys.master?' Forgot it? The master key can reset it so the GM can choose a new one.':'')+'</span></div><div class="row">'+inp('GM PIN')+'<button class="btn sm pri" data-act="gmunlock">Unlock GM tools</button>'+(keys.master?'<button class="btn sm" data-act="gmreset">Reset GM PIN</button>':'')+'</div>';
+ return h+'</div>';
+}
 function houseToggle(){
  const hr=window.HOUSE_RULES||{};const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
  if(!names.length)return '';
@@ -1020,8 +1033,8 @@ app.addEventListener('click',e=>{
   case 'rmslot':edit.rm=s;render();break;
   case 'rmno':edit.rm=null;render();break;
   case 'rmyes':if(edit.rm===s)removeSlot(s);break;
-  case 'sessionAll':SLOTS.filter(canEdit).forEach(x=>R.newSession(x,true));if(isGM())saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});toast('New session started for everyone.');break;
-  case 'refillAll':SLOTS.filter(canEdit).forEach(x=>R.refill(x));toast('All pools refilled.');break;
+  case 'sessionAll':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));if(isGM())saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});toast('New session started for everyone.');break;
+  case 'refillAll':SLOTS.filter(gmCan).forEach(x=>R.refill(x));toast('All pools refilled.');break;
   case 'spend':R.spend(s,b.dataset.k);break;
   case 'refill':R.refill(s);break;
   case 'dmg':R.damage(s,n);break;
@@ -1047,7 +1060,7 @@ app.addEventListener('click',e=>{
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the master key can change house rules.'));break;}
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master)return;save(s,{log:[]});toast('Recent history cleared.');break;
-  case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':lockAction(a,s);break;
+  case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':lockAction(a,s);break;
   case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast('Choose a knack first.');const k=A.knacksFor(c.archetype).find(x=>x.name===sel.value);if(!k)return;
    if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name)}]},'Added knack '+k.name);break;}
    const have=c.knacks.filter(x=>Number(x.tier)===k.tier).length;if(have>=KNACK_CAP[k.tier])return toast('Limit reached: '+KNACK_CAP[k.tier]+' tier '+k.tier+' knack'+(KNACK_CAP[k.tier]>1?'s':'')+'.');
@@ -1113,12 +1126,17 @@ async function lockAction(a,s){
    await db.doc('locks/'+s).set({code});await grant(s,code);if(!chars[s].locked)await db.doc('characters/'+s).update({locked:true});toast(chars[s].locked?'Passcode set.':'Passcode changed.');}
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
+  else if(a==='gmset'){const code=val('gmpin');if(code.length<4)return toast('Use at least 4 characters.');
+   await db.doc('locks/gm').set({code});await grant('gm',code);await db.doc('settings/gm').set({set:true});toast(gmClaimed?'GM PIN changed.':'You\u2019re the GM. The GM tab is unlocked on this device.');}
+  else if(a==='gmunlock'){const code=val('gmpin');if(!code)return toast('Enter the GM PIN.');await grant('gm',code);toast('GM tools unlocked on this device.');}
+  else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
+  else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v68 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v69 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
- db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();if(active==='gm'&&!isGM())active='party';render();},
-  ()=>{[...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});});
+ db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();if(active==='gm'&&!isGMView())active='party';render();},
+  ()=>{[...SLOTS,'master','gm'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});});
 }
 
 
@@ -1128,7 +1146,8 @@ let table={scene:'',fight:false,phase:'',round:0,first:'investigators',session:1
 let enemies={},clues={},campaign={date:'',locations:[],npcs:[],threads:[]},gmNotes='',history=[],historySession=null;
 const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:'',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
 let gmUnsubs=[],gmMasterState=null;
-const isGM=()=>!db||!!keys.master;
+const isGM=()=>!db||(!!keys.gm&&gmClaimed);
+const isGMView=()=>isGM()||!!keys.master;
 const gmId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 async function gmSet(path,data,merge){if(!db)return;try{await db.doc(path).set(data,merge?{merge:true}:undefined);}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README) and use the master key.':'Couldn’t save that. Try again.');}}
 async function gmDel(path){if(!db)return;try{await db.doc(path).delete();}catch(e){toast('Couldn’t delete that. Try again.');}}
@@ -1139,7 +1158,7 @@ function logHistory(slot,m){const c=chars[slot];const h={slot,name:(c&&c.name)||
 
 // subscriptions that depend on whether this device holds the master key
 function gmSubscribe(){
- if(!db)return;const m=!!keys.master;if(m===gmMasterState)return;gmMasterState=m;
+ if(!db)return;const m=isGMView();if(m===gmMasterState)return;gmMasterState=m;
  gmUnsubs.forEach(u=>{try{u();}catch(e){}});gmUnsubs=[];
  const eq=m?db.collection('enemies'):db.collection('enemies').where('shown','==',true);
  gmUnsubs.push(eq.onSnapshot(qs=>{enemies={};qs.forEach(d=>{enemies[d.id]={...d.data(),id:d.id};});render();},()=>{}));
@@ -1165,7 +1184,7 @@ function turnBar(){
  const ph=table.phase==='surprise'?'Surprise round':table.phase==='investigators'?'Investigators’ turn':table.phase==='adversaries'?'Adversaries’ turn':'';
  return '<div class="turnbar'+(table.phase==='adversaries'?' adv':'')+'" role="status"><span>'+(table.scene?'<b>'+esc(table.scene)+'</b>':'')+(table.fight?' <span class="chip warn">'+(table.phase==='surprise'?'Fight · surprise round':'Fight · round '+Math.max(1,table.round))+'</span>':' <span class="chip">Narrative scene</span>')+'</span>'+(ph?'<span class="ph">'+ph+'</span>':'')+'</div>';
 }
-function refillChar(s,n){const c=chars[s];if(!c||!canEdit(s))return;const cur=c.regular+c.horror;const want=n==null?c.poolLimit:Math.min(c.poolLimit,cur+n);if(want<=cur&&n!=null)return;
+function refillChar(s,n){const c=chars[s];if(!c||!gmCan(s))return;const cur=c.regular+c.horror;const want=n==null?c.poolLimit:Math.min(c.poolLimit,cur+n);if(want<=cur&&n!=null)return;
  let h=Math.min(c.horrorLimit,want),r=want-h;if(n!=null){h=Math.max(c.horror,Math.min(c.horrorLimit,c.horror+(want-cur)));r=want-h;}
  save(s,{horror:h,regular:r});}
 function refillEnemy(e,n){const cur=e.regular+e.horror;const want=n==null?e.limit:Math.min(e.limit,cur+n);let h=Math.min(e.horrorLimit||0,want);if(n!=null)h=Math.max(e.horror,Math.min(e.horrorLimit||0,e.horror+Math.max(0,want-cur)));
@@ -1287,9 +1306,9 @@ function renderJournal(){
  return h;
 }
 function renderGM(){
- if(!isGM())return '<section class="sec"><h2>Game master</h2><p class="note">This page needs the master key. Enter it in the Game master section of the Party tab.</p></section>';
+ if(!isGMView())return '<section class="sec"><h2>Game master</h2><p class="note">This page needs the GM PIN. Enter it in the Game master section of the Party tab.</p></section>';
  const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
- let h=turnBar();
+ let h=(isGM()?'':'<div class="roll" role="status"><span><b>View only.</b> The master key can see the GM page, but only the device with the GM PIN can change it.</span></div>')+turnBar();
  // scene & turns
  h+='<section class="sec"><div class="sec-head"><h2>Scene &amp; turns</h2><span class="note">Everyone sees this bar at the top of their screen.</span></div>'+
   '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">Scene</span><input class="f" id="gm-scene" data-gt="scene" value="'+esc(table.scene)+'" placeholder="e.g. The Orne Library, after midnight"></label>'+
@@ -1341,12 +1360,13 @@ function renderGM(){
  // campaign
  h+='<section class="sec"><div class="sec-head"><h2>Campaign</h2><span class="note">Players can read this on the Journal tab.</span></div><label class="field" style="max-width:320px"><span class="lbl">In-game date</span><input class="f" id="cp-date" data-gcpd="1" value="'+esc(campaign.date)+'" placeholder="e.g. Friday, October 14, 1927"></label>'+campaignHtml(true)+'</section>';
  // notes
- h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the master key can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8" placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the GM (and the master key) can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
  return h;
 }
 
 // ---------- GM clicks and edits ----------
 function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n),e=id&&enemies[id];
+ if(!isGM()&&!['eopen','copyrecap'].includes(a))return toast('Only the GM can change this.');
  switch(a){
   case 'fight':startFight();break;
   case 'next':nextTurn();break;
@@ -1377,12 +1397,13 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'cpdone':campaign.threads=(campaign.threads||[]).map(x=>x.id===id?{...x,done:!x.done}:x);saveCampaign();break;
   case 'wrapall':SLOTS.forEach(s=>{gm.wrap[s]={...(gm.wrap[s]||{mom:false}),xp:gm.wrap.hours||4};});render();break;
   case 'award':awardSession();break;
-  case 'nextsession':SLOTS.filter(canEdit).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gm.wrap={};toast('Session '+table.session+' started.');break;
+  case 'nextsession':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gm.wrap={};toast('Session '+table.session+' started.');break;
   case 'copyrecap':{const t=recapText();try{navigator.clipboard.writeText(t).then(()=>toast('Recap copied.'),()=>toast('Couldn’t copy. Select the text instead.'));}catch(x){toast('Couldn’t copy. Select the text instead.');}break;}
  }
 }
 let notesT=null;
 function gmChange(el){
+ if(!isGM()&&(el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast('Only the GM can change this.');render();return true;}
  if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
  if(el.dataset.gt){const k=el.dataset.gt;saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
  if(el.dataset.gen){updEnemy(el.dataset.gen,{[el.dataset.k]:el.value});return true;}
@@ -1408,8 +1429,9 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  gmBoot();
+ db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();if(active==='gm'&&!isGMView())active='party';render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v68';
+ syncEl.textContent='Live · synced for the party · v69';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

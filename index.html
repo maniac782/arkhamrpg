@@ -760,7 +760,7 @@ function renderCreator(){
  h+='<section class="sec"><h2>3 · Archetype</h2><label class="field"><span class="lbl">Archetype</span><select class="f" id="cr-arch" data-cf="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===cr.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label>'+
  (arch?'<p class="note" style="margin:0">Can improve '+arch.three.map(sname).join(', ')+' up to 3+, and '+sname(arch.two)+' up to 2+. Everything else stops at 4+.</p>':'')+'</section>';
  // 4
- h+='<section class="sec"><div class="sec-head"><h2>4 · Starting skills</h2><span class="note">All skills start at 6+. Raise three to 5+ and one to 4+ for free.</span></div><div class="skills">'+
+ h+='<section class="sec"><div class="sec-head"><h2>4 · Starting skills</h2><span class="note">All skills start at 6+. Raise three to 5+ and one to 4+ for free.'+(xpB?' <b>XP left: '+(xpB-crXpSpent())+' of '+xpB+'</b>':'')+'</span></div><div class="skills">'+
  SKILLS.map(([k,n])=>{const r=crRating(k),up=cr.ups[k]||0,f=crFloor(k),next=SKILL_COST[r];
   return '<div class="skill"><span class="nm">'+n+(f<4?' <span class="tier">max '+f+'+</span>':'')+'</span>'+
   '<button class="btn sm" data-cact="five" data-k="'+k+'" aria-pressed="'+cr.five.includes(k)+'" style="'+(cr.five.includes(k)?'background:var(--ink);color:var(--surface)':'')+'">5+</button>'+
@@ -803,8 +803,15 @@ function renderCreator(){
 function creatorClick(b){
  const a=b.dataset.cact,k=b.dataset.k,n=b.dataset.n;
  switch(a){
-  case 'five':if(cr.five.includes(k))cr.five=cr.five.filter(x=>x!==k);else{if(cr.five.length>=3)return toast('Only three skills start at 5+. Tap one to unselect it first.');if(cr.four===k)cr.four='';cr.five=[...cr.five,k];}cr.ups={};break;
-  case 'four':cr.four=cr.four===k?'':k;cr.five=cr.five.filter(x=>x!==k);cr.ups={};break;
+  case 'five':case 'four':{
+   if(a==='five'&&!cr.five.includes(k)&&cr.five.length>=3)return toast('Only three skills start at 5+. Tap one to unselect it first.');
+   const touched=[k];if(a==='four'&&cr.four&&cr.four!==k)touched.push(cr.four);
+   let refund=0;touched.forEach(x=>{if(cr.ups[x])refund+=crUpCost(x);});
+   if(a==='five'){if(cr.five.includes(k))cr.five=cr.five.filter(x=>x!==k);else{if(cr.four===k)cr.four='';cr.five=[...cr.five,k];}}
+   else{cr.four=cr.four===k?'':k;cr.five=cr.five.filter(x=>x!==k);}
+   const ups={...cr.ups};touched.forEach(x=>delete ups[x]);cr.ups=ups;
+   if(refund)toast('Refunded '+refund+' XP from that skill\u2019s XP improvements. Buy them again if you still want them.');
+   break;}
   case 'up':{const r=crRating(k),cost=SKILL_COST[r];if(!cost||r-1<crFloor(k))return;if(crXpSpent()+cost>crXpBudget())return toast('Not enough XP. That costs '+cost+'.');cr.ups={...cr.ups,[k]:(cr.ups[k]||0)+1};break;}
   case 'down':cr.ups={...cr.ups,[k]:Math.max(0,(cr.ups[k]||0)-1)};break;
   case 'kbuy':{const sel=document.getElementById('cr-kbuy');if(!sel||!sel.value)return toast('Choose a knack first.');kpickSel.cr='';const kk=A.knacksFor(cr.archetype).find(x=>x.name===sel.value);if(!kk)return;
@@ -950,7 +957,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v64 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v65 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});render();},
@@ -967,7 +974,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v64';
+ syncEl.textContent='Live · synced for the party · v65';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

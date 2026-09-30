@@ -47,7 +47,7 @@ Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps w
 
 ## Game master tools
 The GM has their own **GM PIN**, separate from the master key:
-- On the **GM** tab, the GM presses **I'm the GM** and chooses a PIN. After that, only devices that enter that PIN can run the **GM** tab.
+- At the top of the **GM** tab, the GM chooses a PIN and presses **Set GM PIN**, just like locking a sheet. After that, only devices that enter that PIN can run the **GM** tab.
 - The GM PIN can also award XP, start sessions and refill pools on locked sheets, but it can't make any other changes to them.
 - The master key still does everything it did before (edit every sheet, house rules, remove investigators, reset passcodes). It can **view** the GM tab, including hidden enemies, clues and GM notes, but can't change anything there. If the GM forgets their PIN, the master key can **Reset GM PIN** so they can choose a new one.
 

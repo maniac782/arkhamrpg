@@ -801,12 +801,17 @@ function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons|
 function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
 function gmPinHtml(){
  if(!db)return '';
- const inp=(ph)=>'<input class="maxsel" style="width:170px" type="password" id="gmpin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
- let h='<div class="item" style="padding:8px 0;flex-wrap:wrap;gap:8px"><div class="grow"><b>'+(gmClaimed?(isGM()?'<span class="chip ok">Active on this device</span>':'<span class="chip">Set</span>'):'<span class="chip warn">Not set</span>')+'</b><span class="effect">';
- if(!gmClaimed)h+='The GM chooses a PIN here. After that only devices with the PIN can run the GM tools.</span></div><div class="row">'+inp('Choose a GM PIN')+'<button class="btn sm pri" data-act="gmset">I\u2019m the GM</button></div>';
- else if(isGM())h+='This device runs the GM tools.</span></div><div class="row">'+inp('New GM PIN')+'<button class="btn sm" data-act="gmset">Change PIN</button><button class="btn sm" data-act="gmforget">Remove from this device</button></div>';
- else h+='Enter it to run the GM tools on this device.'+(keys.master?' Forgot it? The master key can reset it so the GM can choose a new one.':'')+'</span></div><div class="row">'+inp('GM PIN')+'<button class="btn sm pri" data-act="gmunlock">Unlock GM tools</button>'+(keys.master?'<button class="btn sm" data-act="gmreset">Reset GM PIN</button>':'')+'</div>';
- return h+'</div>';
+ const gmk=isGM(),mk=!!keys.master;
+ const [cls,lab,note]=!gmClaimed?['warn','No GM PIN','Whoever runs the game sets a PIN here. After that only devices with the PIN can run these tools.']
+  :gmk?['ok','Unlocked on this device','Others need the GM PIN to run these tools.']
+  :mk?['ok','Master key','You can view the GM tools. Only the GM PIN can change them.']
+  :['warn','Locked','Enter the GM PIN to run the GM tools.'];
+ const inp=ph=>'<input class="maxsel" style="width:150px" type="password" id="gmpin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
+ let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+cls+'">'+lab+'</span><span class="note">'+note+'</span></div></div>';
+ if(!gmClaimed)h+='<div class="row">'+inp('New GM PIN')+'<button class="btn sm pri" data-act="gmset">Set GM PIN</button></div>';
+ else if(gmk)h+='<div class="row">'+inp('New GM PIN')+'<button class="btn sm" data-act="gmset">Change GM PIN</button><button class="btn sm" data-act="gmforget">Lock this device</button></div>';
+ else h+='<div class="row">'+inp('GM PIN')+'<button class="btn sm pri" data-act="gmunlock">Unlock</button>'+(mk?'<button class="btn sm" data-act="gmreset">Reset GM PIN</button>':'')+'</div>';
+ return h+'</section>';
 }
 function houseToggle(){
  const hr=window.HOUSE_RULES||{};const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
@@ -1129,12 +1134,12 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='gmset'){const code=val('gmpin');if(code.length<4)return toast('Use at least 4 characters.');
-   await db.doc('locks/gm').set({code});await grant('gm',code);await db.doc('settings/gm').set({set:true});toast(gmClaimed?'GM PIN changed.':'You\u2019re the GM. The GM tab is unlocked on this device.');}
+   await db.doc('locks/gm').set({code});await grant('gm',code);await db.doc('settings/gm').set({set:true});toast(gmClaimed?'GM PIN changed.':'GM PIN set. The GM tools are unlocked on this device.');}
   else if(a==='gmunlock'){const code=val('gmpin');if(!code)return toast('Enter the GM PIN.');await grant('gm',code);toast('GM tools unlocked on this device.');}
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v72 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v73 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1308,10 +1313,9 @@ function renderJournal(){
  return h;
 }
 function renderGM(){
- const pin=db?'<section class="sec"><div class="sec-head"><h2>GM PIN</h2></div>'+gmPinHtml()+'</section>':'';
- if(!isGMView())return '<section class="sec"><h2>Game master</h2><p class="note">These are the game master\u2019s tools. Players don\u2019t need anything here.</p></section>'+pin;
+ if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>Game master</h2><p class="note">These are the game master\u2019s tools. Players don\u2019t need anything here.</p></section>';
  const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
- let h=(isGM()?'':'<div class="roll" role="status"><span><b>View only.</b> The master key can see the GM page, but only a device with the GM PIN can change it. The GM PIN box is at the bottom.</span></div>')+turnBar();
+ let h=turnBar()+gmPinHtml();
  // scene & turns
  h+='<section class="sec"><div class="sec-head"><h2>Scene &amp; turns</h2><span class="note">Everyone sees this bar at the top of their screen.</span></div>'+
   '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">Scene</span><input class="f" id="gm-scene" data-gt="scene" value="'+esc(table.scene)+'" placeholder="e.g. The Orne Library, after midnight"></label>'+
@@ -1364,7 +1368,6 @@ function renderGM(){
  h+='<section class="sec"><div class="sec-head"><h2>Campaign</h2><span class="note">Players can read this on the Journal tab.</span></div><label class="field" style="max-width:320px"><span class="lbl">In-game date</span><input class="f" id="cp-date" data-gcpd="1" value="'+esc(campaign.date)+'" placeholder="e.g. Friday, October 14, 1927"></label>'+campaignHtml(true)+'</section>';
  // notes
  h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the GM (and the master key) can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
- h+=pin;
  return h;
 }
 
@@ -1435,7 +1438,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v72';
+ syncEl.textContent='Live · synced for the party · v73';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

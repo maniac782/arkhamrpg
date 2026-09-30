@@ -296,7 +296,7 @@ function sheetHtml(c){
  :'<div class="row"><div class="fd" style="width:1.6in"><span class="lb">Trait</span><div class="ln"></div></div><div class="fd" style="flex:1"><span class="lb">Positive</span><div class="ln"></div></div><div class="fd" style="flex:1"><span class="lb">Negative</span><div class="ln"></div></div></div>')+'</div>'+
  '<div class="panel"><div class="h">Knacks</div>'+knRows.join('')+'</div>'+
  '<div class="panel"><div class="h">Weapons</div><table><thead><tr><th style="width:26%">Weapon</th><th>Skill</th><th>Range</th><th>Dmg</th><th>Injury</th><th>Ammo</th><th style="width:28%">Special</th></tr></thead><tbody>'+
- w.map(x=>x?'<tr><td><b>'+e(x.name)+'</b></td><td>'+e((x.skill||'').replace(' Combat',''))+'</td><td>'+e(x.range)+'</td><td>'+e(x.dmg)+'</td><td>'+e(x.inj)+'</td><td>'+pips(Number(x.ammoMax)||0)+(x.reloads>0?'<div style="font-size:11px;white-space:nowrap">+'+x.reloads+' reload'+(x.reloads===1?'':'s')+'</div>':'')+'</td><td style="font-size:12px">'+e(x.special)+'</td></tr>':'<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('')+'</tbody></table></div>'+
+ w.map(x=>x?'<tr><td><b>'+e(x.name)+'</b></td><td>'+e((x.skill||'').replace(' Combat',''))+'</td><td>'+e(x.range)+'</td><td>'+e(x.dmg)+'</td><td>'+e(x.inj)+'</td><td>'+pips(Number(x.ammoMax)||0)+(function(){if(!x.name||x.fr)return x.reloads>0?'<div style="font-size:11px;white-space:nowrap">+'+x.reloads+' reload'+(x.reloads===1?'':'s')+'</div>':'';var k=String(x.name).trim().toLowerCase(),g=(c.weapons||[]).filter(function(y){return !y.fr&&String(y.name||'').trim().toLowerCase()===k;});var n=g.reduce(function(a,y){return a+(y.reloads||0);},0);if(g.length>1&&g[0]!==x)return '<div style="font-size:11px;white-space:nowrap">shares reloads</div>';return n>0?'<div style="font-size:11px;white-space:nowrap">+'+n+' reload'+(n===1?'':'s')+(g.length>1?' (shared)':'')+'</div>':'';})()+'</td><td style="font-size:12px">'+e(x.special)+'</td></tr>':'<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('')+'</tbody></table></div>'+
  '<div class="row" style="flex:1"><div class="panel" style="flex:1;display:flex;flex-direction:column"><div class="h">Injuries</div><div class="ruled"></div></div><div class="panel" style="flex:1;display:flex;flex-direction:column"><div class="h">Traumas &amp; Effects</div><div class="ruled"></div></div></div></section>'+
  // page 2
  '<section class="page"><div class="top"><div class="nm" style="font-size:28px">'+e(c.name||'')+'</div><div class="kick">Background &amp; Resources</div></div>'+
@@ -444,10 +444,11 @@ const R={
  reload(s,id){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w)return;
   if(w.ammo>=w.ammoMax)return toast('Already fully loaded.');
   let src=null;
-  if(!w.fr){if(w.reloads>0)src=w;else if(sharedAmmo())src=ws.find(x=>x.reloads>0);
+  if(!w.fr){if(w.reloads>0)src=w;else src=sameGuns(ws,w).find(x=>x.reloads>0)||(sharedAmmo()?ws.find(x=>x.reloads>0):null);
    if(!src)return toast(sharedAmmo()?'No extra reloads left on any gun.':'No extra reloads left for '+(w.name||'this gun')+'.');src.reloads-=1;}
-  w.ammo=w.ammoMax;save(s,{weapons:ws},'Reloaded '+(w.name||'weapon')+(src&&src!==w?' using a reload from '+(src.name||'another gun'):''));},
- wrel(s,id,n){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w)return;w.reloads=Math.max(0,(w.reloads||0)+n);save(s,{weapons:ws});},
+  w.ammo=w.ammoMax;save(s,{weapons:ws},'Reloaded '+(w.name||'weapon')+(src&&src!==w?(gunKey(src)===gunKey(w)?' from the shared '+(w.name||'gun')+' reloads':' using a reload from '+(src.name||'another gun')):''));},
+ wrel(s,id,n){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w)return;
+  if(n<0){const t=w.reloads>0?w:sameGuns(ws,w).find(x=>x.reloads>0);if(!t)return;t.reloads-=1;}else w.reloads=(w.reloads||0)+n;save(s,{weapons:ws});},
  money(s,d){const c=chars[s];const v=Math.round(((Number(c.money)||0)+d)*100)/100;if(v<0)return toast('Not enough money.');save(s,{money:v},(d<0?'Spent ':'Gained ')+money(Math.abs(d)));},
 };
 
@@ -588,8 +589,8 @@ function renderCharBody(s){
  (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="Ammo '+(i+1)+(i<w.ammo?' loaded':' spent')+'"></button>';
   return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(w.name)+'" placeholder="Weapon" style="font-weight:600">'+
   '<div class="wgrid">'+[['skill','Skill'],['range','Range'],['dmg','Damage'],['inj','Injury rating'],['ammoMax','Ammo'],['special','Special']].map(([k,l])=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="w'+k+'-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="'+k+'" value="'+esc(w[k])+'" '+(k==='ammoMax'?'type="number" min="0" max="12"':'')+'></label>').join('')+'</div>'+
-  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(w.reloads>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?'Reload (free)':'Reload')+'</button>'+
-   (w.fr?'':'<span class="note">Extra reloads</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="One fewer reload for '+esc(w.name||'this gun')+'">−</button><b class="num">'+(w.reloads||0)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="One more reload for '+esc(w.name||'this gun')+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy one · '+money(w.rc)+'</button>':''))+'</div>':'')+
+  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(gunPool(c.weapons,w)>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?'Reload (free)':'Reload')+'</button>'+
+   (w.fr?'':'<span class="note">Extra reloads'+(sameGuns(c.weapons,w).length>1?' (shared by your '+sameGuns(c.weapons,w).length+' '+esc(w.name)+'s)':'')+'</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="One fewer reload for '+esc(w.name||'this gun')+'">−</button><b class="num">'+gunPool(c.weapons,w)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="One more reload for '+esc(w.name||'this gun')+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy one · '+money(w.rc)+'</button>':''))+'</div>':'')+
   '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
  '</div>'+weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">Add a custom weapon</button></div></section>';
 
@@ -610,6 +611,9 @@ function renderCharBody(s){
 }
 const edit={xp:false};
 let house={on:false};
+function gunKey(w){return String(w.name||'').trim().toLowerCase();}
+function sameGuns(ws,w){const k=gunKey(w);return k&&!w.fr?ws.filter(x=>!x.fr&&gunKey(x)===k):[w];}
+function gunPool(ws,w){return sameGuns(ws,w).reduce((a,x)=>a+(x.reloads||0),0);}
 function sharedAmmo(){return !!(house.on&&((window.HOUSE_RULES||{}).rules||[]).some(r=>r.id==='universalAmmo'));}
 function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
 function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
@@ -915,7 +919,7 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v60 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v61 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
@@ -931,7 +935,7 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v60';
+ syncEl.textContent='Live · synced for the party · v61';
  SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

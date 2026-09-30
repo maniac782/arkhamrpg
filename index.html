@@ -1040,7 +1040,7 @@ app.addEventListener('click',e=>{
   case 'rmslot':edit.rm=s;render();break;
   case 'rmno':edit.rm=null;render();break;
   case 'rmyes':if(edit.rm===s)removeSlot(s);break;
-  case 'sessionAll':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));if(isGM())saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});toast('New session started for everyone.');break;
+  case 'sessionAll':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));if(isGM()){saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gmLog('Session '+table.session+' started',false);}toast('New session started for everyone.');break;
   case 'refillAll':SLOTS.filter(gmCan).forEach(x=>R.refill(x));toast('All pools refilled.');break;
   case 'spend':R.spend(s,b.dataset.k);break;
   case 'refill':R.refill(s);break;
@@ -1134,12 +1134,12 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='gmset'){const code=val('gmpin');if(code.length<4)return toast('Use at least 4 characters.');
-   await db.doc('locks/gm').set({code});await grant('gm',code);await db.doc('settings/gm').set({set:true});toast(gmClaimed?'GM PIN changed.':'GM PIN set. The GM tools are unlocked on this device.');}
+   await db.doc('locks/gm').set({code});await grant('gm',code);await db.doc('settings/gm').set({set:true});gmLog(gmClaimed?'GM PIN changed':'GM PIN set',false);toast(gmClaimed?'GM PIN changed.':'GM PIN set. The GM tools are unlocked on this device.');}
   else if(a==='gmunlock'){const code=val('gmpin');if(!code)return toast('Enter the GM PIN.');await grant('gm',code);toast('GM tools unlocked on this device.');}
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v73 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v74 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1159,6 +1159,13 @@ const gmId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 async function gmSet(path,data,merge){if(!db)return;try{await db.doc(path).set(data,merge?{merge:true}:undefined);}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README) and use the master key.':'Couldn’t save that. Try again.');}}
 async function gmDel(path){if(!db)return;try{await db.doc(path).delete();}catch(e){toast('Couldn’t delete that. Try again.');}}
 function saveTable(p){Object.assign(table,p);render();gmSet('table/state',{...table});}
+let gmLogList=[];
+// GM activity: private log (gmlog), plus public story beats that go into the session recap
+function gmLog(m,pub){const e={id:gmId(),m,t:Date.now(),session:table.session||1};gmLogList=[e,...gmLogList].slice(0,40);
+ const {id,...doc}=e;gmSet('gmlog/'+id,doc);
+ if(pub)gmStory(m);render();}
+function gmStory(m){const e={t:Date.now(),session:table.session||1};{const h={slot:'gm',name:'The story',m,t:e.t,session:e.session};if(historySession===h.session){history=[...history,h];render();}if(db)db.collection('history').add(h).catch(()=>{});}}
+const recapGroups=()=>{const by={};history.forEach(x=>{const n=x.slot==='gm'?'The story':(x.name||x.slot);(by[n]=by[n]||[]).push(x);});return Object.entries(by).sort((a,b)=>(b[0]==='The story')-(a[0]==='The story'));};
 function logHistory(slot,m){const c=chars[slot];const h={slot,name:(c&&c.name)||'',m,t:Date.now(),session:table.session||1};
  if(historySession===h.session)history=[...history,h];
  if(db)db.collection('history').add(h).catch(()=>{});}
@@ -1170,6 +1177,7 @@ function gmSubscribe(){
  const eq=m?db.collection('enemies'):db.collection('enemies').where('shown','==',true);
  gmUnsubs.push(eq.onSnapshot(qs=>{enemies={};qs.forEach(d=>{enemies[d.id]={...d.data(),id:d.id};});render();},()=>{}));
  if(m){gmUnsubs.push(db.collection('clues').onSnapshot(qs=>{clues={};qs.forEach(d=>{clues[d.id]={...d.data(),id:d.id};});render();},()=>{}));
+  gmUnsubs.push(db.collection('gmlog').orderBy('t','desc').limit(40).onSnapshot(qs=>{gmLogList=[];qs.forEach(d=>gmLogList.push({...d.data(),id:d.id}));render();},()=>{}));
   gmUnsubs.push(db.doc('gm/notes').onSnapshot(s=>{gmNotes=(s.exists&&s.data().text)||'';render();},()=>{}));}
  else{const got={};const put=()=>{clues={};Object.values(got).forEach(o=>Object.assign(clues,o));render();};
   const q=(k,ref)=>gmUnsubs.push(ref.onSnapshot(qs=>{got[k]={};qs.forEach(d=>{got[k][d.id]={...d.data(),id:d.id};});put();},()=>{}));
@@ -1198,12 +1206,12 @@ function refillEnemy(e,n){const cur=e.regular+e.horror;const want=n==null?e.limi
  updEnemy(e.id,{horror:h,regular:Math.max(0,want-h)});}
 function refillSide(side,n){if(side==='investigators')SLOTS.forEach(s=>refillChar(s,n));else Object.values(enemies).filter(e=>!e.out).forEach(e=>refillEnemy(e,n));}
 function startFight(){const first=gm.fightFirst,sur=gm.fightSurprise;
- if(sur!=='none'){const other=sur==='investigators'?'adversaries':'investigators';if(table.auto)refillSide(other,1);saveTable({fight:true,phase:'surprise',round:0,first});toast('Surprise round: '+(other==='investigators'?'investigators':'adversaries')+' add 1 die. The surprised side doesn’t refill.');}
- else{if(table.auto)refillSide(first);saveTable({fight:true,phase:first,round:1,first});}}
+ if(sur!=='none'){const other=sur==='investigators'?'adversaries':'investigators';if(table.auto)refillSide(other,1);saveTable({fight:true,phase:'surprise',round:0,first});gmLog('Fight started: the '+sur+' were surprised',true);toast('Surprise round: '+(other==='investigators'?'investigators':'adversaries')+' add 1 die. The surprised side doesn’t refill.');}
+ else{if(table.auto)refillSide(first);saveTable({fight:true,phase:first,round:1,first});gmLog('Fight started: '+first+' go first',true);}}
 function nextTurn(){let ph,round=table.round;
  if(table.phase==='surprise'){ph=table.first;round=1;}
  else{ph=table.phase==='investigators'?'adversaries':'investigators';if(ph===table.first)round++;}
- if(table.auto)refillSide(ph);saveTable({phase:ph,round});}
+ if(table.auto)refillSide(ph);if(round!==table.round)gmLog('Round '+round,false);saveTable({phase:ph,round});}
 
 // ---------- enemies ----------
 function npcProfile(n){return NPCS.find(x=>x.n===n);}
@@ -1213,13 +1221,14 @@ function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.mi
  for(let i=0;i<count;i++){const id=gmId()+i;const hl=(p&&p.horror)||0;
   const e={id,base:p?p.n:'Custom enemy',n:(p?p.n:'Enemy')+(count>1||existing?' '+(existing+i+1):''),type:p?p.type:'Minor',max:pool,limit:pool,regular:pool-Math.min(hl,pool),horror:Math.min(hl,pool),horrorLimit:hl,injuries:[],traumas:[],strained:false,out:false,shown:false,t:Date.now()+i,note:''};
   enemies[id]=e;gmSet('enemies/'+id,e);}
- gm.addCount=1;render();toast('Added '+count+' '+(p?p.n:'enemy')+(count>1?'s':'')+'.');}
+ gmLog('Added '+count+' \u00d7 '+(p?p.n:'custom enemy'),false);gm.addCount=1;render();toast('Added '+count+' '+(p?p.n:'enemy')+(count>1?'s':'')+'.');}
 function updEnemy(id,p){const e=enemies[id];if(!e)return;Object.assign(e,p);render();gmSet('enemies/'+id,p,true);}
 function enemyClamp(e){e.limit=Math.max(0,Math.min(e.max,e.limit));let over=e.regular+e.horror-e.limit;while(over>0&&e.regular>0){e.regular--;over--;}while(over>0&&e.horror>0){e.horror--;over--;}}
 function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limit:e.limit,regular:e.regular,horror:e.horror};
  if(e.limit===0){if(e.type==='Minor'){p.out=true;toast(e.n+' is out: killed or knocked unconscious (your call).');}
   else if(e.type==='Major'||e.type==='Monstrous'){if(e.strained){p.out=true;toast(e.n+' is out: killed or knocked unconscious (your call).');}else toast(e.n+' is wounded. As a Major NPC it can strain once to get its pool back.');}
   else toast(e.n+' is wounded.');}
+ gmLog(e.n+' took '+n+' damage'+(p.out?' and is out':e.limit===0?' and is wounded':''),false);if(p.out&&e.shown)gmStory(e.n+' was taken down');
  updEnemy(e.id,p);}
 function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();
@@ -1270,9 +1279,12 @@ function pickClueImage(f){if(!f||!/^image\//.test(f.type))return toast('Choose a
  img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,1200/Math.max(w,h));const cv=document.createElement('canvas');
   let q=0.82,d='';for(let k=0;k<6;k++){cv.width=Math.round(w*s);cv.height=Math.round(h*s);cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);d=cv.toDataURL('image/jpeg',q);if(d.length<900000)break;s*=0.8;q-=0.05;}
   URL.revokeObjectURL(url);gm.clueImg=d;render();};img.onerror=()=>toast('Couldn’t read that image.');img.src=url;}
+const clueName=c=>'\u201c'+(c.title||(c.body||'').slice(0,40)||'picture')+'\u201d';
+const clueWho=c=>c.to==='all'?'everyone':((chars[c.to]&&chars[c.to].name)||c.to);
+function clueLog(c){if(c.shown){gmLog('Revealed clue '+clueName(c)+' to '+clueWho(c),false);if(c.to==='all')gmStory('Found '+clueName(c));}else gmLog('Hid clue '+clueName(c),false);}
 function addClue(show){const t=(document.getElementById('cl-title')||{}).value||'',b=(document.getElementById('cl-body')||{}).value||'';
  if(!t.trim()&&!b.trim()&&!gm.clueImg)return toast('Write a clue or add a picture first.');
- const id=gmId();const c={id,title:t.trim(),body:b.trim(),img:gm.clueImg,to:gm.clueTo||'all',shown:!!show,t:Date.now()};clues[id]=c;gm.clueImg='';gmSet('clues/'+id,c);
+ const id=gmId();const c={id,title:t.trim(),body:b.trim(),img:gm.clueImg,to:gm.clueTo||'all',shown:!!show,t:Date.now()};clues[id]=c;gm.clueImg='';gmSet('clues/'+id,c);if(show)clueLog(c);else gmLog('Saved clue '+clueName(c)+' (hidden)',false);
  const ti=document.getElementById('cl-title'),bo=document.getElementById('cl-body');if(ti)ti.value='';if(bo)bo.value='';render();toast(show?'Clue revealed to the players.':'Clue saved. Reveal it when they find it.');}
 
 // ---------- campaign ----------
@@ -1298,9 +1310,9 @@ function wrapHtml(){
 }
 function awardSession(){let n=0;SLOTS.forEach(s=>{const x=gm.wrap[s];const c=chars[s];if(!x||!c)return;const xp=Math.max(0,Math.round(Number(x.xp)||0));const p={};
  if(xp){p.xpTotal=c.xpTotal+xp;p.xpUnused=c.xpUnused+xp;}if(x.mom)p.insightChance=true;if(Object.keys(p).length){save(s,p,[xp?'Earned '+xp+' XP for session '+table.session:'',x.mom?'Momentous session: may raise insight limit':''].filter(Boolean).join(' · '));n++;}});
+ if(n)gmLog('End of session '+table.session+': '+SLOTS.filter(s=>gm.wrap[s]&&chars[s]&&((Number(gm.wrap[s].xp)||0)>0||gm.wrap[s].mom)).map(s=>chars[s].name+' '+(Number(gm.wrap[s].xp)>0?'+'+Math.round(Number(gm.wrap[s].xp))+' XP':'')+(gm.wrap[s].mom?' (momentous)':'')).join(', '),false);
  gm.wrap={};toast(n?'Awarded. Players can spend their XP now.':'Nothing to award.');}
-function recapText(){const by={};history.forEach(h=>{(by[h.name||h.slot]=by[h.name||h.slot]||[]).push(h.m);});
- return 'Session '+historySession+' recap\n'+Object.entries(by).map(([n,ms])=>'\n'+n+':\n'+ms.map(m=>'- '+m).join('\n')).join('\n');}
+function recapText(){return 'Session '+historySession+' recap\n'+recapGroups().map(([n,a])=>'\n'+n+':\n'+a.map(x=>'- '+x.m).join('\n')).join('\n');}
 
 // ---------- pages ----------
 function renderJournal(){
@@ -1361,11 +1373,14 @@ function renderGM(){
   '<p class="note" style="margin:0">Starting the next session refills everyone’s insight, frees habitual and lucky items, clears trauma penalties and begins a new recap.</p></section>';
  // recap
  h+='<section class="sec"><div class="sec-head"><h2>Session recap</h2></div><div class="row"><label class="field"><span class="lbl">Session</span><select class="f" data-grecap="1"><option value="">Choose…</option>'+ss.map(i=>'<option value="'+i+'"'+(historySession===i?' selected':'')+'>Session '+i+'</option>').join('')+'</select></label>'+(historySession&&history.length?'<button class="btn sm" data-gact="copyrecap">Copy as text</button>':'')+'</div>';
- if(historySession){const by={};history.forEach(x=>{(by[x.name||x.slot]=by[x.name||x.slot]||[]).push(x);});
-  h+=history.length?'<div class="grid2">'+Object.entries(by).map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(x.m)+'</li>').join('')+'</ul></div>').join('')+'</div>':'<p class="note" style="margin:0">Nothing logged for session '+historySession+'. (Recaps start from when this feature was added.)</p>';}
+ if(historySession){
+  h+=history.length?'<div class="grid2">'+recapGroups().map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(x.m)+'</li>').join('')+'</ul></div>').join('')+'</div>':'<p class="note" style="margin:0">Nothing logged for session '+historySession+'. (Recaps start from when this feature was added.)</p>';}
  h+='</section>';
  // campaign
  h+='<section class="sec"><div class="sec-head"><h2>Campaign</h2><span class="note">Players can read this on the Journal tab.</span></div><label class="field" style="max-width:320px"><span class="lbl">In-game date</span><input class="f" id="cp-date" data-gcpd="1" value="'+esc(campaign.date)+'" placeholder="e.g. Friday, October 14, 1927"></label>'+campaignHtml(true)+'</section>';
+ // activity
+ const g=isGM(),tf=t=>new Date(t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'});
+ h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><span class="note">Only the GM and the master key see this.</span>'+(g&&gmLogList.length?'<button class="btn sm dng" data-gact="glclear">Clear all</button>':'')+'</div><div class="log">'+(gmLogList.length?gmLogList.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(g?'<button class="btn sm icon" style="min-height:24px;width:24px" data-gact="gldel" data-id="'+esc(l.id)+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+tf(l.t)+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div></section>';
  // notes
  h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the GM (and the master key) can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
  return h;
@@ -1377,34 +1392,36 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
  switch(a){
   case 'fight':startFight();break;
   case 'next':nextTurn();break;
-  case 'endfight':saveTable({fight:false,phase:'',round:0});break;
-  case 'endscene':saveTable({scene:'',fight:false,phase:'',round:0});break;
+  case 'endfight':gmLog('Fight ended after '+Math.max(1,table.round)+' round'+(table.round>1?'s':''),true);saveTable({fight:false,phase:'',round:0});break;
+  case 'endscene':if(table.scene)gmLog('Scene ended: '+table.scene,false);saveTable({scene:'',fight:false,phase:'',round:0});break;
   case 'eadd':if(gm.addN==='__custom'){gm.addN='';addEnemies();}else addEnemies();break;
   case 'eopen':gm.open[id]=!gm.open[id];render();break;
-  case 'eshow':if(e)updEnemy(id,{shown:!e.shown});break;
-  case 'edel':if(e){delete enemies[id];render();gmDel('enemies/'+id);}break;
-  case 'eclearall':Object.keys(enemies).forEach(k=>gmDel('enemies/'+k));enemies={};render();break;
+  case 'eshow':if(e){gmLog((e.shown?'Hid ':'Showed ')+e.n+(e.shown?' from':' to')+' the players',false);if(!e.shown)gmStory('Encountered '+e.n);updEnemy(id,{shown:!e.shown});}break;
+  case 'edel':if(e){gmLog('Removed '+e.n,false);delete enemies[id];render();gmDel('enemies/'+id);}break;
+  case 'eclearall':if(Object.keys(enemies).length)gmLog('Cleared all enemies',false);Object.keys(enemies).forEach(k=>gmDel('enemies/'+k));enemies={};render();break;
   case 'espend':if(e){if(e.regular>0)updEnemy(id,{regular:e.regular-1});else if(e.horror>0)updEnemy(id,{horror:e.horror-1});}break;
   case 'erefill':if(e)refillEnemy(e);break;
   case 'erefillall':Object.values(enemies).filter(x=>!x.out).forEach(x=>refillEnemy(x));break;
   case 'edmg':if(e)enemyDamage(e,1);break;
-  case 'eheal':if(e&&e.limit<e.max)updEnemy(id,{limit:e.limit+1});break;
-  case 'estrain':if(e)updEnemy(id,{limit:e.max,strained:true});break;
-  case 'eback':if(e)updEnemy(id,{out:false,limit:Math.max(1,e.limit)});break;
+  case 'eheal':if(e&&e.limit<e.max)gmLog(e.n+' healed 1',false),updEnemy(id,{limit:e.limit+1});break;
+  case 'estrain':if(e)gmLog(e.n+' strained to fight on',!!e.shown),updEnemy(id,{limit:e.max,strained:true});break;
+  case 'eback':if(e)gmLog(e.n+' is back in the fight',false),updEnemy(id,{out:false,limit:Math.max(1,e.limit)});break;
   case 'emax':if(e){const m=Math.max(1,Math.min(12,e.max+n));const lim=e.limit===e.max?m:Math.min(e.limit,m);e.max=m;e.limit=lim;enemyClamp(e);updEnemy(id,{max:m,limit:e.limit,regular:e.regular,horror:e.horror});}break;
   case 'ehl':if(e)updEnemy(id,{horrorLimit:Math.max(0,Math.min(e.max,(e.horrorLimit||0)+n))});break;
   case 'eclear':if(e)updEnemy(id,{injuries:[],traumas:[]});break;
   case 'roll':rollDice();break;
   case 'cadd':addClue(n===1);break;
-  case 'cshow':{const c=clues[id];if(c){c.shown=!c.shown;render();gmSet('clues/'+id,{shown:c.shown},true);}break;}
-  case 'cdel':delete clues[id];render();gmDel('clues/'+id);break;
+  case 'cshow':{const c=clues[id];if(c){c.shown=!c.shown;clueLog(c);render();gmSet('clues/'+id,{shown:c.shown},true);}break;}
+  case 'cdel':if(clues[id])gmLog('Deleted clue '+clueName(clues[id]),false);delete clues[id];render();gmDel('clues/'+id);break;
   case 'climgdel':gm.clueImg='';render();break;
   case 'cpadd':{const l=b.dataset.list;campaign[l]=[...(campaign[l]||[]),{id:gmId()}];saveCampaign();break;}
   case 'cpdel':{const l=b.dataset.list;campaign[l]=(campaign[l]||[]).filter(x=>x.id!==id);saveCampaign();break;}
   case 'cpdone':campaign.threads=(campaign.threads||[]).map(x=>x.id===id?{...x,done:!x.done}:x);saveCampaign();break;
   case 'wrapall':SLOTS.forEach(s=>{gm.wrap[s]={...(gm.wrap[s]||{mom:false}),xp:gm.wrap.hours||4};});render();break;
   case 'award':awardSession();break;
-  case 'nextsession':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gm.wrap={};toast('Session '+table.session+' started.');break;
+  case 'nextsession':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gmLog('Session '+table.session+' started',false);gm.wrap={};toast('Session '+table.session+' started.');break;
+  case 'gldel':gmLogList=gmLogList.filter(x=>x.id!==id);render();gmDel('gmlog/'+id);break;
+  case 'glclear':gmLogList.forEach(x=>gmDel('gmlog/'+x.id));gmLogList=[];render();break;
   case 'copyrecap':{const t=recapText();try{navigator.clipboard.writeText(t).then(()=>toast('Recap copied.'),()=>toast('Couldn’t copy. Select the text instead.'));}catch(x){toast('Couldn’t copy. Select the text instead.');}break;}
  }
 }
@@ -1412,10 +1429,10 @@ let notesT=null;
 function gmChange(el){
  if(!isGM()&&(el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast('Only the GM can change this.');render();return true;}
  if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
- if(el.dataset.gt){const k=el.dataset.gt;saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
+ if(el.dataset.gt){const k=el.dataset.gt;if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog('Scene: '+el.value.trim(),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
  if(el.dataset.gen){updEnemy(el.dataset.gen,{[el.dataset.k]:el.value});return true;}
- if(el.dataset.geinj){const e=enemies[el.dataset.geinj];if(e&&el.value){const inj=[...e.injuries,el.value];const p={injuries:inj};if(el.value==='Comatose'||el.value==='Dire'){e.limit=0;enemyClamp(e);Object.assign(p,{limit:0,regular:e.regular,horror:e.horror});}updEnemy(e.id,p);}return true;}
- if(el.dataset.getra){const e=enemies[el.dataset.getra];if(e&&el.value)updEnemy(e.id,{traumas:[...e.traumas,el.value]});return true;}
+ if(el.dataset.geinj){const e=enemies[el.dataset.geinj];if(e&&el.value){gmLog(e.n+' suffered injury: '+el.value,!!e.shown);const inj=[...e.injuries,el.value];const p={injuries:inj};if(el.value==='Comatose'||el.value==='Dire'){e.limit=0;enemyClamp(e);Object.assign(p,{limit:0,regular:e.regular,horror:e.horror});}updEnemy(e.id,p);}return true;}
+ if(el.dataset.getra){const e=enemies[el.dataset.getra];if(e&&el.value)gmLog(e.n+' suffered trauma: '+el.value,!!e.shown),updEnemy(e.id,{traumas:[...e.traumas,el.value]});return true;}
  if(el.dataset.gimg){pickClueImage(el.files&&el.files[0]);el.value='';return true;}
  if(el.dataset.gcp){const l=el.dataset.gcp;campaign[l]=(campaign[l]||[]).map(x=>x.id===el.dataset.id?{...x,[el.dataset.k]:el.value}:x);saveCampaign();return true;}
  if(el.dataset.gcpd){campaign.date=el.value;saveCampaign();return true;}
@@ -1438,7 +1455,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v73';
+ syncEl.textContent='Live · synced for the party · v74';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

@@ -57,7 +57,8 @@ The GM tab has:
 - **Handouts and clues.** Write a clue, attach an image, and reveal it to everyone or to one player. A clue for one player only stays private if that player's sheet has a passcode.
 - **Campaign tracker.** The in-game date, open threads, NPCs and locations. Players see it on the Journal tab.
 - **End of session.** Award XP to everyone at once and mark the session as momentous, which lets each player buy Insight. It also moves the session counter on.
-- **Session recap.** Builds a summary of any session from everyone's activity.
+- **Recent activity.** A log of what the GM did: scenes, fights and rounds, enemies added, hurt or taken down, clues revealed, XP awarded. Only the GM and the master key can see it.
+- **Session recap.** Builds a summary of any session from everyone's activity. It opens with **The story**: the scenes, fights, enemies the players saw and clues revealed to everyone, so nothing hidden leaks.
 - **GM notes and hidden roller.** Private notes and a dice roller only the GM sees.
 
 These need the current `firestore.rules` (paste into Firebase → Firestore → Rules, **Publish**, reload).

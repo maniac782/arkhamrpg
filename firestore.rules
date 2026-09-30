@@ -86,11 +86,17 @@ service cloud.firestore {
       allow read: if gmView();
       allow write: if isGM();
     }
+    // The GM's own activity log.
+    match /gmlog/{id} {
+      allow read: if gmView();
+      allow create, delete: if isGM();
+    }
     // Activity history for session recaps: anyone who can edit a sheet can add to its history.
     match /history/{id} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.slot is string
-        && isSlot(request.resource.data.slot) && (canEdit(request.resource.data.slot) || isGM());
+        && ((isSlot(request.resource.data.slot) && (canEdit(request.resource.data.slot) || isGM()))
+          || (request.resource.data.slot == 'gm' && isGM()));
       allow delete: if gmView();
     }
 

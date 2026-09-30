@@ -776,7 +776,7 @@ function renderCharBody(s){
  [-1,-0.25,0.25,1,5].map(d=>'<button class="btn sm" data-act="cash" data-n="'+d+'">'+(d<0?'−':'+')+money(Math.abs(d))+'</button>').join('')+
  '</div>'+gearPicker(s)+'<div class="row"><label class="row note" for="cash-'+s+'">Amount <input id="cash-'+s+'" class="maxsel" style="width:80px" type="number" step="0.01" min="0" placeholder="0.00"></label><button class="btn sm" data-act="cashin">Add</button><button class="btn sm" data-act="cashout">Spend</button><button class="btn sm" data-act="cashset" title="Replace the current money with this amount">Set to this</button></div>'+
  '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(it.name)+'" placeholder="Item" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(it.note)+'" placeholder="Notes or rules"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="Remove item">×</button></div>').join(''):'<p class="note">No equipment.</p>')+
- '</div><div class="row"><button class="btn sm" data-act="addi">Add item</button></div><div class="grid2">'+fld('bg.vehicle','Vehicle',c.bg.vehicle)+fld('bg.lodging','Lodging',c.bg.lodging)+'</div></section>';
+ '</div><div class="row"><button class="btn sm" data-act="addi">Add item</button></div>'+vehiclePicker(s)+fld('bg.lodging','Lodging',c.bg.lodging)+'</section>';
 
  h+='<details class="sec"><summary><h2>Tomes, relics &amp; debts</h2></summary><div class="grid2"><label class="field"><span class="lbl">Tomes</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">Relics</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">Eldritch debts or favors</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
 
@@ -843,8 +843,14 @@ function knackPicker(c){
  return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+esc(c.archetype)+' knacks (\u2605 unique)</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">Add a knack…</option>'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' \u00b7 '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'\u2605 ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">Buy with XP</button><button class="btn" data-act="kgrant">Add free</button></div>';
 }
 function gearPicker(s){
- const cats=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
+ const cats=['Protection','Useful items','Tools and personal','Outdoors'];
  return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment \u00b7 '+money(chars[s].money)+' left</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+}
+function vehiclePicker(s){
+ const c=chars[s];
+ return '<div class="row" style="align-items:flex-end">'+'<label class="field" style="flex:1;min-width:180px"><span class="lbl">Vehicle</span><input class="f" id="bg-vehicle-'+s+'" data-f="bg.vehicle" value="'+esc(c.bg.vehicle||'')+'" placeholder="None"></label>'+
+  '<label class="field" style="flex:1;min-width:200px"><span class="lbl">Get a vehicle \u00b7 '+money(c.money)+' left</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">Choose a vehicle…</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</select></label>'+
+  '<button class="btn" data-act="vbuy">Buy</button><button class="btn" data-act="vfree">Add free</button></div>';
 }
 function weaponPicker(s){
  const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(w.n)+(w.house?' (house rule)':'')+' \u2014 '+money(w.c)+'</option>':'').join('')+'</optgroup>';
@@ -855,6 +861,7 @@ function addGear(s,val,pay){
  const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast('Not enough money. '+it.n+' costs '+money(it.c)+'.');
  const p={money:m};
  if(t==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
+ else if(it.cat==='Transport'){const v=(c.bg.vehicle||'').trim();p.bg={...c.bg,vehicle:v?v+', '+it.n:it.n};}
  else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||'Habitual item',used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
  save(s,p,(pay?'Bought ':'Added ')+it.n+(pay?' for '+money(it.c):''));
@@ -912,19 +919,19 @@ function crBuild(){
  const t=A.TRAITS[cr.trait]||['',''];
  const kn=A.knacksFor(cr.archetype);
  const knacks=crKnackList().map(n=>{const k=kn.find(x=>x.name===n);return {id:uid(),tier:k?k.tier:1,name:n,text:A.knackText(n)};});
- const weapons=[],items=[];let reloads=0,habitual={name:'',used:false,uses:0};
+ const weapons=[],items=[],vehicles=[];let reloads=0,habitual={name:'',used:false,uses:0};
  cr.cart.forEach(it=>{
   if(it.type==='w'){const w=W().find(x=>x.n===it.n);if(w)weapons.push({id:uid(),name:w.n,skill:w.s,range:w.r,dmg:w.d,inj:w.i,ammoMax:w.a,ammo:w.a,reloads:0,rc:w.rc,fr:!!w.fr,special:w.sp});}
   else if(it.type==='reload'){const g=weapons.find(x=>x.name===it.n);if(g)g.reloads++;else reloads++;}
   else if(it.n==='Habitual Item')habitual={name:'Habitual item',used:false,uses:habitual.uses+1};
-  else{const g=GR().find(x=>x.n===it.n);items.push({id:uid(),name:it.n,note:g?g.note:''});}
+  else{const g=GR().find(x=>x.n===it.n);if(g&&g.cat==='Transport'){vehicles.push(it.n);return;}items.push({id:uid(),name:it.n,note:g?g.note:''});}
  });
  const xp=crXpBudget();
  const b=blank(1);
  return Object.assign(b,{name:cr.name.trim(),player:cr.player,archetype:cr.archetype,personality:cr.trait,positive:t[0],negative:t[1],
   xpTotal:xp,xpUnused:xp-crXpSpent(),skills,insightLimit:cr.bonus==='insight'?2:1,insight:cr.bonus==='insight'?2:1,
   knacks,weapons,items,reloads,habitual,money:Math.round((crMoneyBudget()-crMoneySpent())*100)/100,
-  bg:Object.assign(b.bg,cr.bg),log:[{t:Date.now(),m:'Created in the ledger'}]});
+  bg:Object.assign(b.bg,cr.bg,vehicles.length?{vehicle:[cr.bg.vehicle,...vehicles].filter(Boolean).join(', ')}:{}),log:[{t:Date.now(),m:'Created in the ledger'}]});
 }
 function renderCreator(){
  const kn=A.knacksFor(cr.archetype);const arch=A.ARCH[cr.archetype];
@@ -1082,6 +1089,7 @@ app.addEventListener('click',e=>{
    for(let t=1;t<k.tier;t++)if(!c.knacks.some(x=>Number(x.tier)===t))return toast('You need a tier '+t+' knack first.');
    if(c.xpUnused<KNACK_COST[k.tier])return toast('Needs '+KNACK_COST[k.tier]+' XP.');
    save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name)}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},'Bought '+k.name+' ('+KNACK_COST[k.tier]+' XP)');break;}
+  case 'vbuy':case 'vfree':{const sel=document.getElementById('vpick-'+s);if(!sel||!sel.value)return toast('Choose a vehicle first.');pickSel['v'+s]='';addGear(s,sel.value,a==='vbuy');break;}
   case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(!sel||!sel.value)return toast('Choose something to add first.');pickSel['g'+s]='';addGear(s,sel.value,a==='gbuy');break;}
   case 'wbuy':case 'wfree':{const sel=document.getElementById('wpick-'+s);if(!sel||!sel.value)return toast('Choose a weapon first.');pickSel['w'+s]='';addGear(s,sel.value,a==='wbuy');break;}
   case 'buyrel':{const w=c.weapons.find(x=>x.id===b.dataset.id);if(!w||!w.rc)return;const m=Math.round(((Number(c.money)||0)-w.rc)*100)/100;if(m<0)return toast('Not enough money.');save(s,{money:m,weapons:c.weapons.map(x=>x.id===w.id?{...x,reloads:(x.reloads||0)+1}:x)},'Bought an extra reload for '+(w.name||'a gun')+' ('+money(w.rc)+')');break;}
@@ -1147,7 +1155,7 @@ async function lockAction(a,s){
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v79 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v80 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1463,7 +1471,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v79';
+ syncEl.textContent='Live · synced for the party · v80';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

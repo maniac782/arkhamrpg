@@ -865,8 +865,9 @@ const A=window.APL;
 const CR_KEY='apl-creator-v1';
 function crBlank(){return {name:'',player:'',trait:'',archetype:'',five:[],four:'',bonus:'',freeKnack:'',ups:{},bought:[],cart:[],bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:''},cat:'Weapons',slot:'',confirm:false};}
 let cr=crBlank();
-try{const t=JSON.parse(localStorage.getItem(CR_KEY)||'null');if(t)cr=Object.assign(crBlank(),t);}catch(e){}
-function crSave(){try{localStorage.setItem(CR_KEY,JSON.stringify(cr));}catch(e){}}
+// the creator starts fresh on every visit; clear drafts older versions saved
+try{localStorage.removeItem(CR_KEY);}catch(e){}
+function crSave(){}
 function crSkill(k){let r=6;if(cr.five.includes(k))r=5;if(cr.four===k)r=4;return r;}
 function crUpCost(k){let r=crSkill(k),cost=0;for(let i=0;i<(cr.ups[k]||0);i++){cost+=SKILL_COST[r];r--;}return cost;}
 function crRating(k){return crSkill(k)-(cr.ups[k]||0);}
@@ -1020,7 +1021,7 @@ function downloadSheet(c){
 
 // ---------- events ----------
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;go(b.dataset.tab);});
-function go(t){active=t;try{localStorage.setItem('apl-tab',t);}catch(e){}render();window.scrollTo(0,0);}
+function go(t){if(t==='create'&&active!=='create')cr=crBlank();active=t;try{localStorage.setItem('apl-tab',t);}catch(e){}render();window.scrollTo(0,0);}
 const app=document.getElementById('app');
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{
@@ -1132,7 +1133,7 @@ async function lockAction(a,s){
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v69 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v70 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();if(active==='gm'&&!isGMView())active='party';render();},
@@ -1431,7 +1432,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();if(active==='gm'&&!isGMView())active='party';render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v69';
+ syncEl.textContent='Live · synced for the party · v70';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

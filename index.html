@@ -844,11 +844,11 @@ function knackPicker(c){
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment \u00b7 '+money(chars[s].money)+' left</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
 }
 function vehiclePicker(s){
  const c=chars[s];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Get a vehicle \u00b7 '+money(c.money)+' left</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">Choose a vehicle…</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="vbuy">Buy</button><button class="btn" data-act="vfree">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Get a vehicle</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">Choose a vehicle…</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="vbuy">Buy</button><button class="btn" data-act="vfree">Add free</button></div>';
 }
 function weaponPicker(s){
  const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(w.n)+(w.house?' (house rule)':'')+' \u2014 '+money(w.c)+'</option>':'').join('')+'</optgroup>';
@@ -1153,7 +1153,7 @@ async function lockAction(a,s){
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v81 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v82 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1469,7 +1469,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v81';
+ syncEl.textContent='Live · synced for the party · v82';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

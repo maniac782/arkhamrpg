@@ -54,4 +54,4 @@ Extra weapons, gear and rule changes live in the `window.HOUSE_RULES` block near
 - If a player forgets their passcode, use the master key to open their sheet and set a new one or remove it.
 - Firebase's free plan covers far more than a four-player table uses.
 - **Open printable sheet** opens the sheet in a new tab. Print it on Letter paper with background graphics on.
-- Knack names and tiers follow each archetype's table in the corebook. Write each knack's effect in from the book.
+- Knack names and tiers follow each archetype's table in the corebook. Each knack's effect is filled in as a short summary of the book's rules; you can edit it on the sheet.

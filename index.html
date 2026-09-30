@@ -317,7 +317,9 @@ return {ARCH,knacksFor,maxFor,TRAITS,WEAPONS,GEAR,sheetHtml};
 
 <script>
 (function(){
-const SLOTS=['p1','p2','p3','p4'];
+let SLOTS=['p1','p2','p3','p4'];
+const MAX_SLOTS=12,slotNum=x=>parseInt(String(x).slice(1))||0,isSlotId=x=>/^p([1-9]|1[0-2])$/.test(x);
+let rosterLocked=false,pendingTab=null;
 const SEED={"p1": {"archetype": "Seeker", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "Stick of Gum", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [{"id": "i1", "name": "Lockpicks", "note": ""}], "knacks": [{"id": "k1", "name": "Scientific", "text": "When performing a complex action using Knowledge to conduct an experiment or scientific analysis, add 1 to the result of each die rolled.", "tier": 1}, {"id": "k2", "name": "Brilliant Insight", "text": "On a complex Knowledge or Lore action that rolls two or more 6s, you or one ally within earshot immediately regains 1 insight (up to the insight limit).", "tier": 1}], "log": [{"m": "Refilled dice pool", "t": 1790404667653}, {"m": "Bought Colt Police Revolver for $30.00", "t": 1790404660204}, {"m": "Gained $5.00", "t": 1790404654074}, {"m": "Gained $5.00", "t": 1790404653898}, {"m": "Gained $5.00", "t": 1790404653348}, {"m": "Gained $5.00", "t": 1790404653206}, {"m": "Gained $5.00", "t": 1790404653058}, {"m": "Gained $5.00", "t": 1790404652874}, {"m": "Gained $5.00", "t": 1790404652540}, {"m": "Gained $5.00", "t": 1790404652315}, {"m": "Refilled dice pool", "t": 1790403386024}, {"m": "Rested: pool limit restored", "t": 1790403188043}], "money": 13.75, "name": "Wallace Morrow", "negative": "", "personality": "", "player": "Dan", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 4, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "2", "r": 5}, "lore": {"max": "3", "r": 5}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "3", "r": 4}, "resolve": {"max": "", "r": 5}, "wits": {"max": "3", "r": 5}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [{"ammo": 2, "ammoMax": 2, "dmg": "2", "id": "w1", "inj": "3", "name": "Colt 1911 Pistol", "range": "75 ft", "rc": 1, "skill": "Ranged Combat", "special": "None"}, {"ammo": 0, "ammoMax": 0, "dmg": "1", "id": "w2", "inj": "4", "name": "Pocketknife", "range": "Engaged", "skill": "Melee Combat", "special": "Very Hard to Find (3 successes to spot)"}], "xpTotal": 12, "xpUnused": 7}, "p2": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667655}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 2", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p3": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 3", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p4": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386026}], "money": 0, "name": "Investigator 4", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}};
 const SKILLS=[['agility','Agility'],['athletics','Athletics'],['wits','Wits'],['presence','Presence'],['intuition','Intuition'],['knowledge','Knowledge'],['resolve','Resolve'],['melee','Melee Combat'],['ranged','Ranged Combat'],['lore','Lore']];
 const ARCH=['Adventurer','Believer','Guardian','Hunter','Mystic','Rogue','Seeker','Survivor'];
@@ -371,7 +373,7 @@ const keys={};// slot or 'master' -> this device holds a key
 function canEdit(s){if(!db)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
-try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||SLOTS.includes(t)))active=t;}catch(e){}
+try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
 SLOTS.forEach((s,i)=>chars[s]=blank(i+1));
 
 const toastEl=document.getElementById('toast');let toastT;
@@ -475,7 +477,9 @@ function renderTabs(){
  t.innerHTML=['party',...SLOTS,'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':(chars[s].name||'Investigator'))+'</button>').join('');
 }
 function renderParty(){
- let h='<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div><div class="party">';
+ let h='<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
+  (SLOTS.length<MAX_SLOTS?'<div class="row"><button class="btn" data-act="addslot">+ Add an investigator</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
+  '<div class="party">';
  SLOTS.forEach(s=>{const c=chars[s];const [cls,lab]=status(c);const lr=(c.log||[])[0];
   h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · ')||'Unassigned')+'</div></div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
   poolHtml(c,true)+
@@ -534,7 +538,27 @@ function lockPanel(s){
  else h+='<div class="row"><button class="btn sm" data-act="lockoff">Remove passcode</button>'+(keys[s]?'<button class="btn sm" data-act="forget">Lock this device</button>':'')+'</div>';
  return h+'</section>';
 }
-function renderChar(s){ const body=renderCharBody(s); return lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>'); }
+function renderChar(s){ const body=renderCharBody(s); return lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>')+removePanel(s); }
+function removePanel(s){
+ const can=!db||!!keys.master;const c=chars[s];
+ if(!can)return '<p class="note" style="margin:0">Only the master key can remove an investigator from the party.</p>';
+ if(edit.rm===s)return '<section class="sec"><div class="roll" role="status"><span>Remove <b>'+esc(c.name||'this investigator')+'</b> from the party? Their sheet is deleted for everyone. This can\u2019t be undone.</span><div class="row"><button class="btn sm dng" data-act="rmyes">Remove '+esc(c.name||'investigator')+'</button><button class="btn sm" data-act="rmno">Cancel</button></div></div></section>';
+ return '<div class="row"><button class="btn sm dng" data-act="rmslot">Remove this investigator from the party…</button></div>';
+}
+function freeSlot(){for(let i=1;i<=MAX_SLOTS;i++){const id='p'+i;if(!SLOTS.includes(id))return id;}return null;}
+async function addSlot(data){
+ if(rosterLocked)return toast('Publish the updated Firestore rules first (see README).'),null;
+ const id=freeSlot();if(!id)return toast('The party is full ('+MAX_SLOTS+' investigators).'),null;
+ const c=norm(data||blank(slotNum(id)),slotNum(id));c.locked=false;
+ chars[id]=c;SLOTS=[...SLOTS,id].sort((a,b)=>slotNum(a)-slotNum(b));
+ if(db){try{await db.doc('characters/'+id).set(JSON.parse(JSON.stringify(c)));}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README).':'Couldn\u2019t add the investigator. Try again.');SLOTS=SLOTS.filter(x=>x!==id);delete chars[id];render();return null;}}
+ return id;
+}
+async function removeSlot(s){
+ const name=chars[s]&&chars[s].name;
+ if(db){try{await db.doc('characters/'+s).delete();await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?'Only the master key can remove investigators (and the updated rules must be published).':'Couldn\u2019t remove that investigator. Try again.');return;}}
+ SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast((name||'Investigator')+' was removed from the party.');
+}
 function renderCharBody(s){
  const c=chars[s];const [cls,lab]=status(c);const rl=lastRoll[s];
  let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div></div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+
@@ -771,9 +795,9 @@ function renderCreator(){
  const checks=crChecks();const ok=checks.every(x=>x[0]);
  h+='<section class="sec"><h2>8 · Finish</h2><div class="row"><div class="stat"><span class="lbl">XP left</span><b class="num">'+(xpB-xpS)+'</b></div><div class="stat"><span class="lbl">Cash left</span><b class="num">'+money(left)+'</b></div><div class="stat"><span class="lbl">Insight limit</span><b class="num">'+(cr.bonus==='insight'?2:1)+'</b></div></div>'+
  '<div class="list">'+checks.map(([g,l])=>'<div class="item" style="padding:6px 0"><span class="chip '+(g?'ok':'warn')+'">'+(g?'Done':'To do')+'</span><span>'+esc(l)+'</span></div>').join('')+'</div>'+
- '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in party slot</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+SLOTS.map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Slot '+(i+1)+' — '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
- (cr.slot?'<label class="row note" for="cr-confirm"><input type="checkbox" id="cr-confirm" data-cconfirm="1"'+(cr.confirm?' checked':'')+'> Replace '+esc(chars[cr.slot].name)+'’s sheet with this one</label>':'')+
- '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&cr.confirm?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Open printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
+ '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in the party</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+(SLOTS.length<MAX_SLOTS?'<option value="new"'+(cr.slot==='new'?' selected':'')+'>A new spot in the party</option>':'')+''+SLOTS.map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Replace '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
+ (cr.slot&&cr.slot!=='new'?'<label class="row note" for="cr-confirm"><input type="checkbox" id="cr-confirm" data-cconfirm="1"'+(cr.confirm?' checked':'')+'> Replace '+esc(chars[cr.slot].name)+'’s sheet with this one</label>':'')+
+ '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&(cr.slot==='new'||cr.confirm)?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Open printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
  return h;
 }
 function creatorClick(b){
@@ -795,7 +819,8 @@ function creatorClick(b){
   case 'addr':{const it=cr.cart[Number(n)];const w=W().find(x=>x.n===it.n);if(crMoneySpent()+w.rc>crMoneyBudget())return toast('Over budget.');cr.cart=[...cr.cart,{type:'reload',n:w.n,c:w.rc}];break;}
   case 'rm':cr.cart=cr.cart.filter((x,i)=>i!==Number(n));break;
   case 'reset':cr=crBlank();break;
-  case 'place':{if(!canEdit(cr.slot))return toast(chars[cr.slot].name+'\u2019s sheet is locked. Unlock it first.');const c=crBuild();const s=cr.slot;c.locked=!!chars[s].locked;chars[s]=norm(c,SLOTS.indexOf(s)+1);if(db)db.doc('characters/'+s).set(JSON.parse(JSON.stringify(chars[s]))).catch(e=>toast(e&&e.code==='permission-denied'?'That slot is locked. Unlock it first.':'Couldn’t save the new investigator. Try again.'));
+  case 'place':{if(cr.slot==='new'){const c=crBuild();addSlot(c).then(id=>{if(!id)return;cr.confirm=false;cr.slot='';crSave();toast(c.name+' joined the party.');go(id);});return;}
+   if(!canEdit(cr.slot))return toast(chars[cr.slot].name+'\u2019s sheet is locked. Unlock it first.');const c=crBuild();const s=cr.slot;c.locked=!!chars[s].locked;chars[s]=norm(c,slotNum(s));if(db)db.doc('characters/'+s).set(JSON.parse(JSON.stringify(chars[s]))).catch(e=>toast(e&&e.code==='permission-denied'?'That slot is locked. Unlock it first.':'Couldn’t save the new investigator. Try again.'));
    cr.confirm=false;crSave();toast(c.name+' joined the party.');go(s);return;}
   case 'print':downloadSheet(crBuild());return;
  }
@@ -829,6 +854,10 @@ app.addEventListener('click',e=>{
  if(active==='create'){const cb=e.target.closest('[data-cact]');if(cb&&!cb.disabled)creatorClick(cb);return;}
  const b=e.target.closest('[data-act]');if(!b||b.matches(':disabled'))return;const s=active,a=b.dataset.act,n=Number(b.dataset.n),c=chars[s];
  switch(a){
+  case 'addslot':addSlot().then(id=>{if(id){toast('Added a new investigator.');go(id);}});break;
+  case 'rmslot':edit.rm=s;render();break;
+  case 'rmno':edit.rm=null;render();break;
+  case 'rmyes':if(edit.rm===s)removeSlot(s);break;
   case 'sessionAll':SLOTS.filter(canEdit).forEach(x=>R.newSession(x,true));toast('New session started for everyone.');break;
   case 'refillAll':SLOTS.filter(canEdit).forEach(x=>R.refill(x));toast('All pools refilled.');break;
   case 'spend':R.spend(s,b.dataset.k);break;
@@ -921,10 +950,11 @@ async function lockAction(a,s){
   else if(a==='lockoff'){await db.doc('characters/'+s).update({locked:false});await db.doc('locks/'+s).delete();await db.doc('grants/'+authUid+'/keys/'+s).delete().catch(()=>{});toast('Passcode removed. Anyone can edit this sheet.');}
   else if(a==='forget'){await db.doc('grants/'+authUid+'/keys/'+s).delete();toast('This device needs the passcode again to edit.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v63 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':'Firebase refused that change (permission-denied). Check the site says v64 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
- [...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});
+ db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});render();},
+  ()=>{[...SLOTS,'master'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});});
 }
 
 // ---------- boot ----------
@@ -937,14 +967,26 @@ render();
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
  watchKeys();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v63';
- SLOTS.forEach((s,i)=>{
+ syncEl.textContent='Live · synced for the party · v64';
+ const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{
    if(!snap.exists){ if(!created&&!snap.metadata.fromCache){created=true;ref.set(SEED[s]||blank(i+1)).catch(()=>{});} return; }
    chars[s]=norm(JSON.parse(JSON.stringify(snap.data())),i+1);render();
   },err=>{syncEl.textContent='Sync paused — reload to reconnect';});
- });
+ });render();};
+ let seeded=false;
+ db.collection('characters').onSnapshot(qs=>{
+  const ids=[];
+  qs.forEach(d=>{if(!isSlotId(d.id))return;ids.push(d.id);chars[d.id]=norm(JSON.parse(JSON.stringify(d.data())),slotNum(d.id));});
+  if(!ids.length&&!qs.metadata.fromCache&&!seeded){seeded=true;['p1','p2','p3','p4'].forEach((s,i)=>db.doc('characters/'+s).set(SEED[s]||blank(i+1)).catch(()=>{}));return;}
+  if(!ids.length&&qs.metadata.fromCache)return;
+  SLOTS=ids.sort((a,b)=>slotNum(a)-slotNum(b));
+  Object.keys(chars).forEach(k=>{if(!SLOTS.includes(k))delete chars[k];});
+  if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
+  if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
+  render();
+ },err=>{if(err&&err.code==='permission-denied')legacy();else syncEl.textContent='Sync paused — reload to reconnect';});
 })();
 })();
 </script>

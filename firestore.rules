@@ -2,7 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function slots() { return ['p1', 'p2', 'p3', 'p4']; }
+    // Investigator sheets are p1 to p12.
+    function isSlot(s) { return s.matches('p([1-9]|1[0-2])'); }
     function signedIn() { return request.auth != null; }
     function lockDoc(s) { return /databases/$(database)/documents/locks/$(s); }
     function grantDoc(s) { return /databases/$(database)/documents/grants/$(request.auth.uid)/keys/$(s); }
@@ -16,20 +17,22 @@ service cloud.firestore {
     function canEdit(s) { return isMaster() || !exists(lockDoc(s)) || holdsKey(s); }
 
     // Character sheets: everyone can view; editing a locked sheet needs its passcode or the master key.
+    // Anyone can add a new investigator; only the master key can remove one.
     match /characters/{slot} {
-      allow read: if slot in slots();
-      allow write: if slot in slots() && signedIn() && canEdit(slot);
+      allow read: if true;
+      allow create, update: if isSlot(slot) && signedIn() && canEdit(slot);
+      allow delete: if isSlot(slot) && isMaster();
     }
 
     // Passcodes: nobody can read them. Set one on an open sheet; change or remove it with the passcode or master key.
     // The master key (locks/master) can only be set in the Firebase console.
     match /locks/{slot} {
       allow read: if false;
-      allow create: if slot in slots() && signedIn() && request.resource.data.code is string
+      allow create: if isSlot(slot) && signedIn() && request.resource.data.code is string
         && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64;
-      allow update: if slot in slots() && (isMaster() || holdsKey(slot)) && request.resource.data.code is string
+      allow update: if isSlot(slot) && (isMaster() || holdsKey(slot)) && request.resource.data.code is string
         && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64;
-      allow delete: if slot in slots() && (isMaster() || holdsKey(slot));
+      allow delete: if isSlot(slot) && (isMaster() || holdsKey(slot));
     }
 
     // A device's saved keys: grants/{device}/keys/{slot or 'master'}.
@@ -37,7 +40,7 @@ service cloud.firestore {
     match /grants/{owner}/keys/{slot} {
       allow read, delete: if signedIn() && request.auth.uid == owner;
       allow create, update: if signedIn() && request.auth.uid == owner
-        && (slot in slots() || slot == 'master')
+        && (isSlot(slot) || slot == 'master')
         && exists(lockDoc(slot))
         && request.resource.data.code == get(lockDoc(slot)).data.code;
     }

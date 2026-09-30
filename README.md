@@ -40,6 +40,11 @@ The repo also deploys to Firebase Hosting through `.github/workflows/deploy-fire
 
 Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps working.
 
+## Adding and removing investigators
+- **+ Add an investigator** on the Party tab adds a blank sheet (up to 12). The **New investigator** tab can also put a finished character into **a new spot in the party**.
+- Only the master key can remove an investigator: open their sheet and use **Remove this investigator from the party…** at the bottom.
+- This needs the current `firestore.rules`. If you set the site up before this was added, paste the new rules into Firebase → Firestore → Rules, press **Publish**, then reload the site.
+
 ## House rules
 Extra weapons, gear and rule changes live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game master section of the Party tab. The switch is shared with the whole party.
 

@@ -719,50 +719,21 @@ async function removeSlot(s){
 }
 function renderCharBody(s){
  const c=chars[s];const [cls,lab]=status(c);const rl=lastRoll[s];
- let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div></div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+
- '<div class="grid2">'+fld('player','Player',c.player)+'<label class="field"><span class="lbl">Archetype</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===c.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label></div>'+
- '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="row" style="gap:6px;align-items:center"><span class="note">Award XP</span><div class="stepper"><button class="btn sm icon" data-act="xpamt" data-n="-1" aria-label="One less XP">−</button><input id="xpamt-'+s+'" data-xpamt="1" class="maxsel num" type="number" inputmode="numeric" min="1" max="30" value="'+(xpAmt[s]||1)+'" aria-label="XP to award" style="width:56px;text-align:center"><button class="btn sm icon" data-act="xpamt" data-n="1" aria-label="One more XP">+</button></div><button class="btn sm pri" data-act="xpaward">Add</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+'<p class="note" style="margin:4px 0 0">The book suggests 1 XP per hour played, plus 1–3 for big moments.</p>'+
- (edit.xp?'<div class="row">'+fld('xpTotal','Total XP',c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused','Unused XP',c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
- '</section>';
+ let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div></div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+'</section>';
+ if(c.insightChance)h+='<section class="sec">'+(c.insightChance?'<div class="roll" role="status"><span><b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>Raise it · 1 XP</button><button class="btn sm" data-act="skipins">Not this time</button></div></div>':'')+'</section>';
 
  // condition
  h+='<section class="sec"><div class="sec-head"><h2>Dice pool</h2><span class="note num">'+(c.regular+c.horror)+' in pool · limit '+c.poolLimit+' of '+c.poolMax+'</span></div>'+poolHtml(c)+
  '<div class="legend"><span>■ regular</span><span style="color:var(--horror)">■ horror</span><span>□ spent</span><span style="color:var(--danger)">▨ lost to damage</span><span style="color:var(--horror)">▢ green ring = becomes horror on refill</span></div>'+
  '<div class="row"><button class="btn" data-act="spend" data-k="reg" '+(c.regular?'':'disabled')+'>Spend regular die</button><button class="btn hor" data-act="spend" data-k="hor" '+(c.horror?'':'disabled')+'>Spend horror die</button><button class="btn pri" data-act="refill">Refill pool</button></div>'+
  '<div class="row"><button class="btn dng" data-act="dmg" data-n="1" title="Lowers the pool limit by 1. Tap once per point of damage." '+(c.poolLimit>0?'':'disabled')+'>Take damage</button><button class="btn" data-act="heal" data-n="1" title="Raises the pool limit by 1." '+(c.poolLimit<c.poolMax?'':'disabled')+'>Heal</button><button class="btn" data-act="rest" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Full rest</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Strain</button></div>'+
+ activeEffects(c)+
  '<p class="note" style="margin:0">Damage lowers the pool limit. At 0 you’re wounded. Straining restores the limit, then you roll an injury at the end of your turn.</p></section>';
 
- // horror & insight
- h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
- '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<span class="num" title="How many you have" style="white-space:nowrap">\u00d7 '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?'Used this session':c.habitual.uses<=0?'None left':'Use one (\u22121 horror)')+'</button><button class="btn sm" data-act="buyhabit">Buy another $1</button></div>'+
- '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
- '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
- '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
- '<div class="row">'+fld('lucky.name','Lucky item',c.lucky.name,'text','placeholder="e.g. Grandpa\u2019s silver dollar"')+'<button class="btn" data-act="lucky" '+(c.lucky.used||!c.lucky.name||c.insight>=c.insightLimit?'disabled':'')+'>'+(c.lucky.used?'Used this session':'Use it (+1 insight)')+'</button></div>'+
- traitField(s,c)+'</div></div></section>';
-
- // injuries & trauma
- h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2></div>'+
- '<div class="grid2"><div><span class="lbl">Injuries</span>'+
- '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="Add an injury" style="flex:1;min-width:0"><option value="">Add an injury…</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(x[0])+'</option>').join('')+'</select></div>'+
- '<p class="note" style="margin:6px 0">Roll 1d6'+(c.injuries.length?' + '+c.injuries.length:'')+' at the table'+(c.injuries.length?' (+1 for each injury you already have)':'')+', then pick the result.</p>'+
- '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
- '<div><span class="lbl">Traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span>'+
- '<div class="row"><select class="maxsel" id="trasel-'+s+'" data-addtra="1" aria-label="Add a trauma" style="flex:1;min-width:0"><option value="">Add a trauma…</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(k)+'</option>').join('')+'</select></div>'+
- '<p class="note" style="margin:6px 0">Roll 1d6 + the number of 1s on your horror dice'+(c.traumaMod?' + '+c.traumaMod:'')+' at the table, then pick the result.</p>'+
- '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
-
  // skills
- h+='<section class="sec"><div class="sec-head"><h2>Skills</h2><span class="note">Success on a roll at or above the rating. Lower is better.</span></div><div class="skills">'+
+ h+='<section class="sec"><div class="sec-head"><h2>Skills</h2><span class="note">Success on a roll at or above the rating. Lower is better. <span class="chip">'+c.xpUnused+' unused XP</span></span></div><div class="skills">'+
  SKILLS.map(([k,n])=>{const sk=c.skills[k];const cost=SKILL_COST[sk.r];return '<div class="skill"><span class="nm">'+n+'</span><label class="note" for="mx-'+k+'-'+s+'">max</label><select class="maxsel" id="mx-'+k+'-'+s+'" data-skmax="'+k+'"><option value="">–</option>'+[4,3,2].map(v=>'<option value="'+v+'"'+(String(sk.max)===String(v)?' selected':'')+'>'+v+'+</option>').join('')+'</select><span class="rate">'+sk.r+'+</span><button class="btn sm" data-act="imp" data-k="'+k+'" '+(cost?'':'disabled')+' aria-label="Improve '+n+'">'+(cost?'↑ '+cost+' XP':'Best')+'</button></div>';}).join('')+
  '</div><details><summary class="note" style="cursor:pointer">Set ratings by hand</summary><div class="wgrid" style="margin-top:8px">'+SKILLS.map(([k,n])=>'<label class="field"><span class="lbl">'+n+'</span><select class="f" id="sr-'+k+'-'+s+'" data-skr="'+k+'">'+[6,5,4,3,2].map(v=>'<option value="'+v+'"'+(c.skills[k].r===v?' selected':'')+'>'+v+'+</option>').join('')+'</select></label>').join('')+'</div></details></section>';
-
- // knacks
- h+='<section class="sec"><div class="sec-head"><h2>Knacks</h2></div>'+knackPicker(c)+
- '<div class="list">'+(c.knacks.length?c.knacks.map(k=>'<div class="item"><span class="tier">T'+k.tier+'</span><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="name" value="'+esc(k.name)+'" placeholder="Knack name" style="font-weight:600"><textarea class="f" id="kt-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="text" placeholder="What it does">'+esc(k.text)+'</textarea></div><button class="btn sm icon" data-act="del" data-list="knacks" data-id="'+k.id+'" aria-label="Remove knack">×</button></div>').join(''):'<p class="note">No knacks yet.</p>')+'</div>'+
- 
- '<div class="costs"><span>Skill 6+ → 5+</span><span>2 XP</span><span>Skill 5+ → 4+</span><span>4 XP</span><span>Skill 4+ → 3+ (archetype skills)</span><span>7 XP</span><span>Skill 3+ → 2+ (archetype skills)</span><span>12 XP</span><span>+1 insight limit (after a momentous session)</span><span>1 XP</span></div>'+
- (c.insightChance?'<div class="roll" role="status"><span><b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>Raise it · 1 XP</button><button class="btn sm" data-act="skipins">Not this time</button></div></div>':'')+'<div class="row"><button class="btn sm" data-act="buyins">Raise insight limit · 1 XP</button></div></section>';
 
  // weapons
  const shared=sharedAmmo(),totRel=c.weapons.reduce((a,w)=>a+(w.fr?0:(w.reloads||0)),0);
@@ -776,6 +747,30 @@ function renderCharBody(s){
   '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
  '</div>'+weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">Add a custom weapon</button></div></section>';
 
+ // horror & insight
+ h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
+ '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<span class="num" title="How many you have" style="white-space:nowrap">\u00d7 '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?'Used this session':c.habitual.uses<=0?'None left':'Use one (\u22121 horror)')+'</button><button class="btn sm" data-act="buyhabit">Buy another $1</button></div>'+
+ '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
+ '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
+ '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
+ '<div class="row">'+fld('lucky.name','Lucky item',c.lucky.name,'text','placeholder="e.g. Grandpa\u2019s silver dollar"')+'<button class="btn" data-act="lucky" '+(c.lucky.used||!c.lucky.name||c.insight>=c.insightLimit?'disabled':'')+'>'+(c.lucky.used?'Used this session':'Use it (+1 insight)')+'</button></div>'+
+ traitField(s,c)+'</div></div></section>';
+
+ // knacks
+ h+='<section class="sec"><div class="sec-head"><h2>Knacks</h2></div>'+knackPicker(c)+
+ '<div class="list">'+(c.knacks.length?c.knacks.map(k=>'<div class="item"><span class="tier">T'+k.tier+'</span><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="name" value="'+esc(k.name)+'" placeholder="Knack name" style="font-weight:600"><textarea class="f" id="kt-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="text" placeholder="What it does">'+esc(k.text)+'</textarea></div><button class="btn sm icon" data-act="del" data-list="knacks" data-id="'+k.id+'" aria-label="Remove knack">×</button></div>').join(''):'<p class="note">No knacks yet.</p>')+'</div>'+'</section>';
+
+ // injuries & trauma
+ h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2></div>'+
+ '<div class="grid2"><div><span class="lbl">Injuries</span>'+
+ '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="Add an injury" style="flex:1;min-width:0"><option value="">Add an injury…</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(x[0])+'</option>').join('')+'</select></div>'+
+ '<p class="note" style="margin:6px 0">Roll 1d6'+(c.injuries.length?' + '+c.injuries.length:'')+' at the table'+(c.injuries.length?' (+1 for each injury you already have)':'')+', then pick the result.</p>'+
+ '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
+ '<div><span class="lbl">Traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span>'+
+ '<div class="row"><select class="maxsel" id="trasel-'+s+'" data-addtra="1" aria-label="Add a trauma" style="flex:1;min-width:0"><option value="">Add a trauma…</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(k)+'</option>').join('')+'</select></div>'+
+ '<p class="note" style="margin:6px 0">Roll 1d6 + the number of 1s on your horror dice'+(c.traumaMod?' + '+c.traumaMod:'')+' at the table, then pick the result.</p>'+
+ '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
+
  // resources
  h+='<section class="sec"><div class="sec-head"><h2>Money &amp; equipment</h2></div><div class="row"><div class="stat"><span class="lbl">Money</span><b class="num">'+money(c.money)+'</b></div>'+
  [-1,-0.25,0.25,1,5].map(d=>'<button class="btn sm" data-act="cash" data-n="'+d+'">'+(d<0?'−':'+')+money(Math.abs(d))+'</button>').join('')+
@@ -783,13 +778,26 @@ function renderCharBody(s){
  '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(it.name)+'" placeholder="Item" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(it.note)+'" placeholder="Notes or rules"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="Remove item">×</button></div>').join(''):'<p class="note">No equipment.</p>')+
  '</div><div class="row"><button class="btn sm" data-act="addi">Add item</button></div><div class="grid2">'+fld('bg.vehicle','Vehicle',c.bg.vehicle)+fld('bg.lodging','Lodging',c.bg.lodging)+'</div></section>';
 
- // supernatural + background
  h+='<details class="sec"><summary><h2>Tomes, relics &amp; debts</h2></summary><div class="grid2"><label class="field"><span class="lbl">Tomes</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">Relics</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">Eldritch debts or favors</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
+
+ // player, archetype & experience
+ h+='<section class="sec"><div class="sec-head"><h2>Player, archetype &amp; XP</h2></div>'+
+ '<div class="grid2">'+fld('player','Player',c.player)+'<label class="field"><span class="lbl">Archetype</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===c.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label></div>'+
+ '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="row" style="gap:6px;align-items:center"><span class="note">Award XP</span><div class="stepper"><button class="btn sm icon" data-act="xpamt" data-n="-1" aria-label="One less XP">−</button><input id="xpamt-'+s+'" data-xpamt="1" class="maxsel num" type="number" inputmode="numeric" min="1" max="30" value="'+(xpAmt[s]||1)+'" aria-label="XP to award" style="width:56px;text-align:center"><button class="btn sm icon" data-act="xpamt" data-n="1" aria-label="One more XP">+</button></div><button class="btn sm pri" data-act="xpaward">Add</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+'<p class="note" style="margin:4px 0 0">The book suggests 1 XP per hour played, plus 1–3 for big moments.</p>'+
+ (edit.xp?'<div class="row">'+fld('xpTotal','Total XP',c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused','Unused XP',c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
+ '<div class="costs"><span>Skill 6+ → 5+</span><span>2 XP</span><span>Skill 5+ → 4+</span><span>4 XP</span><span>Skill 4+ → 3+ (archetype skills)</span><span>7 XP</span><span>Skill 3+ → 2+ (archetype skills)</span><span>12 XP</span><span>+1 insight limit (after a momentous session)</span><span>1 XP</span></div>'+
+ '<div class="row"><button class="btn sm" data-act="buyins">Raise insight limit · 1 XP</button></div></section>';
+
  h+='<details class="sec"><summary><h2>Background</h2></summary><div class="grid2">'+fld('bg.origin','Place of origin',c.bg.origin)+fld('bg.family','Family & friends',c.bg.family)+fld('bg.employment','Employment',c.bg.employment)+fld('bg.salary','Weekly salary',c.bg.salary)+fld('bg.encounter','First supernatural encounter',c.bg.encounter)+fld('bg.enemies','Notable enemies',c.bg.enemies)+'</div></details>';
 
  const gm=!!keys.master&&!!db;
  h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">Clear all</button>':'')+'<button class="btn sm" data-act="session">New session</button></div></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+new Date(l.t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div>'+(gm?'<p class="note" style="margin:0">Master key: you can remove entries.</p>':'')+'</section>';
  return h;
+}
+function activeEffects(c){
+ const a=c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(j.name)+'</b>'+(e?' \u2014 '+esc(e[1]):'')+'</div>';})
+  .concat(c.traumas.map(j=>'<div class="note"><b style="color:var(--horror)">'+esc(j.name)+'</b> \u2014 '+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</div>'));
+ return a.length?'<div style="display:flex;flex-direction:column;gap:4px"><span class="lbl">Affecting you now</span>'+a.join('')+'</div>':'';
 }
 const edit={xp:false};
 let house={on:false};
@@ -1139,7 +1147,7 @@ async function lockAction(a,s){
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v76 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v77 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1455,7 +1463,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v76';
+ syncEl.textContent='Live · synced for the party · v77';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

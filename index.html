@@ -737,7 +737,7 @@ function renderCharBody(s){
 
  // weapons
  const shared=sharedAmmo(),totRel=c.weapons.reduce((a,w)=>a+(w.fr?0:(w.reloads||0)),0);
- h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2>'+(shared?'<span class="chip ok" title="House rule">Universal ammo · '+totRel+' reload'+(totRel===1?'':'s')+' shared</span>':'')+'</div>'+
+ h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2><span class="chip">'+money(c.money)+' on hand</span>'+(shared?'<span class="chip ok" title="House rule">Universal ammo · '+totRel+' reload'+(totRel===1?'':'s')+' shared</span>':'')+'</div>'+
  '<p class="note" style="margin:0">Mark off ammo only when an attack rolls one or more 1s. Reloading is a simple action, or complex (Ranged Combat) under pressure.</p><div class="list">'+
  (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="Ammo '+(i+1)+(i<w.ammo?' loaded':' spent')+'"></button>';
   return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(w.name)+'" placeholder="Weapon" style="font-weight:600">'+
@@ -749,7 +749,7 @@ function renderCharBody(s){
 
  // horror & insight
  h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
- '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<span class="num" title="How many you have" style="white-space:nowrap">\u00d7 '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?'Used this session':c.habitual.uses<=0?'None left':'Use one (\u22121 horror)')+'</button><button class="btn sm" data-act="buyhabit">Buy another $1</button></div>'+
+ '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<span class="num" title="How many you have" style="white-space:nowrap">\u00d7 '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?'Used this session':c.habitual.uses<=0?'None left':'Use one (\u22121 horror)')+'</button><button class="btn sm" data-act="buyhabit">Buy another $1</button><span class="note">'+money(c.money)+' on hand</span></div>'+
  '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
  '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
  '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
@@ -757,7 +757,7 @@ function renderCharBody(s){
  traitField(s,c)+'</div></div></section>';
 
  // knacks
- h+='<section class="sec"><div class="sec-head"><h2>Knacks</h2></div>'+knackPicker(c)+
+ h+='<section class="sec"><div class="sec-head"><h2>Knacks</h2><span class="chip">'+c.xpUnused+' unused XP</span></div>'+knackPicker(c)+
  '<div class="list">'+(c.knacks.length?c.knacks.map(k=>'<div class="item"><span class="tier">T'+k.tier+'</span><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="name" value="'+esc(k.name)+'" placeholder="Knack name" style="font-weight:600"><textarea class="f" id="kt-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="text" placeholder="What it does">'+esc(k.text)+'</textarea></div><button class="btn sm icon" data-act="del" data-list="knacks" data-id="'+k.id+'" aria-label="Remove knack">×</button></div>').join(''):'<p class="note">No knacks yet.</p>')+'</div>'+'</section>';
 
  // injuries & trauma
@@ -838,13 +838,13 @@ function traitField(s,c){
 function setTrait(s,t,cost){const c=chars[s];const d=A.TRAITS[t]||['',''];const p={personality:t,positive:d[0],negative:d[1]};if(cost)p.xpUnused=c.xpUnused-cost;edit.trait=null;save(s,p,t?(cost?'Changed personality trait to '+t+' (2 XP)':'Personality trait: '+t):'Cleared personality trait');}
 function knackPicker(c){
  const kn=A.knacksFor(c.archetype);
- if(!kn.length)return '<p class="note" style="margin:0">Choose an archetype at the top to pick knacks from its list.</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">Add a knack by hand</button></div>';
+ if(!kn.length)return '<p class="note" style="margin:0">Choose an archetype (under Player, archetype &amp; XP) to pick knacks from its list.</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">Add a knack by hand</button></div>';
  const owned=c.knacks.map(k=>k.name);
  return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+esc(c.archetype)+' knacks (\u2605 unique)</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">Add a knack…</option>'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' \u00b7 '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'\u2605 ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">Buy with XP</button><button class="btn" data-act="kgrant">Add free</button></div>';
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment \u00b7 '+money(chars[s].money)+' on hand</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
 }
 function weaponPicker(s){
  const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(w.n)+(w.house?' (house rule)':'')+' \u2014 '+money(w.c)+'</option>':'').join('')+'</optgroup>';
@@ -953,7 +953,7 @@ function renderCreator(){
  const opt=(v,l,d)=>'<label class="item" style="cursor:pointer" for="cr-b-'+v+'"><input type="radio" name="crbonus" id="cr-b-'+v+'" data-cbonus="'+v+'"'+(cr.bonus===v?' checked':'')+'><div class="grow"><b>'+l+'</b><span class="effect">'+d+'</span></div></label>';
  h+='<section class="sec"><h2>5 · Extra advancement</h2><div class="list">'+opt('money','An extra $100 of gear','Gear budget becomes $150. Unspent money is kept as cash.')+opt('xp','5 experience points','Spend on skills or knacks now, or save it.')+opt('insight','Insight limit of 2','Instead of the usual 1.')+'</div></section>';
  // 6
- h+='<section class="sec"><div class="sec-head"><h2>6 · Knacks</h2>'+(cr.archetype?'<span class="note">★ = unique to the '+esc(cr.archetype)+'</span>':'')+'</div>';
+ h+='<section class="sec"><div class="sec-head"><h2>6 · Knacks</h2>'+(cr.archetype?'<span class="note">★ = unique to the '+esc(cr.archetype)+'</span>':'')+(xpB?'<span class="chip">'+(xpB-crXpSpent())+' of '+xpB+' XP left</span>':'')+'</div>';
  if(!cr.archetype)h+='<p class="note" style="margin:0">Choose an archetype to see its knacks.</p>';
  else{
   h+='<label class="field"><span class="lbl">Free tier 1 knack</span><select class="f" id="cr-free" data-cf="freeKnack"><option value="">Choose…</option>'+kn.filter(k=>k.tier===1).map(k=>'<option value="'+esc(k.name)+'"'+(k.name===cr.freeKnack?' selected':'')+'>'+(k.unique?'★ ':'')+esc(k.name)+'</option>').join('')+'</select></label>'+(cr.freeKnack&&A.knackText(cr.freeKnack)?'<p class="note" style="margin:0">'+esc(A.knackText(cr.freeKnack))+'</p>':'')+'';
@@ -1147,7 +1147,7 @@ async function lockAction(a,s){
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v77 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v78 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1463,7 +1463,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v77';
+ syncEl.textContent='Live · synced for the party · v78';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

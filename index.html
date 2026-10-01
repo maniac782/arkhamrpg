@@ -738,6 +738,7 @@ function renderCharBody(s){
  // weapons
  const shared=sharedAmmo(),totRel=c.weapons.reduce((a,w)=>a+(w.fr?0:(w.reloads||0)),0);
  h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2><span class="chip">'+money(c.money)+' left</span>'+(shared?'<span class="chip ok" title="House rule">Universal ammo · '+totRel+' reload'+(totRel===1?'':'s')+' shared</span>':'')+'</div>'+
+ weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">Add a custom weapon</button></div>'+
  '<p class="note" style="margin:0">Mark off ammo only when an attack rolls one or more 1s. Reloading is a simple action, or complex (Ranged Combat) under pressure.</p><div class="list">'+
  (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="Ammo '+(i+1)+(i<w.ammo?' loaded':' spent')+'"></button>';
   return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(w.name)+'" placeholder="Weapon" style="font-weight:600">'+
@@ -745,7 +746,7 @@ function renderCharBody(s){
   (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(gunPool(c.weapons,w)>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?'Reload (free)':'Reload')+'</button>'+
    (w.fr?'':'<span class="note">Extra reloads'+(sameGuns(c.weapons,w).length>1?' (shared by your '+sameGuns(c.weapons,w).length+' '+esc(w.name)+'s)':'')+'</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="One fewer reload for '+esc(w.name||'this gun')+'">−</button><b class="num">'+gunPool(c.weapons,w)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="One more reload for '+esc(w.name||'this gun')+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy one · '+money(w.rc)+'</button>':''))+'</div>':'')+
   '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
- '</div>'+weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">Add a custom weapon</button></div></section>';
+ '</div></section>';
 
  // horror & insight
  h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
@@ -1153,7 +1154,7 @@ async function lockAction(a,s){
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v82 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v83 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1469,7 +1470,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v82';
+ syncEl.textContent='Live · synced for the party · v83';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

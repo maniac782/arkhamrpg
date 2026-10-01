@@ -1117,8 +1117,8 @@ app.addEventListener('click',e=>{
   case 'xpamt':{const el=document.getElementById('xpamt-'+s);const v=Math.round(Number(el&&el.value)||xpAmt[s]||1);xpAmt[s]=Math.max(1,Math.min(30,v+n));render();break;}
   case 'xpaward':{const el=document.getElementById('xpamt-'+s);const v=Math.max(1,Math.min(30,Math.round(Number(el&&el.value)||1)));xpAmt[s]=1;R.addXp(s,v);break;}
   case 'xpfix':edit.xp=!edit.xp;render();break;
-  case 'claim':{if(!CAMP||!db)break;if(!canAddSheet())return toast('You already have your investigator.');const b=db.batch();b.update(db.doc('characters/'+s),{ownerUid:authUid,player:((camp&&camp.names)||{})[authUid]||c.player});if(!keys.master)b.set(db.doc('players/'+authUid),{slot:s});b.commit().then(()=>toast('This investigator is yours now.'),()=>toast('Couldn\u2019t claim it. Someone may have just taken it.'));break;}
-  case 'release':{if(!CAMP||!db)break;const b=db.batch();b.update(db.doc('characters/'+s),{ownerUid:null});if(!keys.master)b.delete(db.doc('players/'+authUid));b.commit().then(()=>toast('You gave up this investigator. Anyone in the campaign without one can claim it.'),()=>toast('Couldn\u2019t do that. Try again.'));break;}
+  case 'claim':{if(!CAMP||!db)break;if(!canAddSheet())return toast('You already have your investigator.');const b=db.batch();b.update(db.doc('characters/'+s),{ownerUid:authUid,player:((camp&&camp.names)||{})[authUid]||c.player});if(!keys.master)b.set(db.doc('players/'+authUid),{slot:s});b.commit().then(()=>toast('This investigator is yours now.'),e=>{console.warn(e);toast('Couldn\u2019t claim it ('+((e&&e.code)||'error')+'). Someone may have just taken it.');});break;}
+  case 'release':{if(!CAMP||!db)break;const b=db.batch();b.update(db.doc('characters/'+s),{ownerUid:null});if(!keys.master)b.delete(db.doc('players/'+authUid));b.commit().then(()=>toast('You gave up this investigator. Anyone in the campaign without one can claim it.'),e=>{console.warn(e);toast('Couldn\u2019t give it up ('+((e&&e.code)||'error')+').');});break;}
   case 'printc':downloadSheet(c);break;
   case 'traitxp':if(edit.trait&&c.xpUnused>=2)setTrait(s,edit.trait.t,2);break;
   case 'traitfree':if(edit.trait)setTrait(s,edit.trait.t,0);break;
@@ -1204,7 +1204,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v96 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v97 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1540,7 +1540,7 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- const syncLine=()=>{syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 <a href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Campaign settings':'Members')+'</a> \u00b7 v96';};syncLine();window.__syncLine=syncLine;
+ const syncLine=()=>{syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 <a href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Campaign settings':'Members')+'</a> \u00b7 v97';};syncLine();window.__syncLine=syncLine;
 }
 
 // ---------- boot ----------
@@ -1556,7 +1556,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v96';
+ syncEl.textContent='Live · synced for the party · v97';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

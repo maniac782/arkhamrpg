@@ -203,7 +203,7 @@ let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTim
 const MAX_OWNED=10;
 // state
 let fb=null,auth=null,db=null,user=null,profile=undefined,camps=[],campUnsub=null,profUnsub=null,inbox=[],outbox=[],inboxUnsub=null,outUnsub=null,outCid=null;
-const ui={mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,confirmLeave:false,kick:null,newOpen:false,clear:new Set()};
+const ui={importing:'',confirmImport:false,mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,confirmLeave:false,kick:null,newOpen:false,clear:new Set()};
 
 function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c.projectId).startsWith('PASTE')&&window.firebase;}
 
@@ -283,6 +283,8 @@ function campView(){
    '<p class="note" style="margin:0">The invite waits on their My campaigns page once they sign in with that email. Nothing is emailed, so let them know.</p>';
   if(outbox.length)h+='<div><span class="lbl">Waiting to join</span><div class="list">'+outbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.toEmail)+'</b><span class="effect">Invited</span></div><button class="btn sm" data-a="icancel" data-id="'+esc(i.id)+'">Cancel invite</button></div>').join('')+'</div></div>';
   h+='</section>';
+  h+='<section class="sec"><div class="sec-head"><h2>Bring in your original party</h2></div><p class="note" style="margin:0">Copies the investigators, their recent history, the campaign tracker, the scene and turn tracker, the house rules switch and anything the GM has already revealed from the original ledger (arkhamrpg.web.app) into this campaign. The original stays as it is. Imported investigators start unclaimed, so each player claims theirs (or you assign them). Hidden enemies, private handouts and GM notes stay behind.</p>'+
+   (ui.importing?'<p class="note" style="margin:0"><b>'+esc(ui.importing)+'</b></p>':ui.confirmImport?'<p class="note" style="margin:0">'+(c.gmUid!==user.uid?'This makes you the GM of this campaign (you can hand it to someone else afterwards). ':'')+'Any investigators already in this campaign are replaced.</p><div class="row"><button class="btn pri" data-a="impyes">Import now</button><button class="btn" data-a="impno">Cancel</button></div>':'<div class="row"><button class="btn" data-a="impask">Import the original party\u2026</button></div>')+'</section>';
   h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
  }else{
   h+='<section class="sec"><div class="sec-head"><h2>Leave campaign</h2></div>'+(ui.confirmLeave?'<p class="note" style="margin:0">Leave “'+esc(c.name)+'”? You’ll need a new invite to come back.</p><div class="row"><button class="btn dng" data-a="leaveyes">Yes, leave</button><button class="btn" data-a="leaveno">Cancel</button></div>':'<div class="row"><button class="btn" data-a="leaveask">Leave this campaign…</button></div>')+'</section>';
@@ -369,6 +371,28 @@ async function joinInvite(id){
  catch(e){console.warn(e);if(e&&e.code==='not-found'){await db.doc('invites/'+id).delete().catch(()=>{});toast('That campaign no longer exists.');}else toast('Couldn’t join. Try again.');}
 }
 // Firestore doesn't delete a campaign's contents with it, so clear each part first.
+// Copy the original (pre-accounts) ledger into a campaign.
+async function importLegacy(c){
+ const root=db,dst=p=>db.doc('campaigns/'+c.id+'/'+p),step=m=>{ui.importing=m;render();};
+ let ops=[];const flush=async()=>{while(ops.length){const b=db.batch();ops.splice(0,400).forEach(f=>f(b));await b.commit();}};
+ if(c.gmUid!==user.uid){step('Making you the GM\u2026');await db.doc('campaigns/'+c.id).update({gmUid:user.uid});}
+ step('Reading the original ledger\u2026');
+ const chars=await root.collection('characters').get();
+ const extra={};for(const p of ['table/state','campaign/main','settings/house']){const d=await root.doc(p).get();if(d.exists)extra[p]=d.data();}
+ const hist=await root.collection('history').get();
+ let en={docs:[]},cl={docs:[]};try{en=await root.collection('enemies').where('shown','==',true).get();}catch(e){}try{cl=await root.collection('clues').where('shown','==',true).where('to','==','all').get();}catch(e){}
+ step('Clearing this campaign\u2019s investigators\u2026');
+ for(const col of ['characters','players']){const qs=await db.collection('campaigns/'+c.id+'/'+col).get();qs.docs.forEach(d=>ops.push(b=>b.delete(d.ref)));}
+ await flush();
+ step('Copying '+chars.size+' investigators\u2026');
+ let n=0;chars.docs.forEach(d=>{if(!/^p([1-9]|1[0-2])$/.test(d.id))return;n++;const v=d.data();delete v.locked;v.ownerUid=null;ops.push(b=>b.set(dst('characters/'+d.id),v));});
+ Object.keys(extra).forEach(p=>ops.push(b=>b.set(dst(p),extra[p])));
+ hist.docs.forEach(d=>ops.push(b=>b.set(dst('history/'+d.id),d.data())));
+ en.docs.forEach(d=>ops.push(b=>b.set(dst('enemies/'+d.id),d.data())));
+ cl.docs.forEach(d=>ops.push(b=>b.set(dst('clues/'+d.id),d.data())));
+ step('Saving\u2026');await flush();
+ ui.importing='';ui.confirmImport=false;toast('Imported '+n+' investigator'+(n===1?'':'s')+' and '+hist.size+' history entr'+(hist.size===1?'y':'ies')+'. Players can now claim theirs.');
+}
 async function wipeCampaign(id){
  for(const col of ['characters','players','table','campaign','enemies','clues','gm','gmlog','history','settings']){
   try{const qs=await db.collection('campaigns/'+id+'/'+col).get();await Promise.all(qs.docs.map(d=>d.ref.delete()));}catch(e){console.warn('wipe',col,e);}
@@ -394,6 +418,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'newclose':ui.newOpen=false;ui.err='';render();break;
   case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;
   case 'home':ui.view='home';ui.err='';render();break;
+  case 'impask':ui.confirmImport=true;render();break;
+  case 'impno':ui.confirmImport=false;render();break;
+  case 'impyes':{const c=camps.find(x=>x.id===ui.cid);ui.confirmImport=false;if(c)importLegacy(c).catch(e=>{console.warn(e);ui.importing='';render();toast('The import stopped partway ('+((e&&e.code)||'error')+'). You can run it again.');});break;}
   case 'delask':ui.confirmDel=true;render();break;
   case 'delno':ui.confirmDel=false;render();break;
   case 'ijoin':joinInvite(b.dataset.id);break;

@@ -215,8 +215,8 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['slot']) && isSlot(request.resource.data.slot)
           && slotOwner(request.resource.data.slot) == request.auth.uid);
         allow update: if cOwner();
-        allow delete: if cOwner() || (uid == request.auth.uid
-          && (!existsAfter(/databases/$(database)/documents/campaigns/$(cid)/characters/$(resource.data.slot))
+        allow delete: if cOwner() || (uid == request.auth.uid && (resource == null
+          || !existsAfter(/databases/$(database)/documents/campaigns/$(cid)/characters/$(resource.data.slot))
             || slotOwner(resource.data.slot) != request.auth.uid));
       }
       // Turn tracker and campaign tracker: everyone reads, the GM writes.
@@ -256,7 +256,7 @@ service cloud.firestore {
         allow read: if member();
         allow create: if member() && request.resource.data.slot is string
           && ((request.resource.data.slot == 'gm' && cGM())
-            || (isSlot(request.resource.data.slot) && (plays(request.resource.data.slot) || cOwner() || cGM())));
+            || (isSlot(request.resource.data.slot) && (cOwner() || cGM() || plays(request.resource.data.slot))));
         allow delete: if gmSees();
       }
       // House rules switch: the owner decides.

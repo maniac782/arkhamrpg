@@ -193,7 +193,7 @@ a{color:var(--brass)}
 </head>
 <body>
 <div class="top"><div class="top-in">
-  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v107</small></span></div>
+  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v108</small></span></div>
 </div></div>
 <main id="app"><p class="note" style="padding:24px 16px">Loading…</p></main>
 <div class="toast" id="toast" hidden role="status"></div>
@@ -269,7 +269,7 @@ function campView(){
  if(ui.waitCid===c.id)ui.waitCid=null;
  const own=c.ownerUid===user.uid,names=c.names||{};
  let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button><a class="btn sm pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a></div>';
- h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+' \u00b7 '+(own?'settings':'members')+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+(own?'Campaign settings':esc(c.name))+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
  if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form>';
  h+='</section>';
  // members

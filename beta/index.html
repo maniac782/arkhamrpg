@@ -344,6 +344,15 @@ function watchInbox(){if(inboxUnsub)inboxUnsub();inbox=[];if(!myEmail())return;
 let hr=null,hrCid=null,hrUnsub=null,hrT=null,hrErr='';
 const UA={id:'universalAmmo',n:'Universal ammo',note:'Reloads are shared: any gun can use any gun’s extra reloads.'};
 const GEAR_CATS=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
+// Ready-made house rules the owner can switch on one by one.
+const clean=t=>String(t||'').replace(/^House rule\.\s*/,'');
+function presets(){const o=window.HOUSE_RULES||{};
+ return [{key:'rule:universalAmmo',kind:'rule',item:UA,name:UA.n,desc:'Reloads are shared: any gun can use any other gun’s extra reloads, instead of each gun keeping its own.'}]
+  .concat((o.weapons||[]).map(w=>({key:'w:'+w.n,kind:'weapon',item:w,name:w.n,desc:'A weapon for the picker: '+[w.s,'damage '+w.d,w.i&&w.i!=='–'?'injury '+w.i:'',w.r?'range '+w.r:'',w.a?w.a+' shots':'',w.fr?'free reloads':'',w.c?'$'+w.c:'costs nothing'].filter(Boolean).join(', ')+'.'+(clean(w.sp)&&clean(w.sp)!=='Free reloads.'?' '+clean(w.sp):'')})))
+  .concat((o.gear||[]).map(g=>({key:'g:'+g.n,kind:'gear',item:g,name:g.n,desc:(g.cat?g.cat+', ':'')+'$'+g.c+'. '+clean(g.note)})));}
+function presetOn(p){return p.kind==='rule'?hr.rules.some(r=>r.id===p.item.id):(p.kind==='weapon'?hr.weapons:hr.gear).some(x=>x.n===p.item.n);}
+function setPreset(p,on){if(p.kind==='rule'){hr.rules=hr.rules.filter(r=>r.id!==p.item.id);if(on)hr.rules.push(p.item);}
+ else{const k=p.kind==='weapon'?'weapons':'gear';hr[k]=hr[k].filter(x=>x.n!==p.item.n);if(on)hr[k].push({id:rid(),...p.item});}saveHouse();render();}
 const rid=()=>Math.random().toString(36).slice(2,9);
 function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
  hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
@@ -355,23 +364,24 @@ function houseHtml(c,own){
  let h='<section class="sec"><div class="sec-head"><h2>House rules</h2>'+(own?'<label class="row note" style="gap:6px"><input type="checkbox" id="hr-on" data-hr="on"'+(hr.on?' checked':'')+'> Turned on</label>':'<span class="chip'+(hr.on?' ok':'')+'">'+(hr.on?'On':'Off')+'</span>')+'</div>';
  if(!own){const all=[...(ua?[UA]:[]),...hr.weapons,...hr.gear].filter(x=>x.n);
   return h+(all.length?'<div class="list">'+all.map(x=>'<div class="item"><div class="grow"><b>'+esc(x.n)+'</b>'+((x.note||x.sp)?'<span class="effect">'+esc(x.note||x.sp)+'</span>':'')+'</div></div>').join('')+'</div>':'<p class="note" style="margin:0">None.</p>')+'</section>';}
- h+='<p class="note" style="margin:0">Extra weapons, equipment and rule changes for this campaign. While house rules are turned on, they show up in everyone’s weapon and equipment pickers.</p>';
- h+='<label class="row note" style="gap:6px"><input type="checkbox" id="hr-ua" data-hr="ua"'+(ua?' checked':'')+'> <b>Universal ammo</b> — any gun can use any gun’s extra reloads</label>';
+ h+='<p class="note" style="margin:0">Pick the optional rules you want and add your own weapons and equipment. While house rules are turned on, they apply to everyone in this campaign.</p>';
+ const ps=presets(),pnames=ps.map(p=>p.name);
+ h+='<div><span class="lbl">Optional rules</span><div class="list">'+ps.map((p,i)=>'<label class="item" style="gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="hp-'+i+'" data-hp="'+i+'"'+(presetOn(p)?' checked':'')+' style="margin-top:4px"><div class="grow"><b>'+esc(p.name)+'</b><span class="effect">'+esc(p.desc)+'</span></div></label>').join('')+'</div></div>';
  const inp=(pre,x,k,ph,type,w)=>'<label class="field"'+(w?' style="'+w+'"':'')+'><span class="lbl">'+ph+'</span><input class="f" id="'+pre+'-'+x.id+'-'+k+'" data-'+pre+'="'+x.id+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(x[k]==null?'':x[k])+'"'+(type==='number'?' min="0" step="any"':'')+'></label>';
- h+='<div><span class="lbl">Weapons</span><div class="list">'+(hr.weapons.length?hr.weapons.map(w=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
+ const cw=hr.weapons.filter(w=>!pnames.includes(w.n)),cg=hr.gear.filter(g=>!pnames.includes(g.n));
+ h+='<div><span class="lbl">Your own weapons</span><div class="list">'+(cw.length?cw.map(w=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
    inp('hw',w,'n','Name')+'<label class="field"><span class="lbl">Skill</span><select class="f" id="hw-'+w.id+'-s" data-hw="'+w.id+'" data-k="s">'+['Ranged Combat','Melee Combat'].map(o=>'<option'+(w.s===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
    inp('hw',w,'d','Damage')+inp('hw',w,'i','Injury rating')+inp('hw',w,'r','Range')+inp('hw',w,'a','Ammo','number')+inp('hw',w,'c','Price $','number')+inp('hw',w,'rc','Reload price $','number')+inp('hw',w,'sp','Special')+
    '<label class="row note" style="gap:6px;align-self:end"><input type="checkbox" id="hw-'+w.id+'-fr" data-hw="'+w.id+'" data-k="fr"'+(w.fr?' checked':'')+'> Free reloads</label></div></div><button class="btn sm icon" data-a="hwdel" data-id="'+esc(w.id)+'" aria-label="Remove weapon">×</button></div>').join(''):'<p class="note">None.</p>')+'</div><div class="row"><button class="btn sm" data-a="hwadd">Add a weapon</button></div></div>';
- h+='<div><span class="lbl">Equipment</span><div class="list">'+(hr.gear.length?hr.gear.map(g=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
+ h+='<div><span class="lbl">Your own equipment</span><div class="list">'+(cg.length?cg.map(g=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
    '<label class="field"><span class="lbl">Category</span><select class="f" id="hg-'+g.id+'-cat" data-hg="'+g.id+'" data-k="cat">'+GEAR_CATS.map(o=>'<option'+(g.cat===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
    inp('hg',g,'n','Name')+inp('hg',g,'c','Price $','number')+inp('hg',g,'note','What it does','text','grid-column:1/-1')+'</div></div><button class="btn sm icon" data-a="hgdel" data-id="'+esc(g.id)+'" aria-label="Remove equipment">×</button></div>').join(''):'<p class="note">None.</p>')+'</div><div class="row"><button class="btn sm" data-a="hgadd">Add equipment</button></div></div>';
- const orig=window.HOUSE_RULES;
- if(orig&&[...(orig.weapons||[]),...(orig.gear||[])].some(x=>![...hr.weapons,...hr.gear].some(y=>y.n===x.n)))h+='<div class="row"><button class="btn sm" data-a="hrcopy">Add the original site’s house rules</button><span class="note">'+esc([...(orig.weapons||[]),...(orig.gear||[])].map(x=>x.n).join(', '))+'</span></div>';
  return h+'</section>';
 }
 const NUMK=['a','c','rc'];
 function houseChange(el){if(!hr)return false;
  if(el.dataset.hr==='on'){hr.on=el.checked;saveHouse();return true;}
+ if(el.dataset.hp!=null){const p=presets()[Number(el.dataset.hp)];if(p)setPreset(p,el.checked);return true;}
  if(el.dataset.hr==='ua'){hr.rules=hr.rules.filter(r=>r.id!=='universalAmmo');if(el.checked)hr.rules.push(UA);saveHouse();return true;}
  const list=el.dataset.hw?hr.weapons:el.dataset.hg?hr.gear:null;if(!list)return false;
  const it=list.find(x=>x.id===(el.dataset.hw||el.dataset.hg));if(!it)return true;const k=el.dataset.k;

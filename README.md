@@ -10,7 +10,7 @@ Live character sheets for our Arkham Horror RPG group, plus a character creator 
 3. In the left menu, open **Build → Firestore Database** → **Create database**.
    - Location: pick one near you (e.g. `nam5 (United States)`).
    - Start in **production mode**.
-4. Open the **Rules** tab, delete what's there, paste in everything from `firestore.rules` in this repo, and click **Publish**.
+4. Open the **Rules** tab, delete what's there, paste in everything from `firestore.rules` in this repo, and click **Publish**. (After the GitHub deploy below is set up, rules publish themselves on every push. See "Automatic rules publishing".)
 
 ### 2. Get the settings for the website
 1. Click the gear icon next to **Project Overview** → **Project settings**.
@@ -40,10 +40,13 @@ The repo also deploys to Firebase Hosting through `.github/workflows/deploy-fire
 
 Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps working.
 
+## Automatic rules publishing
+Every push to `main` deploys the site and also publishes `firestore.rules` (the **rules** job in `.github/workflows/deploy-firebase.yml`). The GitHub service account needs three roles in Google Cloud → IAM: **Firebase Rules Admin**, **Service Usage Consumer** and **Cloud Datastore Viewer**.
+
 ## Adding and removing investigators
 - **+ Add an investigator** on the Party tab adds a blank sheet (up to 12). The **New investigator** tab can also put a finished character into **a new spot in the party**.
 - Only the master key can remove an investigator: open their sheet and use **Remove this investigator from the party…** at the bottom.
-- This needs the current `firestore.rules`. If you set the site up before this was added, paste the new rules into Firebase → Firestore → Rules, press **Publish**, then reload the site.
+- This needs the current `firestore.rules`, which the deploy publishes automatically.
 
 ## Game master tools
 The GM has their own **GM PIN**, separate from the master key:
@@ -61,7 +64,7 @@ The GM tab has:
 - **Session recap.** Builds a summary of any session from everyone's activity. It opens with **The story**: the scenes, fights, enemies the players saw and clues revealed to everyone, so nothing hidden leaks.
 - **GM notes and hidden roller.** Private notes and a dice roller only the GM sees.
 
-These need the current `firestore.rules` (paste into Firebase → Firestore → Rules, **Publish**, reload).
+These need the current `firestore.rules`, which the deploy publishes automatically.
 
 ## House rules
 Extra weapons, gear and rule changes live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game Master section of the Party tab. The switch is shared with the whole party.

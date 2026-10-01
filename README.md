@@ -70,7 +70,7 @@ The GM tab has:
 These need the current `firestore.rules`, which the deploy publishes automatically.
 
 ## House rules
-Extra weapons, gear and rule changes live in the `window.HOUSE_RULES` block near the top of `index.html`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game Master section of the Party tab. The switch is shared with the whole party.
+In a campaign (beta), the owner edits house rules on the campaign's **Settings** page: custom weapons, equipment, Universal ammo, and an on/off switch. On the original site, extra weapons, gear and rule changes live in `house-rules.js`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game Master section of the Party tab. The switch is shared with the whole party.
 
 ## Good to know
 - Anyone with the link can view every sheet. A player can lock their own sheet with a passcode at the top of it; after that, only devices that entered the passcode (or the master key on the Party tab) can edit it. Firebase enforces this, not just the page.

@@ -21,22 +21,7 @@ window.FIREBASE_CONFIG = {
   appId: "1:789653165049:web:23629583d7d0a3fc8de328"
 };
 </script>
-<script>
-/* House rules. Edit this list for your own group. The master key turns them on or off on the Party tab. */
-window.HOUSE_RULES = {
-  weapons: [
-    {n:'Slingshot', s:'Ranged Combat', d:'1', i:'\u2013', r:'40 ft', a:2, rc:0, fr:true, c:0, sp:'House rule. Free reloads.'}
-  ],
-  rules: [
-    // Uncomment to let any gun use any gun's extra reloads:
-    // {id:'universalAmmo', n:'Universal ammo', note:'Reloads are shared: any gun can use any gun\u2019s extra reloads.'}
-  ],
-  gear: [
-    {cat:'Protection', n:'Fine Heavy Clothes', c:105, note:'House rule. Counts as heavy clothing and fine clothing: \u22121 damage from melee attacks (minimum 1).'},
-    {cat:'Protection', n:'Cape', c:15, note:'House rule. Counts as flowing clothing: reroll a reaction to avoid a ranged attack once.'}
-  ]
-};
-</script>
+<script src="house-rules.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -66,6 +51,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .brand h1{font-family:var(--display);font-weight:700;font-size:24px;margin:0;letter-spacing:.3px}
 .brand small{color:var(--muted);font-size:12px}
 .tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+@media (min-width:700px){.tabs{flex-wrap:wrap;overflow:visible;row-gap:0}}
+.brand .links{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.brand .links a.btn{text-decoration:none;color:inherit}
 .tab{border:0;background:none;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
 main{max-width:980px;margin:0 auto;padding-block:18px 60px;padding-inline:16px;display:flex;flex-direction:column;gap:16px}
@@ -643,7 +631,7 @@ function poolHtml(c,mini){
 }
 function renderTabs(){
  const t=document.getElementById('tabs');
- t.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('')+(CAMP?'<a class="tab" href="beta/?settings='+encodeURIComponent(CAMP)+'" style="text-decoration:none">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>':'');
+ t.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
 }
 function renderParty(){
  let h=turnBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
@@ -846,9 +834,11 @@ let house={on:false};
 function gunKey(w){return String(w.name||'').trim().toLowerCase();}
 function sameGuns(ws,w){const k=gunKey(w);return k&&!w.fr?ws.filter(x=>!x.fr&&gunKey(x)===k):[w];}
 function gunPool(ws,w){return sameGuns(ws,w).reduce((a,x)=>a+(x.reloads||0),0);}
-function sharedAmmo(){return !!(house.on&&((window.HOUSE_RULES||{}).rules||[]).some(r=>r.id==='universalAmmo'));}
-function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
-function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
+// Campaigns keep their house rules in the database (Settings); the original site uses house-rules.js.
+const HR=()=>CAMP?{weapons:house.weapons||[],gear:house.gear||[],rules:house.rules||[]}:(window.HOUSE_RULES||{});
+function sharedAmmo(){return !!(house.on&&(HR().rules||[]).some(r=>r.id==='universalAmmo'));}
+function W(){return house.on?[...A.WEAPONS,...(HR().weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
+function GR(){return house.on?[...A.GEAR,...(HR().gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
 function gmPinHtml(){
  if(localMode||CAMP)return '';
  const gmk=isGM(),mk=!!keys.master;
@@ -865,8 +855,8 @@ function gmPinHtml(){
  return h+'</section>';
 }
 function houseToggle(){
- const hr=window.HOUSE_RULES||{};const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
- if(!names.length)return '';
+ const hr=HR();const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n).filter(Boolean);
+ if(!names.length)return CAMP&&keys.master?'<p class="note" style="margin:0 0 8px">No house rules yet. Add custom weapons, gear or rule changes in <a href="beta/?settings='+encodeURIComponent(CAMP)+'">Settings</a>.</p>':'';
  const can=(!db&&localMode)||!!keys.master;
  return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>House rules '+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' '+(CAMP?'Only the campaign owner can change this.':'Only the master key can change this.')+'')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
 }
@@ -1124,7 +1114,7 @@ app.addEventListener('click',e=>{
   case 'traitfree':if(edit.trait)setTrait(s,edit.trait.t,0);break;
   case 'traitcancel':edit.trait=null;render();break;
   case 'picdel':save(s,{portrait:''},'Removed portrait');break;
-  case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the '+(CAMP?'campaign owner':'master key')+' can change house rules.'));break;}
+  case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the '+(CAMP?'campaign owner':'master key')+' can change house rules.'));break;}
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master)return;save(s,{log:[]});toast('Recent history cleared.');break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
@@ -1204,7 +1194,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v97 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v98 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1529,7 +1519,7 @@ async function bootCampaign(syncEl){
   applyRoles();if(window.__syncLine)window.__syncLine();render();
  },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
  gmBoot();
- db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
+ db.doc('settings/house').onSnapshot(snap=>{const d=snap.exists?snap.data():{};house={on:!!d.on,weapons:Array.isArray(d.weapons)?d.weapons:[],gear:Array.isArray(d.gear)?d.gear:[],rules:Array.isArray(d.rules)?d.rules:[]};render();},()=>{});
  db.collection('characters').onSnapshot(qs=>{
   const ids=[];
   qs.forEach(d=>{if(!isSlotId(d.id))return;ids.push(d.id);chars[d.id]=norm(JSON.parse(JSON.stringify(d.data())),slotNum(d.id));});
@@ -1540,7 +1530,7 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- const syncLine=()=>{syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 <a href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Campaign settings':'Members')+'</a> \u00b7 v97';};syncLine();window.__syncLine=syncLine;
+ const syncLine=()=>{syncEl.innerHTML='<span class="links"><a class="btn sm" href="beta/">My campaigns</a><a class="btn sm" href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a><span>Live \u00b7 v98</span></span>';};syncLine();window.__syncLine=syncLine;
 }
 
 // ---------- boot ----------
@@ -1556,7 +1546,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v97';
+ syncEl.textContent='Live · synced for the party · v98';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

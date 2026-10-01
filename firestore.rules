@@ -221,22 +221,26 @@ service cloud.firestore {
       }
       // Turn tracker and campaign tracker: everyone reads, the GM writes.
       match /table/{doc} {
+        allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
         allow delete: if cOwner();
         allow read: if member();
         allow write: if cGM() && doc == 'state';
       }
       match /campaign/{doc} {
+        allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
         allow delete: if cOwner();
         allow read: if member();
         allow write: if cGM();
       }
       // Enemies and handouts: players only see what the GM reveals (a handout to one player only to that player).
       match /enemies/{id} {
+        allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
         allow delete: if cOwner();
         allow read: if gmSees() || (member() && resource.data.shown == true);
         allow write: if cGM();
       }
       match /clues/{id} {
+        allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
         allow delete: if cOwner();
         allow read: if gmSees() || (member() && resource.data.shown == true
           && (resource.data.to == 'all' || plays(resource.data.to)));
@@ -253,18 +257,23 @@ service cloud.firestore {
         allow create, delete: if cGM();
       }
       match /history/{id} {
+        allow update: if cOwner();  // re-running the import
         allow read: if member();
         allow create: if member() && request.resource.data.slot is string
           && ((request.resource.data.slot == 'gm' && cGM())
             || (isSlot(request.resource.data.slot) && (cOwner() || cGM() || plays(request.resource.data.slot))));
         allow delete: if gmSees();
       }
-      // House rules switch: the owner decides.
+      // House rules (on/off plus the campaign's own weapons, equipment and rule changes): the owner decides.
       match /settings/{doc} {
         allow delete: if cOwner();
         allow read: if member();
-        allow write: if cOwner() && doc == 'house' && request.resource.data.keys().hasOnly(['on'])
-          && request.resource.data.on is bool;
+        allow write: if cOwner() && doc == 'house'
+          && request.resource.data.keys().hasOnly(['on', 'weapons', 'gear', 'rules'])
+          && request.resource.data.get('on', false) is bool
+          && request.resource.data.get('weapons', []) is list && request.resource.data.get('weapons', []).size() <= 40
+          && request.resource.data.get('gear', []) is list && request.resource.data.get('gear', []).size() <= 60
+          && request.resource.data.get('rules', []) is list && request.resource.data.get('rules', []).size() <= 10;
       }
     }
 

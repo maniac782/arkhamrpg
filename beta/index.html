@@ -184,6 +184,7 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .wide{width:100%}
 a{color:var(--brass)}
 </style>
+<script src="../house-rules.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -215,7 +216,7 @@ function render(){
  if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
@@ -274,6 +275,7 @@ function campView(){
   return '<div class="item" style="flex-wrap:wrap"><div class="grow"><b>'+esc(nm)+'</b>'+(u===user.uid?' <span class="note">(you)</span>':'')+'</div><span class="row" style="gap:6px">'+chipsFor(c,u)+act+'</span></div>';}).join('')+'</div>';
  if(own)h+='<p class="note" style="margin:0">The GM runs the GM tools. You can make yourself the GM, or hand it to a player.</p>';
  h+='</section>';
+ h+=houseHtml(c,own);
  if(own){
   const link=joinLink(c);
   h+='<section class="sec"><div class="sec-head"><h2>Invite players</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+' spots used</span></div>';
@@ -283,8 +285,8 @@ function campView(){
    '<p class="note" style="margin:0">The invite waits on their My campaigns page once they sign in with that email. Nothing is emailed, so let them know.</p>';
   if(outbox.length)h+='<div><span class="lbl">Waiting to join</span><div class="list">'+outbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.toEmail)+'</b><span class="effect">Invited</span></div><button class="btn sm" data-a="icancel" data-id="'+esc(i.id)+'">Cancel invite</button></div>').join('')+'</div></div>';
   h+='</section>';
-  h+='<section class="sec"><div class="sec-head"><h2>Bring in your original party</h2></div><p class="note" style="margin:0">Copies the investigators, their recent history, the campaign tracker, the scene and turn tracker, the house rules switch and anything the GM has already revealed from the original ledger (arkhamrpg.web.app) into this campaign. The original stays as it is. Imported investigators start unclaimed, so each player claims theirs (or you assign them). Hidden enemies, private handouts and GM notes stay behind.</p>'+
-   (ui.importing?'<p class="note" style="margin:0"><b>'+esc(ui.importing)+'</b></p>':ui.confirmImport?'<p class="note" style="margin:0">'+(c.gmUid!==user.uid?'This makes you the GM of this campaign (you can hand it to someone else afterwards). ':'')+'Any investigators already in this campaign are replaced.</p><div class="row"><button class="btn pri" data-a="impyes">Import now</button><button class="btn" data-a="impno">Cancel</button></div>':'<div class="row"><button class="btn" data-a="impask">Import the original party\u2026</button></div>')+'</section>';
+  h+='<section class="sec"><div class="sec-head"><h2>Bring in your original party</h2></div><p class="note" style="margin:0">Copies the investigators, their recent history, the campaign tracker, the scene and turn tracker, the house rules and anything the GM has already revealed from the original ledger (arkhamrpg.web.app) into this campaign. The original stays as it is. Imported investigators start unclaimed, so each player claims theirs (or you assign them). Hidden enemies, private handouts and GM notes stay behind.</p>'+
+   (ui.importing?'<p class="note" style="margin:0"><b>'+esc(ui.importing)+'</b></p>':ui.confirmImport?'<p class="note" style="margin:0">Any investigators already in this campaign are replaced.</p><div class="row"><button class="btn pri" data-a="impyes">Import now</button><button class="btn" data-a="impno">Cancel</button></div>':'<div class="row"><button class="btn" data-a="impask">Import the original party\u2026</button></div>')+'</section>';
   h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
  }else{
   h+='<section class="sec"><div class="sec-head"><h2>Leave campaign</h2></div>'+(ui.confirmLeave?'<p class="note" style="margin:0">Leave “'+esc(c.name)+'”? You’ll need a new invite to come back.</p><div class="row"><button class="btn dng" data-a="leaveyes">Yes, leave</button><button class="btn" data-a="leaveno">Cancel</button></div>':'<div class="row"><button class="btn" data-a="leaveask">Leave this campaign…</button></div>')+'</section>';
@@ -338,6 +340,43 @@ const FV=()=>firebase.firestore.FieldValue;
 const myEmail=()=>String((user&&user.email)||'').toLowerCase();
 function watchInbox(){if(inboxUnsub)inboxUnsub();inbox=[];if(!myEmail())return;
  inboxUnsub=db.collection('invites').where('toEmail','==',myEmail()).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+// ---------- house rules (stored per campaign) ----------
+let hr=null,hrCid=null,hrUnsub=null,hrT=null;
+const UA={id:'universalAmmo',n:'Universal ammo',note:'Reloads are shared: any gun can use any gun’s extra reloads.'};
+const GEAR_CATS=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
+const rid=()=>Math.random().toString(36).slice(2,9);
+function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrCid=cid;if(!cid)return;
+ hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>console.warn(e));}
+function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
+ db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
+function houseHtml(c,own){
+ if(!hr)return '';
+ const ua=hr.rules.some(r=>r.id==='universalAmmo');
+ let h='<section class="sec"><div class="sec-head"><h2>House rules</h2>'+(own?'<label class="row note" style="gap:6px"><input type="checkbox" id="hr-on" data-hr="on"'+(hr.on?' checked':'')+'> Turned on</label>':'<span class="chip'+(hr.on?' ok':'')+'">'+(hr.on?'On':'Off')+'</span>')+'</div>';
+ if(!own){const all=[...(ua?[UA]:[]),...hr.weapons,...hr.gear].filter(x=>x.n);
+  return h+(all.length?'<div class="list">'+all.map(x=>'<div class="item"><div class="grow"><b>'+esc(x.n)+'</b>'+((x.note||x.sp)?'<span class="effect">'+esc(x.note||x.sp)+'</span>':'')+'</div></div>').join('')+'</div>':'<p class="note" style="margin:0">None.</p>')+'</section>';}
+ h+='<p class="note" style="margin:0">Extra weapons, equipment and rule changes for this campaign. While house rules are turned on, they show up in everyone’s weapon and equipment pickers.</p>';
+ h+='<label class="row note" style="gap:6px"><input type="checkbox" id="hr-ua" data-hr="ua"'+(ua?' checked':'')+'> <b>Universal ammo</b> — any gun can use any gun’s extra reloads</label>';
+ const inp=(pre,x,k,ph,type,w)=>'<label class="field"'+(w?' style="'+w+'"':'')+'><span class="lbl">'+ph+'</span><input class="f" id="'+pre+'-'+x.id+'-'+k+'" data-'+pre+'="'+x.id+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(x[k]==null?'':x[k])+'"'+(type==='number'?' min="0" step="any"':'')+'></label>';
+ h+='<div><span class="lbl">Weapons</span><div class="list">'+(hr.weapons.length?hr.weapons.map(w=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
+   inp('hw',w,'n','Name')+'<label class="field"><span class="lbl">Skill</span><select class="f" id="hw-'+w.id+'-s" data-hw="'+w.id+'" data-k="s">'+['Ranged Combat','Melee Combat'].map(o=>'<option'+(w.s===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
+   inp('hw',w,'d','Damage')+inp('hw',w,'i','Injury rating')+inp('hw',w,'r','Range')+inp('hw',w,'a','Ammo','number')+inp('hw',w,'c','Price $','number')+inp('hw',w,'rc','Reload price $','number')+inp('hw',w,'sp','Special')+
+   '<label class="row note" style="gap:6px;align-self:end"><input type="checkbox" id="hw-'+w.id+'-fr" data-hw="'+w.id+'" data-k="fr"'+(w.fr?' checked':'')+'> Free reloads</label></div></div><button class="btn sm icon" data-a="hwdel" data-id="'+esc(w.id)+'" aria-label="Remove weapon">×</button></div>').join(''):'<p class="note">None.</p>')+'</div><div class="row"><button class="btn sm" data-a="hwadd">Add a weapon</button></div></div>';
+ h+='<div><span class="lbl">Equipment</span><div class="list">'+(hr.gear.length?hr.gear.map(g=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
+   '<label class="field"><span class="lbl">Category</span><select class="f" id="hg-'+g.id+'-cat" data-hg="'+g.id+'" data-k="cat">'+GEAR_CATS.map(o=>'<option'+(g.cat===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
+   inp('hg',g,'n','Name')+inp('hg',g,'c','Price $','number')+inp('hg',g,'note','What it does','text','grid-column:1/-1')+'</div></div><button class="btn sm icon" data-a="hgdel" data-id="'+esc(g.id)+'" aria-label="Remove equipment">×</button></div>').join(''):'<p class="note">None.</p>')+'</div><div class="row"><button class="btn sm" data-a="hgadd">Add equipment</button></div></div>';
+ const orig=window.HOUSE_RULES;
+ if(orig&&[...(orig.weapons||[]),...(orig.gear||[])].some(x=>![...hr.weapons,...hr.gear].some(y=>y.n===x.n)))h+='<div class="row"><button class="btn sm" data-a="hrcopy">Add the original site’s house rules</button><span class="note">'+esc([...(orig.weapons||[]),...(orig.gear||[])].map(x=>x.n).join(', '))+'</span></div>';
+ return h+'</section>';
+}
+const NUMK=['a','c','rc'];
+function houseChange(el){if(!hr)return false;
+ if(el.dataset.hr==='on'){hr.on=el.checked;saveHouse();return true;}
+ if(el.dataset.hr==='ua'){hr.rules=hr.rules.filter(r=>r.id!=='universalAmmo');if(el.checked)hr.rules.push(UA);saveHouse();return true;}
+ const list=el.dataset.hw?hr.weapons:el.dataset.hg?hr.gear:null;if(!list)return false;
+ const it=list.find(x=>x.id===(el.dataset.hw||el.dataset.hg));if(!it)return true;const k=el.dataset.k;
+ it[k]=el.type==='checkbox'?el.checked:NUMK.includes(k)?Math.max(0,Number(el.value)||0):el.value.slice(0,200);
+ saveHouse();return true;}
 function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
  outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
 const joinLink=c=>c.joinCode?location.origin+location.pathname+'?join='+encodeURIComponent(c.id+'.'+c.joinCode)+'&n='+encodeURIComponent(c.name):'';
@@ -375,10 +414,10 @@ async function joinInvite(id){
 async function importLegacy(c){
  const root=db,dst=p=>db.doc('campaigns/'+c.id+'/'+p),step=m=>{ui.importing=m;render();};
  let ops=[];const flush=async()=>{while(ops.length){const b=db.batch();ops.splice(0,400).forEach(f=>f(b));await b.commit();}};
- if(c.gmUid!==user.uid){step('Making you the GM\u2026');await db.doc('campaigns/'+c.id).update({gmUid:user.uid});}
  step('Reading the original ledger\u2026');
  const chars=await root.collection('characters').get();
  const extra={};for(const p of ['table/state','campaign/main','settings/house']){const d=await root.doc(p).get();if(d.exists)extra[p]=d.data();}
+ const o=window.HOUSE_RULES||{};extra['settings/house']={on:!!(extra['settings/house']||{}).on,weapons:(o.weapons||[]).map(w=>({id:rid(),...w})),gear:(o.gear||[]).map(g=>({id:rid(),...g})),rules:(o.rules||[]).filter(r=>r&&r.id)};
  const hist=await root.collection('history').get();
  let en={docs:[]},cl={docs:[]};try{en=await root.collection('enemies').where('shown','==',true).get();}catch(e){}try{cl=await root.collection('clues').where('shown','==',true).where('to','==','all').get();}catch(e){}
  step('Clearing this campaign\u2019s investigators\u2026');
@@ -409,6 +448,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
  else if(id==='invform')busy(sendInvite);
  else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});toast('Renamed.');});
 });
+app.addEventListener('change',e=>{houseChange(e.target);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
  switch(a){
   case 'google':busy(google);break;
@@ -418,6 +458,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'newclose':ui.newOpen=false;ui.err='';render();break;
   case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;
   case 'home':ui.view='home';ui.err='';render();break;
+  case 'hwadd':if(hr){hr.weapons.push({id:rid(),n:'',s:'Ranged Combat',d:'',i:'',r:'',a:0,c:0,rc:0,fr:false,sp:''});saveHouse();render();}break;
+  case 'hgadd':if(hr){hr.gear.push({id:rid(),cat:'Useful items',n:'',c:0,note:''});saveHouse();render();}break;
+  case 'hwdel':if(hr){hr.weapons=hr.weapons.filter(x=>x.id!==b.dataset.id);saveHouse();render();}break;
+  case 'hgdel':if(hr){hr.gear=hr.gear.filter(x=>x.id!==b.dataset.id);saveHouse();render();}break;
+  case 'hrcopy':{const o=window.HOUSE_RULES||{};if(hr){(o.weapons||[]).forEach(w=>{if(!hr.weapons.some(x=>x.n===w.n))hr.weapons.push({id:rid(),...w});});(o.gear||[]).forEach(g=>{if(!hr.gear.some(x=>x.n===g.n))hr.gear.push({id:rid(),...g});});saveHouse();render();toast('Added. Turn house rules on to use them.');}break;}
   case 'impask':ui.confirmImport=true;render();break;
   case 'impno':ui.confirmImport=false;render();break;
   case 'impyes':{const c=camps.find(x=>x.id===ui.cid);ui.confirmImport=false;if(c)importLegacy(c).catch(e=>{console.warn(e);ui.importing='';render();toast('The import stopped partway ('+((e&&e.code)||'error')+'). You can run it again.');});break;}

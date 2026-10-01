@@ -818,7 +818,8 @@ function gmPinHtml(){
  const inp=ph=>'<input class="maxsel" style="width:150px" type="password" id="gmpin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
  let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+cls+'">'+lab+'</span><span class="note">'+note+'</span></div></div>';
  if(!gmClaimed)h+='<div class="row">'+inp('New GM PIN')+'<button class="btn sm pri" data-act="gmset">Set GM PIN</button></div>';
- else if(gmk)h+='<div class="row">'+inp('New GM PIN')+'<button class="btn sm" data-act="gmset">Change GM PIN</button><button class="btn sm" data-act="gmforget">Lock this device</button></div>';
+ else if(gmk)h+=edit.gmclear?'<div class="row"><span class="note">Remove the GM PIN? Anyone can then set a new one and take over the GM tools. Your enemies, clues, notes and log stay.</span><button class="btn sm dng" data-act="gmclear">Yes, remove it</button><button class="btn sm" data-act="gmclearno">Cancel</button></div>'
+  :'<div class="row">'+inp('New GM PIN')+'<button class="btn sm" data-act="gmset">Change GM PIN</button><button class="btn sm" data-act="gmforget">Lock this device</button><button class="btn sm" data-act="gmclearask">Remove GM PIN</button></div>';
  else h+='<div class="row">'+inp('GM PIN')+'<button class="btn sm pri" data-act="gmunlock">Unlock</button>'+(mk?'<button class="btn sm" data-act="gmreset">Reset GM PIN</button>':'')+'</div>';
  return h+'</section>';
 }
@@ -1081,7 +1082,9 @@ app.addEventListener('click',e=>{
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the master key can change house rules.'));break;}
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master)return;save(s,{log:[]});toast('Recent history cleared.');break;
-  case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':lockAction(a,s);break;
+  case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
+  case 'gmclearask':edit.gmclear=true;render();break;
+  case 'gmclearno':edit.gmclear=false;render();break;
   case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast('Choose a knack first.');const k=A.knacksFor(c.archetype).find(x=>x.name===sel.value);if(!k)return;
    if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name)}]},'Added knack '+k.name);break;}
    const have=c.knacks.filter(x=>Number(x.tier)===k.tier).length;if(have>=KNACK_CAP[k.tier])return toast('Limit reached: '+KNACK_CAP[k.tier]+' tier '+k.tier+' knack'+(KNACK_CAP[k.tier]>1?'s':'')+'.');
@@ -1152,9 +1155,10 @@ async function lockAction(a,s){
    await db.doc('locks/gm').set({code});await grant('gm',code);await db.doc('settings/gm').set({set:true});gmLog(gmClaimed?'GM PIN changed':'GM PIN set',false);toast(gmClaimed?'GM PIN changed.':'GM PIN set. The GM tools are unlocked on this device.');}
   else if(a==='gmunlock'){const code=val('gmpin');if(!code)return toast('Enter the GM PIN.');await grant('gm',code);toast('GM tools unlocked on this device.');}
   else if(a==='gmforget'){await db.doc('grants/'+authUid+'/keys/gm').delete();toast('GM PIN removed from this device.');}
+  else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v83 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v84 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
@@ -1470,7 +1474,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v83';
+ syncEl.textContent='Live · synced for the party · v84';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

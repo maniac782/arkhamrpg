@@ -263,7 +263,7 @@ function campView(){
  let h='<div class="row"><button class="btn sm" data-a="home">← My campaigns</button></div>';
  h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
  if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'"></label><button class="btn" type="submit">Rename</button></form>';
- h+='<p class="note" style="margin:0">Coming next: investigators, the GM tools and the Journal inside this campaign.</p></section>';
+ h+='<div class="row"><a class="btn pri" href="../?c='+encodeURIComponent(c.id)+'">Open the ledger \u2192</a></div><p class="note" style="margin:0">The party, investigator sheets, Journal and GM tools for this campaign.</p></section>';
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
   const nm=names[u]||'Unknown';let act='';
@@ -366,6 +366,12 @@ async function joinInvite(id){
  try{await b.commit();toast('You joined '+inv.campaignName+'.');}
  catch(e){console.warn(e);if(e&&e.code==='not-found'){await db.doc('invites/'+id).delete().catch(()=>{});toast('That campaign no longer exists.');}else toast('Couldn’t join. Try again.');}
 }
+// Firestore doesn't delete a campaign's contents with it, so clear each part first.
+async function wipeCampaign(id){
+ for(const col of ['characters','table','campaign','enemies','clues','gm','gmlog','history','settings']){
+  try{const qs=await db.collection('campaigns/'+id+'/'+col).get();await Promise.all(qs.docs.map(d=>d.ref.delete()));}catch(e){console.warn('wipe',col,e);}
+ }
+}
 async function regenLink(){const c=camps.find(x=>x.id===ui.cid);if(!c)return;await db.doc('campaigns/'+c.id).update({joinCode:newCode()});toast(c.joinCode?'New link made. The old one no longer works.':'Invite link ready.');}
 function memberOut(c,u){const p={memberIds:FV().arrayRemove(u),['roles.'+u]:FV().delete(),['names.'+u]:FV().delete()};if(c.gmUid===u)p.gmUid=null;return db.doc('campaigns/'+c.id).update(p);}
 
@@ -404,7 +410,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'leaveask':ui.confirmLeave=true;render();break;
   case 'leaveno':ui.confirmLeave=false;render();break;
   case 'leaveyes':{const c=camps.find(x=>x.id===ui.cid);ui.confirmLeave=false;ui.view='home';render();if(c)memberOut(c,user.uid).then(()=>toast('You left '+c.name+'.'),()=>toast('Couldn\u2019t leave. Try again.'));break;}
-  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;Promise.all(outbox.filter(i=>i.cid===id).map(i=>db.doc('invites/'+i.id).delete())).catch(()=>{}).then(()=>db.doc('campaigns/'+id).delete()).then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
+  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;Promise.all(outbox.filter(i=>i.cid===id).map(i=>db.doc('invites/'+i.id).delete())).catch(()=>{}).then(()=>wipeCampaign(id)).then(()=>db.doc('campaigns/'+id).delete()).then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
  }
 });
 

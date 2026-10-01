@@ -470,7 +470,11 @@ return {ARCH,knacksFor,knackText,maxFor,TRAITS,WEAPONS,GEAR,sheetHtml};
 <script src="npcs.js"></script>
 <script>
 (function(){
-let SLOTS=['p1','p2','p3','p4'];
+// Campaign mode (beta): ?c=<campaign id> runs this ledger inside one campaign, with accounts instead of passcodes.
+const CAMP=(()=>{try{const v=new URLSearchParams(location.search).get('c')||'';return /^[A-Za-z0-9]{10,40}$/.test(v)?v:null;}catch(e){return null;}})();
+let camp=null,halted=null;
+const TAB_KEY='apl-tab'+(CAMP?'-'+CAMP:'');
+let SLOTS=CAMP?[]:['p1','p2','p3','p4'];
 const MAX_SLOTS=12,slotNum=x=>parseInt(String(x).slice(1))||0,isSlotId=x=>/^p([1-9]|1[0-2])$/.test(x);
 let rosterLocked=false,pendingTab=null;
 const SEED={"p1": {"archetype": "Seeker", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "Stick of Gum", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [{"id": "i1", "name": "Lockpicks", "note": ""}], "knacks": [{"id": "k1", "name": "Scientific", "text": "When performing a complex action using Knowledge to conduct an experiment or scientific analysis, add 1 to the result of each die rolled.", "tier": 1}, {"id": "k2", "name": "Brilliant Insight", "text": "On a complex Knowledge or Lore action that rolls two or more 6s, you or one ally within earshot immediately regains 1 insight (up to the insight limit).", "tier": 1}], "log": [{"m": "Refilled dice pool", "t": 1790404667653}, {"m": "Bought Colt Police Revolver for $30.00", "t": 1790404660204}, {"m": "Gained $5.00", "t": 1790404654074}, {"m": "Gained $5.00", "t": 1790404653898}, {"m": "Gained $5.00", "t": 1790404653348}, {"m": "Gained $5.00", "t": 1790404653206}, {"m": "Gained $5.00", "t": 1790404653058}, {"m": "Gained $5.00", "t": 1790404652874}, {"m": "Gained $5.00", "t": 1790404652540}, {"m": "Gained $5.00", "t": 1790404652315}, {"m": "Refilled dice pool", "t": 1790403386024}, {"m": "Rested: pool limit restored", "t": 1790403188043}], "money": 13.75, "name": "Wallace Morrow", "negative": "", "personality": "", "player": "Dan", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 4, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "2", "r": 5}, "lore": {"max": "3", "r": 5}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "3", "r": 4}, "resolve": {"max": "", "r": 5}, "wits": {"max": "3", "r": 5}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [{"ammo": 2, "ammoMax": 2, "dmg": "2", "id": "w1", "inj": "3", "name": "Colt 1911 Pistol", "range": "75 ft", "rc": 1, "skill": "Ranged Combat", "special": "None"}, {"ammo": 0, "ammoMax": 0, "dmg": "1", "id": "w2", "inj": "4", "name": "Pocketknife", "range": "Engaged", "skill": "Melee Combat", "special": "Very Hard to Find (3 successes to spot)"}], "xpTotal": 12, "xpUnused": 7}, "p2": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667655}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 2", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p3": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 3", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p4": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386026}], "money": 0, "name": "Investigator 4", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}};
@@ -528,24 +532,24 @@ const keys={};// slot, 'master' or 'gm' -> this device holds a key
 const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log'];
 let gmClaimed=false;
 const gmCan=s=>canEdit(s)||isGM();
-function canEdit(s){if(!db&&localMode)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
+function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return !!keys.master||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
 // Last-seen party, kept on this device so a refresh shows the sheets right away while Firebase reconnects.
-const CACHE_KEY='apl-cache-v1';
+const CACHE_KEY='apl-cache-v1'+(CAMP?'-'+CAMP:'');
 try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
  if(k&&Array.isArray(k.slots)&&k.slots.length&&k.slots.every(isSlotId)){SLOTS=k.slots;SLOTS.forEach(x=>{if(k.chars&&k.chars[x])chars[x]=norm(k.chars[x],slotNum(x));});(k.keys||[]).forEach(x=>keys[x]=true);gmClaimed=!!k.gm;}}catch(e){}
 let cacheT;
 function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{const d={slots:SLOTS,chars:{},keys:Object.keys(keys).filter(k=>keys[k]),gm:gmClaimed,table};SLOTS.forEach(x=>d.chars[x]=chars[x]);
  try{localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e){try{SLOTS.forEach(x=>d.chars[x]={...chars[x],portrait:''});localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e2){}}},400);}
-try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
+try{const t=localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
 SLOTS.forEach(s=>{if(!chars[s])chars[s]=blank(slotNum(s));});
 
 const toastEl=document.getElementById('toast');let toastT;
 function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 
 async function save(slot,patch,logMsg){
- if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(chars[slot].name+'’s sheet is locked. Unlock it to make changes.');return;}
+ if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?'Only '+(chars[slot].name||'this investigator')+'\u2019s player can change that.':chars[slot].name+'’s sheet is locked. Unlock it to make changes.');return;}
  const c=chars[slot];
  if(patch.weapons&&legacyRel.has(slot)){patch.reloads=0;legacyRel.delete(slot);}
  Object.assign(c,patch);
@@ -650,7 +654,7 @@ function renderParty(){
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
- h+='</div><section class="sec"><div class="sec-head"><h2>Game Master</h2></div>'+houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. With the master key or the GM PIN this covers every sheet.</p>':'<p class="note" style="margin:0">Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.</p>')+(!localMode?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
+ h+='</div><section class="sec"><div class="sec-head"><h2>Game Master</h2></div>'+houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. '+(CAMP?'This covers every investigator in the campaign.':'With the master key or the GM PIN this covers every sheet.')+'</p>':'<p class="note" style="margin:0">'+(CAMP?'Starting a new session and refilling every pool are for the GM or the campaign owner.':'Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.')+'</p>')+(!localMode&&!CAMP?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
@@ -694,7 +698,28 @@ function openCrop(file,slot){
  };
  img.src=url;
 }
+function ownerPanel(s){
+ const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master,gone=!!own&&!names[own];
+ let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(mine?'ok':own&&!gone?'':'warn')+'">'+(mine?'Your investigator':own&&!gone?'Played by '+esc(names[own]):'Unclaimed')+'</span><span class="note">'+
+  (mine?'Only you, the campaign owner and the GM can change it.':own&&!gone?(boss?'You can edit it as the campaign owner.':'Only its player can change it.'):'Nobody plays this investigator yet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
+ let row='';
+ if(!own||gone)row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';
+ if(mine)row+='<button class="btn sm" data-act="release">Give up this investigator</button>';
+ if(boss&&camp)row+='<label class="row note" style="gap:6px" for="assign-'+s+'">Assign to <select class="maxsel" id="assign-'+s+'" data-assign="'+s+'"><option value="">Nobody</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||'Member')+'</option>').join('')+'</select></label>';
+ if(row)h+='<div class="row">'+row+'</div>';
+ return h+'</section>';
+}
+function applyRoles(){
+ if(!CAMP||!camp)return;
+ Object.keys(keys).forEach(k=>delete keys[k]);
+ if(camp.ownerUid===authUid)keys.master=true;
+ if(camp.gmUid&&camp.gmUid===authUid)keys.gm=true;
+ gmClaimed=!!camp.gmUid;
+ SLOTS.forEach(x=>{if(chars[x]&&chars[x].ownerUid===authUid)keys[x]=true;});
+ keysReady=true;gmFlagReady=true;gmMasterState=null;gmSubscribe();
+}
 function lockPanel(s){
+ if(CAMP)return ownerPanel(s);
  const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'Master key':'Unlocked on this device'):'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'Others need the passcode to edit it.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  if(localMode)return h+'</section>';
  const inp=(id,ph)=>'<input class="maxsel" style="width:150px" type="password" id="'+id+'-'+s+'" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
@@ -706,7 +731,7 @@ function lockPanel(s){
 function renderChar(s){ const body=renderCharBody(s); return turnBar()+lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>')+removePanel(s); }
 function removePanel(s){
  const can=(!db&&localMode)||!!keys.master;const c=chars[s];
- if(!can)return '<p class="note" style="margin:0">Only the master key can remove an investigator from the party.</p>';
+ if(!can)return '<p class="note" style="margin:0">'+(CAMP?'Only the campaign owner':'Only the master key')+' can remove an investigator from the party.</p>';
  if(edit.rm===s)return '<section class="sec"><div class="roll" role="status"><span>Remove <b>'+esc(c.name||'this investigator')+'</b> from the party? Their sheet is deleted for everyone. This can\u2019t be undone.</span><div class="row"><button class="btn sm dng" data-act="rmyes">Remove '+esc(c.name||'investigator')+'</button><button class="btn sm" data-act="rmno">Cancel</button></div></div></section>';
  return '<div class="row"><button class="btn sm dng" data-act="rmslot">Remove this investigator from the party…</button></div>';
 }
@@ -714,14 +739,14 @@ function freeSlot(){for(let i=1;i<=MAX_SLOTS;i++){const id='p'+i;if(!SLOTS.inclu
 async function addSlot(data){
  if(rosterLocked)return toast('Publish the updated Firestore rules first (see README).'),null;
  const id=freeSlot();if(!id)return toast('The party is full ('+MAX_SLOTS+' investigators).'),null;
- const c=norm(data||blank(slotNum(id)),slotNum(id));c.locked=false;
+ const c=norm(data||blank(slotNum(id)),slotNum(id));c.locked=false;if(CAMP){c.ownerUid=authUid;if(camp&&camp.names&&camp.names[authUid]&&!data)c.player=camp.names[authUid];}
  chars[id]=c;SLOTS=[...SLOTS,id].sort((a,b)=>slotNum(a)-slotNum(b));
  if(db){try{await db.doc('characters/'+id).set(JSON.parse(JSON.stringify(c)));}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README).':'Couldn\u2019t add the investigator. Try again.');SLOTS=SLOTS.filter(x=>x!==id);delete chars[id];render();return null;}}
  return id;
 }
 async function removeSlot(s){
  const name=chars[s]&&chars[s].name;
- if(db){try{await db.doc('characters/'+s).delete();await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?'Only the master key can remove investigators (and the updated rules must be published).':'Couldn\u2019t remove that investigator. Try again.');return;}}
+ if(db){try{await db.doc('characters/'+s).delete();await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?'Only the campaign owner can remove investigators.':'Only the master key can remove investigators (and the updated rules must be published).'):'Couldn\u2019t remove that investigator. Try again.');return;}}
  SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast((name||'Investigator')+' was removed from the party.');
 }
 function renderCharBody(s){
@@ -816,7 +841,7 @@ function sharedAmmo(){return !!(house.on&&((window.HOUSE_RULES||{}).rules||[]).s
 function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
 function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
 function gmPinHtml(){
- if(localMode)return '';
+ if(localMode||CAMP)return '';
  const gmk=isGM(),mk=!!keys.master;
  const [cls,lab,note]=!gmClaimed?['warn','No GM PIN','Whoever runs the game sets a PIN here. After that only devices with the PIN can run these tools.']
   :gmk?['ok','Unlocked on this device','Others need the GM PIN to run these tools.']
@@ -834,7 +859,7 @@ function houseToggle(){
  const hr=window.HOUSE_RULES||{};const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
  if(!names.length)return '';
  const can=(!db&&localMode)||!!keys.master;
- return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>House rules '+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' Only the master key can change this.')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
+ return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>House rules '+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' '+(CAMP?'Only the campaign owner can change this.':'Only the master key can change this.')+'')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
 }
 function traitField(s,c){
  const names=Object.keys(A.TRAITS);const cur=c.personality||'';const custom=cur&&!names.includes(cur);
@@ -881,7 +906,9 @@ function render(){
  if(typing){pending=true;renderTabs();return;}
  // Don't refocus dropdowns: on phones that reopens the picker right after a choice.
  const keepId=inApp&&ae.id&&ae.tagName!=='SELECT'?ae.id:null;
- pending=false;renderTabs();
+ pending=false;
+ if(halted){document.getElementById('tabs').innerHTML='';document.getElementById('app').innerHTML='<section class="sec"><h2>Can\u2019t open this campaign</h2><p class="note" style="margin:0">'+esc(halted)+'</p><div class="row"><a class="btn pri" href="beta/">Go to My campaigns</a></div></section>';return;}
+ renderTabs();
  const app=document.getElementById('app');
  app.innerHTML=active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty();
  if(keepId){const el=document.getElementById(keepId);if(el)try{el.focus({preventScroll:true});}catch(e){}}
@@ -991,7 +1018,7 @@ function renderCreator(){
  const checks=crChecks();const ok=checks.every(x=>x[0]);
  h+='<section class="sec"><h2>8 · Finish</h2><div class="row"><div class="stat"><span class="lbl">XP left</span><b class="num">'+(xpB-xpS)+'</b></div><div class="stat"><span class="lbl">Cash left</span><b class="num">'+money(left)+'</b></div><div class="stat"><span class="lbl">Insight limit</span><b class="num">'+(cr.bonus==='insight'?2:1)+'</b></div></div>'+
  '<div class="list">'+checks.map(([g,l])=>'<div class="item" style="padding:6px 0"><span class="chip '+(g?'ok':'warn')+'">'+(g?'Done':'To do')+'</span><span>'+esc(l)+'</span></div>').join('')+'</div>'+
- '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in the party</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+(SLOTS.length<MAX_SLOTS?'<option value="new"'+(cr.slot==='new'?' selected':'')+'>A new spot in the party</option>':'')+''+SLOTS.map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Replace '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
+ '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in the party</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+(SLOTS.length<MAX_SLOTS?'<option value="new"'+(cr.slot==='new'?' selected':'')+'>A new spot in the party</option>':'')+''+SLOTS.filter(canEdit).map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Replace '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
  (cr.slot&&cr.slot!=='new'?'<label class="row note" for="cr-confirm"><input type="checkbox" id="cr-confirm" data-cconfirm="1"'+(cr.confirm?' checked':'')+'> Replace '+esc(chars[cr.slot].name)+'’s sheet with this one</label>':'')+
  '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&(cr.slot==='new'||cr.confirm)?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Open printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
  return h;
@@ -1023,7 +1050,7 @@ function creatorClick(b){
   case 'rm':cr.cart=cr.cart.filter((x,i)=>i!==Number(n));break;
   case 'reset':crDone();break;
   case 'place':{if(cr.slot==='new'){const c=crBuild();addSlot(c).then(id=>{if(!id)return;crDone();toast(c.name+' joined the party.');go(id);});return;}
-   if(!canEdit(cr.slot))return toast(chars[cr.slot].name+'\u2019s sheet is locked. Unlock it first.');const c=crBuild();const s=cr.slot;c.locked=!!chars[s].locked;chars[s]=norm(c,slotNum(s));if(db)db.doc('characters/'+s).set(JSON.parse(JSON.stringify(chars[s]))).catch(e=>toast(e&&e.code==='permission-denied'?'That slot is locked. Unlock it first.':'Couldn’t save the new investigator. Try again.'));
+   if(!canEdit(cr.slot))return toast(chars[cr.slot].name+'\u2019s sheet is locked. Unlock it first.');const c=crBuild();const s=cr.slot;c.locked=!!chars[s].locked;if(CAMP)c.ownerUid=chars[s].ownerUid||authUid;chars[s]=norm(c,slotNum(s));if(db)db.doc('characters/'+s).set(JSON.parse(JSON.stringify(chars[s]))).catch(e=>toast(e&&e.code==='permission-denied'?'That slot is locked. Unlock it first.':'Couldn’t save the new investigator. Try again.'));
    crDone();toast(c.name+' joined the party.');go(s);return;}
   case 'print':downloadSheet(crBuild());return;
  }
@@ -1049,7 +1076,7 @@ function downloadSheet(c){
 
 // ---------- events ----------
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;go(b.dataset.tab);});
-function go(t){active=t;try{localStorage.setItem('apl-tab',t);}catch(e){}render();window.scrollTo(0,0);}
+function go(t){active=t;try{localStorage.setItem(TAB_KEY,t);}catch(e){}render();window.scrollTo(0,0);}
 const app=document.getElementById('app');
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{
@@ -1081,12 +1108,14 @@ app.addEventListener('click',e=>{
   case 'xpamt':{const el=document.getElementById('xpamt-'+s);const v=Math.round(Number(el&&el.value)||xpAmt[s]||1);xpAmt[s]=Math.max(1,Math.min(30,v+n));render();break;}
   case 'xpaward':{const el=document.getElementById('xpamt-'+s);const v=Math.max(1,Math.min(30,Math.round(Number(el&&el.value)||1)));xpAmt[s]=1;R.addXp(s,v);break;}
   case 'xpfix':edit.xp=!edit.xp;render();break;
+  case 'claim':if(CAMP&&db)db.doc('characters/'+s).update({ownerUid:authUid,player:((camp&&camp.names)||{})[authUid]||c.player}).then(()=>toast('This investigator is yours now.'),()=>toast('Couldn\u2019t claim it. Someone may have just taken it.'));break;
+  case 'release':if(CAMP&&db)db.doc('characters/'+s).update({ownerUid:null}).then(()=>toast('You gave up this investigator. Anyone in the campaign can claim it.'),()=>toast('Couldn\u2019t do that. Try again.'));break;
   case 'printc':downloadSheet(c);break;
   case 'traitxp':if(edit.trait&&c.xpUnused>=2)setTrait(s,edit.trait.t,2);break;
   case 'traitfree':if(edit.trait)setTrait(s,edit.trait.t,0);break;
   case 'traitcancel':edit.trait=null;render();break;
   case 'picdel':save(s,{portrait:''},'Removed portrait');break;
-  case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the master key can change house rules.'));break;}
+  case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the '+(CAMP?'campaign owner':'master key')+' can change house rules.'));break;}
   case 'dellog':if(!keys.master)return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master)return;save(s,{log:[]});toast('Recent history cleared.');break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
@@ -1120,6 +1149,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(gmChange(el))return;
+ if(el.dataset.assign){const t=el.dataset.assign,u=el.value||null;if(CAMP&&db&&keys.master)db.doc('characters/'+t).update({ownerUid:u,...(u?{player:((camp&&camp.names)||{})[u]||''}:{})}).then(()=>toast(u?'Assigned to '+((camp.names||{})[u]||'them')+'.':'Now unclaimed.'),()=>toast('Couldn\u2019t change that.'));return;}
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
   openCrop(f,s);el.value='';return;}
  if(el.dataset.xpamt){xpAmt[s]=Math.max(1,Math.min(30,Math.round(Number(el.value)||1)));return;}
@@ -1165,7 +1195,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v89 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v90 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1353,7 +1383,7 @@ function renderJournal(){
  return h;
 }
 function renderGM(){
- if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>Game Master</h2><p class="note">These are the Game Master\u2019s tools. Players don\u2019t need anything here.</p></section>';
+ if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>Game Master</h2><p class="note">These are the Game Master\u2019s tools. Players don\u2019t need anything here.'+(CAMP?' The campaign owner chooses the GM on the campaign page.':'')+'</p></section>';
  const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
  let h=turnBar()+gmPinHtml();
  // scene & turns
@@ -1407,10 +1437,10 @@ function renderGM(){
  // campaign
  h+='<section class="sec"><div class="sec-head"><h2>Campaign</h2><span class="note">Players can read this on the Journal tab.</span></div><label class="field" style="max-width:320px"><span class="lbl">In-game date</span><input class="f" id="cp-date" data-gcpd="1" value="'+esc(campaign.date)+'" placeholder="e.g. Friday, October 14, 1927"></label>'+campaignHtml(true)+'</section>';
  // notes
- h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the GM (and the master key) can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the GM (and the '+(CAMP?'campaign owner':'master key')+') can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
  // activity
  const g=isGM(),tf=t=>new Date(t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'});
- h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><span class="note">Only the GM and the master key see this.</span>'+(g&&gmLogList.length?'<button class="btn sm dng" data-gact="glclear">Clear all</button>':'')+'</div><div class="log">'+(gmLogList.length?gmLogList.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(g?'<button class="btn sm icon" style="min-height:24px;width:24px" data-gact="gldel" data-id="'+esc(l.id)+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+tf(l.t)+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><span class="note">Only the GM and the '+(CAMP?'campaign owner':'master key')+' see this.</span>'+(g&&gmLogList.length?'<button class="btn sm dng" data-gact="glclear">Clear all</button>':'')+'</div><div class="log">'+(gmLogList.length?gmLogList.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(g?'<button class="btn sm icon" style="min-height:24px;width:24px" data-gact="gldel" data-id="'+esc(l.id)+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+tf(l.t)+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div></section>';
  return h;
 }
 
@@ -1471,10 +1501,44 @@ function gmChange(el){
  return false;
 }
 
+// ---------- campaign boot (beta) ----------
+async function bootCampaign(syncEl){
+ const cfg0=window.FIREBASE_CONFIG;
+ if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();syncEl.textContent='Not connected';return;}
+ const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
+ const fb=firebase.initializeApp(cfg,'beta');const raw=fb.firestore();const pre='campaigns/'+CAMP+'/';
+ const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
+ if(!u||u.isAnonymous){location.replace('beta/');return;}
+ authUid=u.uid;
+ db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p)};
+ const brand=document.querySelector('.brand h1');
+ raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
+  if(!snap.exists){halted='This campaign was deleted.';render();return;}
+  camp=snap.data();
+  if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
+  if(brand)brand.textContent=camp.name;document.title=camp.name+' \u2014 Arkham Ledger';
+  applyRoles();render();
+ },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
+ gmBoot();
+ db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
+ db.collection('characters').onSnapshot(qs=>{
+  const ids=[];
+  qs.forEach(d=>{if(!isSlotId(d.id))return;ids.push(d.id);chars[d.id]=norm(JSON.parse(JSON.stringify(d.data())),slotNum(d.id));});
+  if(!ids.length&&qs.metadata.fromCache)return;
+  SLOTS=ids.sort((a,b)=>slotNum(a)-slotNum(b));
+  Object.keys(chars).forEach(k=>{if(!SLOTS.includes(k))delete chars[k];});
+  if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
+  if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
+  applyRoles();render();saveCache();
+ },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
+ syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 v90';
+}
+
 // ---------- boot ----------
 render();
 (async()=>{
  const syncEl=document.getElementById('sync');
+ if(CAMP){await bootCampaign(syncEl);return;}
  const cfg=window.FIREBASE_CONFIG;
  if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){localMode=true;render();syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
  try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
@@ -1483,7 +1547,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v89';
+ syncEl.textContent='Live · synced for the party · v90';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

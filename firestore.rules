@@ -178,6 +178,79 @@ service cloud.firestore {
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
         || ownerManages() || joining() || leaving());
       allow delete: if realUser() && isOwner();
+
+      // ----- The ledger inside a campaign -----
+      // (The owner can delete anything here, so deleting a campaign can clean up after itself.)
+      function C() { return get(/databases/$(database)/documents/campaigns/$(cid)).data; }
+      function member() { return realUser() && request.auth.uid in C().memberIds; }
+      function cOwner() { return realUser() && C().ownerUid == request.auth.uid; }
+      function cGM() { return realUser() && C().get('gmUid', null) == request.auth.uid; }
+      function gmSees() { return cGM() || cOwner(); }
+      function sheetOwner(s) { return get(/databases/$(database)/documents/campaigns/$(cid)/characters/$(s)).data.get('ownerUid', null); }
+      function plays(s) { return isSlot(s) && sheetOwner(s) == request.auth.uid; }
+
+      // Investigators: everyone in the campaign can see them. A player edits their own; the owner edits any;
+      // the GM can award XP, start sessions and refill pools. Unclaimed sheets (or ones whose player left) can be claimed.
+      match /characters/{slot} {
+        function oldOwner() { return resource.data.get('ownerUid', null); }
+        function newOwner() { return request.resource.data.get('ownerUid', null); }
+        function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+        allow read: if member();
+        allow create: if member() && isSlot(slot) && (newOwner() == request.auth.uid || cOwner());
+        allow update: if member() && isSlot(slot) && (
+          cOwner()
+          || (oldOwner() == request.auth.uid && (newOwner() == request.auth.uid || newOwner() == null))
+          || (cGM() && changed().hasOnly(['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log']))
+          || ((oldOwner() == null || !(oldOwner() in C().memberIds)) && newOwner() == request.auth.uid && changed().hasOnly(['ownerUid', 'player'])));
+        allow delete: if cOwner();
+      }
+      // Turn tracker and campaign tracker: everyone reads, the GM writes.
+      match /table/{doc} {
+        allow delete: if cOwner();
+        allow read: if member();
+        allow write: if cGM() && doc == 'state';
+      }
+      match /campaign/{doc} {
+        allow delete: if cOwner();
+        allow read: if member();
+        allow write: if cGM();
+      }
+      // Enemies and handouts: players only see what the GM reveals (a handout to one player only to that player).
+      match /enemies/{id} {
+        allow delete: if cOwner();
+        allow read: if gmSees() || (member() && resource.data.shown == true);
+        allow write: if cGM();
+      }
+      match /clues/{id} {
+        allow delete: if cOwner();
+        allow read: if gmSees() || (member() && resource.data.shown == true
+          && (resource.data.to == 'all' || plays(resource.data.to)));
+        allow write: if cGM();
+      }
+      match /gm/{doc} {
+        allow delete: if cOwner();
+        allow read: if gmSees();
+        allow write: if cGM();
+      }
+      match /gmlog/{id} {
+        allow delete: if cOwner();
+        allow read: if gmSees();
+        allow create, delete: if cGM();
+      }
+      match /history/{id} {
+        allow read: if member();
+        allow create: if member() && request.resource.data.slot is string
+          && ((request.resource.data.slot == 'gm' && cGM())
+            || (isSlot(request.resource.data.slot) && (plays(request.resource.data.slot) || cOwner() || cGM())));
+        allow delete: if gmSees();
+      }
+      // House rules switch: the owner decides.
+      match /settings/{doc} {
+        allow delete: if cOwner();
+        allow read: if member();
+        allow write: if cOwner() && doc == 'house' && request.resource.data.keys().hasOnly(['on'])
+          && request.resource.data.on is bool;
+      }
     }
 
     // Invites by email: the owner adds one; whoever signs in with that (verified) email can join or decline.

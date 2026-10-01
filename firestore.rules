@@ -139,9 +139,18 @@ service cloud.firestore {
           && newC().names.keys().hasOnly(newC().memberIds)
           && (gmOf(newC()) == null || gmOf(newC()) in newC().memberIds);
       }
+      function myEmail() { return request.auth.token.email.lower(); }
+      function invited() {
+        return request.auth.token.email_verified == true
+          && exists(/databases/$(database)/documents/invites/$(cid + '_' + myEmail()));
+      }
+      function hasLink() {
+        return oldC().get('joinCode', '') != ''
+          && getAfter(/databases/$(database)/documents/joinreq/$(cid + '_' + me())).data.code == oldC().joinCode;
+      }
       function joining() {
         return !(me() in oldC().memberIds)
-          && exists(/databases/$(database)/documents/invites/$(cid + '_' + me()))
+          && (invited() || hasLink())
           && changedOnly(['memberIds', 'roles', 'names'])
           && newC().memberIds == oldC().memberIds.concat([me()])
           && newC().memberIds.size() <= 12
@@ -166,25 +175,36 @@ service cloud.firestore {
         && goodName();
       allow update: if realUser() && (
         (isOwner() && changedOnly(['name']) && goodName())
+        || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
         || ownerManages() || joining() || leaving());
       allow delete: if realUser() && isOwner();
     }
 
-    // Invites: the owner invites someone by username; the invitee joins or declines; either side can delete it.
+    // Invites by email: the owner adds one; whoever signs in with that (verified) email can join or decline.
     match /invites/{iid} {
       function camp(c) { return get(/databases/$(database)/documents/campaigns/$(c)).data; }
-      function uname(u) { return get(/databases/$(database)/documents/users/$(u)).data.username; }
-      allow read: if realUser() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+      function myEmail() { return request.auth.token.email.lower(); }
+      function isInvitee() { return request.auth.token.email_verified == true && resource.data.toEmail == myEmail(); }
+      allow read: if realUser() && (resource.data.fromUid == request.auth.uid || isInvitee());
       allow create: if realUser()
-        && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toUid', 'toName', 'created'])
-        && iid == request.resource.data.cid + '_' + request.resource.data.toUid
+        && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toEmail', 'created'])
+        && request.resource.data.toEmail is string
+        && request.resource.data.toEmail.size() <= 120
+        && request.resource.data.toEmail.matches('[^@/ ]+@[^@/ ]+[.][^@/ ]+')
+        && request.resource.data.toEmail == request.resource.data.toEmail.lower()
+        && iid == request.resource.data.cid + '_' + request.resource.data.toEmail
         && request.resource.data.fromUid == request.auth.uid
         && camp(request.resource.data.cid).ownerUid == request.auth.uid
-        && !(request.resource.data.toUid in camp(request.resource.data.cid).memberIds)
         && request.resource.data.campaignName == camp(request.resource.data.cid).name
-        && request.resource.data.toName == uname(request.resource.data.toUid)
-        && request.resource.data.fromName == uname(request.auth.uid);
-      allow delete: if realUser() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+        && request.resource.data.fromName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username;
+      allow delete: if realUser() && (resource.data.fromUid == request.auth.uid || isInvitee());
+    }
+    // Proof that someone opened a campaign's invite link (checked when they add themselves).
+    match /joinreq/{rid} {
+      allow create, update: if realUser()
+        && request.resource.data.keys().hasOnly(['cid', 'code'])
+        && rid == request.resource.data.cid + '_' + request.auth.uid
+        && request.resource.data.code is string && request.resource.data.code.size() <= 40;
     }
 
     match /{document=**} {

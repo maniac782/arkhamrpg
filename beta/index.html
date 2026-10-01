@@ -236,7 +236,7 @@ function authView(){
  return h;
 }
 function usernameView(){
- return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">Friends will use it to invite you to campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+
+ return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">It\u2019s the name other players see in your campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+
   '<form id="unform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('un','Username','text','autocomplete="username" maxlength="20" autocapitalize="off" spellcheck="false" required')+errHtml()+
   '<button class="btn pri wide" type="submit" '+(ui.busy?'disabled':'')+'>Save username</button></form></section>';
 }
@@ -246,6 +246,8 @@ function campCard(c){const n=(c.memberIds||[]).length;return '<button class="cam
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
  let h='';
+ if(pendingJoin&&!camps.some(c=>c.id===pendingJoin.cid))h+='<section class="sec"><div class="sec-head"><h2>Join “'+esc(pendingJoin.name||'this campaign')+'”?</h2></div><p class="note" style="margin:0">You opened an invite link. Join to see the party and play.</p><div class="row"><button class="btn pri" data-a="ljoin" '+(ui.busy?'disabled':'')+'>Join</button><button class="btn" data-a="lskip">Not now</button></div>'+errHtml()+'</section>';
+ if(user.email&&!user.emailVerified&&!user.providerData.some(x=>x.providerId==='google.com'))h+='<section class="sec"><p class="note" style="margin:0">Verify your email to see invites sent to <b>'+esc(user.email)+'</b>. Check your inbox for the link, then reload. <button class="btn sm" data-a="reverify">Send it again</button></p></section>';
  if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>Invitations</h2></div><div class="list">'+inbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.campaignName)+'</b><span class="effect">'+esc(i.fromName)+' invited you to join</span></div><button class="btn sm pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join</button><button class="btn sm" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div>').join('')+'</div></section>';
  h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length<MAX_OWNED?'<button class="btn sm pri" data-a="newopen">New campaign</button>':'')+'</div>';
  if(ui.newOpen)h+='<form id="newform" class="row" style="align-items:flex-end" novalidate>'+'<label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="cname" maxlength="60" placeholder="e.g. The Dunwich Legacy" required></label><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create</button><button class="btn" type="button" data-a="newclose">Cancel</button></form>'+errHtml();
@@ -255,7 +257,8 @@ function homeView(){
  return h;
 }
 function campView(){
- const c=camps.find(x=>x.id===ui.cid);if(!c){ui.view='home';return homeView();}
+ const c=camps.find(x=>x.id===ui.cid);if(!c){if(ui.waitCid===ui.cid)return '<p class="note" style="padding:24px 0">Opening the campaign\u2026</p>';ui.view='home';return homeView();}
+ if(ui.waitCid===c.id)ui.waitCid=null;
  const own=c.ownerUid===user.uid,names=c.names||{};
  let h='<div class="row"><button class="btn sm" data-a="home">← My campaigns</button></div>';
  h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
@@ -270,9 +273,13 @@ function campView(){
  if(own)h+='<p class="note" style="margin:0">The GM runs the GM tools. You can make yourself the GM, or hand it to a player.</p>';
  h+='</section>';
  if(own){
-  h+='<section class="sec"><div class="sec-head"><h2>Invite players</h2></div><form id="invform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:200px"><span class="lbl">Their username</span><input class="f" id="iname" maxlength="21" autocapitalize="off" spellcheck="false" placeholder="e.g. Wallace_M"></label><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Invite</button></form>'+errHtml()+
-   '<p class="note" style="margin:0">They need an account first. Have them sign up at this page, pick a username and tell it to you. The invite shows up on their My campaigns page.</p>';
-  if(outbox.length)h+='<div><span class="lbl">Waiting to join</span><div class="list">'+outbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.toName)+'</b><span class="effect">Invited</span></div><button class="btn sm" data-a="icancel" data-id="'+esc(i.id)+'">Cancel invite</button></div>').join('')+'</div></div>';
+  const link=joinLink(c);
+  h+='<section class="sec"><div class="sec-head"><h2>Invite players</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+' spots used</span></div>';
+  h+='<div><span class="lbl">Invite link</span>'+(link?'<div class="row"><input class="f" id="ilink" readonly value="'+esc(link)+'" style="flex:1;min-width:220px" aria-label="Invite link"><button class="btn pri" data-a="lcopy">Copy link</button>'+(navigator.share?'<button class="btn" data-a="lshare">Share…</button>':'')+'</div><p class="note" style="margin:6px 0 0">Anyone with this link can join after signing in. Drop it in your group chat. <button class="btn sm" data-a="lnew">Make a new link</button> turns the old one off.</p>'
+   :'<div class="row"><button class="btn pri" data-a="lnew">Create invite link</button></div>')+'</div>';
+  h+='<form id="invform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Or invite by email</span><input class="f" id="iemail" type="email" autocapitalize="off" spellcheck="false" placeholder="friend@example.com"></label><button class="btn" type="submit" '+(ui.busy?'disabled':'')+'>Add invite</button></form>'+errHtml()+
+   '<p class="note" style="margin:0">The invite waits on their My campaigns page once they sign in with that email. Nothing is emailed, so let them know.</p>';
+  if(outbox.length)h+='<div><span class="lbl">Waiting to join</span><div class="list">'+outbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.toEmail)+'</b><span class="effect">Invited</span></div><button class="btn sm" data-a="icancel" data-id="'+esc(i.id)+'">Cancel invite</button></div>').join('')+'</div></div>';
   h+='</section>';
   h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
  }else{
@@ -319,30 +326,38 @@ async function createCampaign(){
  if(camps.filter(c=>c.ownerUid===user.uid).length>=MAX_OWNED)throw {msg:'You can own up to '+MAX_OWNED+' campaigns.'};
  const ref=db.collection('campaigns').doc();
  await ref.set({name:name.slice(0,60),ownerUid:user.uid,memberIds:[user.uid],roles:{[user.uid]:'owner'},names:{[user.uid]:profile.username},created:firebase.firestore.FieldValue.serverTimestamp()});
- ui.newOpen=false;ui.view='camp';ui.cid=ref.id;toast('Campaign created. You’re its owner.');
+ ui.newOpen=false;ui.view='camp';ui.cid=ref.id;ui.waitCid=ref.id;toast('Campaign created. You’re its owner.');
 }
 
 // ---------- invites & members ----------
 const FV=()=>firebase.firestore.FieldValue;
-function watchInbox(){if(inboxUnsub)inboxUnsub();
- inboxUnsub=db.collection('invites').where('toUid','==',user.uid).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+const myEmail=()=>String((user&&user.email)||'').toLowerCase();
+function watchInbox(){if(inboxUnsub)inboxUnsub();inbox=[];if(!myEmail())return;
+ inboxUnsub=db.collection('invites').where('toEmail','==',myEmail()).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
 function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
  outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+const joinLink=c=>c.joinCode?location.origin+location.pathname+'?join='+encodeURIComponent(c.id+'.'+c.joinCode)+'&n='+encodeURIComponent(c.name):'';
+function newCode(){const a=new Uint8Array(15);crypto.getRandomValues(a);return Array.from(a,x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');}
 async function sendInvite(){
  const c=camps.find(x=>x.id===ui.cid);if(!c)return;
- const name=((document.getElementById('iname')||{}).value||'').trim().replace(/^@/,'');
- if(!/^[A-Za-z0-9_]{3,20}$/.test(name))throw {msg:'Enter their username (3–20 letters, numbers or underscores).'};
- const us=await db.doc('usernames/'+name.toLowerCase()).get();
- if(!us.exists)throw {msg:'Nobody has the username “'+name+'” yet. Check the spelling, or have them sign up first.'};
- const to=us.data().uid;
- if(to===user.uid)throw {msg:'That’s you.'};
- if((c.memberIds||[]).includes(to))throw {msg:name+' is already in this campaign.'};
- if(outbox.some(i=>i.toUid===to))throw {msg:name+' already has an invite waiting.'};
+ const em=((document.getElementById('iemail')||{}).value||'').trim().toLowerCase();
+ if(!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(em)||em.length>120)throw {msg:'That email address doesn’t look right.'};
+ if(em===myEmail())throw {msg:'That’s your own email.'};
+ if(outbox.some(i=>i.toEmail===em))throw {msg:'There’s already an invite waiting for '+em+'.'};
  if((c.memberIds||[]).length+outbox.length>=MAX_MEMBERS)throw {msg:'A campaign can have up to '+MAX_MEMBERS+' members, counting invites.'};
- const p=await db.doc('users/'+to).get();const toName=p.exists?p.data().username:name;
- await db.doc('invites/'+c.id+'_'+to).set({cid:c.id,campaignName:c.name,fromUid:user.uid,fromName:profile.username,toUid:to,toName,created:FV().serverTimestamp()});
- ui.clear.add('iname');toast('Invite sent to '+toName+'.');
+ await db.doc('invites/'+c.id+'_'+em).set({cid:c.id,campaignName:c.name,fromUid:user.uid,fromName:profile.username,toEmail:em,created:FV().serverTimestamp()});
+ ui.clear.add('iemail');toast('Invite saved for '+em+'. Let them know to sign in with that email.');
 }
+async function joinByLink(){
+ const j=pendingJoin;if(!j)return;
+ const b=db.batch();
+ b.set(db.doc('joinreq/'+j.cid+'_'+user.uid),{cid:j.cid,code:j.code});
+ b.update(db.doc('campaigns/'+j.cid),{memberIds:FV().arrayUnion(user.uid),['roles.'+user.uid]:'player',['names.'+user.uid]:profile.username});
+ try{await b.commit();}catch(e){console.warn(e);throw {msg:e&&e.code==='not-found'?'That campaign no longer exists.':'This invite link doesn’t work anymore. Ask for a new one.'};}
+ setPendingJoin(null);ui.view='camp';ui.cid=j.cid;ui.waitCid=j.cid;toast('You joined '+(j.name||'the campaign')+'.');
+}
+let pendingJoin=null;
+function setPendingJoin(v){pendingJoin=v;try{v?sessionStorage.setItem('apl-join',JSON.stringify(v)):sessionStorage.removeItem('apl-join');}catch(e){}}
 async function joinInvite(id){
  const inv=inbox.find(x=>x.id===id);if(!inv)return;
  const b=db.batch();
@@ -351,6 +366,7 @@ async function joinInvite(id){
  try{await b.commit();toast('You joined '+inv.campaignName+'.');}
  catch(e){console.warn(e);if(e&&e.code==='not-found'){await db.doc('invites/'+id).delete().catch(()=>{});toast('That campaign no longer exists.');}else toast('Couldn’t join. Try again.');}
 }
+async function regenLink(){const c=camps.find(x=>x.id===ui.cid);if(!c)return;await db.doc('campaigns/'+c.id).update({joinCode:newCode()});toast(c.joinCode?'New link made. The old one no longer works.':'Invite link ready.');}
 function memberOut(c,u){const p={memberIds:FV().arrayRemove(u),['roles.'+u]:FV().delete(),['names.'+u]:FV().delete()};if(c.gmUid===u)p.gmUid=null;return db.doc('campaigns/'+c.id).update(p);}
 
 // ---------- events ----------
@@ -373,6 +389,12 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'delask':ui.confirmDel=true;render();break;
   case 'delno':ui.confirmDel=false;render();break;
   case 'ijoin':joinInvite(b.dataset.id);break;
+  case 'ljoin':busy(joinByLink);break;
+  case 'lskip':setPendingJoin(null);render();break;
+  case 'lnew':busy(regenLink);break;
+  case 'lcopy':{const el=document.getElementById('ilink');const v=el?el.value:'';(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('Link copied.'),()=>{if(el){el.select();}toast('Select the link and copy it.');});break;}
+  case 'lshare':{const c=camps.find(x=>x.id===ui.cid);if(c&&navigator.share)navigator.share({title:'Join '+c.name,text:'Join my Arkham campaign “'+c.name+'”',url:joinLink(c)}).catch(()=>{});break;}
+  case 'reverify':user.sendEmailVerification().then(()=>toast('Verification email sent.'),()=>toast('Couldn’t send it. Try again in a bit.'));break;
   case 'idecline':db.doc('invites/'+b.dataset.id).delete().then(()=>toast('Invite declined.'),()=>toast('Couldn\u2019t do that.'));break;
   case 'icancel':db.doc('invites/'+b.dataset.id).delete().then(()=>toast('Invite cancelled.'),()=>toast('Couldn\u2019t do that.'));break;
   case 'gm':{const c=camps.find(x=>x.id===ui.cid);if(!c)break;const u=b.dataset.u||null;db.doc('campaigns/'+c.id).update({gmUid:u}).then(()=>toast(u?(c.names||{})[u]+' is now the GM.':'No GM for now.'),()=>toast('Couldn\u2019t change the GM.'));break;}
@@ -394,6 +416,10 @@ if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase i
 const cfg=Object.assign({},window.FIREBASE_CONFIG);
 if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
 fb=firebase.initializeApp(cfg,'beta');auth=fb.auth();db=fb.firestore();
+try{const q=new URLSearchParams(location.search).get('join');const n=new URLSearchParams(location.search).get('n');
+ if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
+ if(q)history.replaceState(null,'',location.pathname);
+ if(!pendingJoin){const sj=JSON.parse(sessionStorage.getItem('apl-join')||'null');if(sj&&sj.cid&&sj.code)pendingJoin=sj;}}catch(e){}
 auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
 auth.onAuthStateChanged(u=>{
  if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}if(inboxUnsub){inboxUnsub();inboxUnsub=null;}if(outUnsub){outUnsub();outUnsub=null;}outCid=null;inbox=[];outbox=[];

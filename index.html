@@ -1165,7 +1165,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v88 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v89 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1180,7 +1180,7 @@ try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(k&&k.table)ta
 let enemies={},clues={},campaign={date:'',locations:[],npcs:[],threads:[]},gmNotes='',history=[],historySession=null;
 const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:'',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
 let gmUnsubs=[],gmMasterState=null;
-const isGM=()=>db?(!!keys.gm&&gmClaimed):localMode;
+const isGM=()=>localMode||(!!keys.gm&&gmClaimed);
 let keysReady=false,gmFlagReady=false;
 const isGMView=()=>isGM()||!!keys.master;
 const gmId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -1353,7 +1353,6 @@ function renderJournal(){
  return h;
 }
 function renderGM(){
- if(!localMode&&!(db&&keysReady&&gmFlagReady))return '<section class="sec"><h2>Game Master</h2><p class="note">Checking this device\u2019s GM PIN\u2026</p></section>';
  if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>Game Master</h2><p class="note">These are the Game Master\u2019s tools. Players don\u2019t need anything here.</p></section>';
  const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
  let h=turnBar()+gmPinHtml();
@@ -1484,7 +1483,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v88';
+ syncEl.textContent='Live · synced for the party · v89';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

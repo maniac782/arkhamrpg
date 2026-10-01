@@ -100,6 +100,45 @@ service cloud.firestore {
       allow delete: if gmView();
     }
 
+    // ===== Beta: accounts and campaigns =====
+    // A real account (Google or email), not the main site's anonymous device sign-in.
+    function realUser() { return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+
+    // Public profile: just a username. Emails are never stored here.
+    match /users/{uid} {
+      allow read: if realUser();
+      allow create, update: if realUser() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'created'])
+        && request.resource.data.username is string
+        && request.resource.data.username.matches('[A-Za-z0-9_]{3,20}')
+        && request.resource.data.usernameLower == request.resource.data.username.lower()
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.usernameLower)).data.uid == uid;
+    }
+    // Username claims, so two people can't take the same one.
+    match /usernames/{name} {
+      allow read: if realUser();
+      allow create: if realUser() && name.matches('[a-z0-9_]{3,20}')
+        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
+      allow delete: if realUser() && resource.data.uid == request.auth.uid;
+    }
+    // Campaigns: members can see them; only the owner can create, rename or delete.
+    match /campaigns/{cid} {
+      allow read: if realUser() && request.auth.uid in resource.data.memberIds;
+      allow create: if realUser()
+        && request.resource.data.keys().hasOnly(['name', 'ownerUid', 'memberIds', 'roles', 'names', 'created'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.roles.keys().hasOnly([request.auth.uid])
+        && request.resource.data.roles[request.auth.uid] == 'owner'
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60;
+      allow update: if realUser() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60;
+      allow delete: if realUser() && resource.data.ownerUid == request.auth.uid;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

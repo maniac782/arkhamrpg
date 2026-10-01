@@ -40,6 +40,9 @@ The repo also deploys to Firebase Hosting through `.github/workflows/deploy-fire
 
 Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps working.
 
+## Beta: accounts and campaigns
+`beta/` (arkhamrpg.web.app/beta) is a test version with real accounts (Google or email) and campaigns you own or belong to. It needs **Google** and **Email/Password** turned on in Firebase → Authentication → Sign-in method, with `arkhamrpg.web.app` in Authorized domains. It uses its own sign-in, separate from the main site's anonymous device sign-in, so it doesn't affect the main site.
+
 ## Automatic rules publishing
 Every push to `main` deploys the site and also publishes `firestore.rules` (the **rules** job in `.github/workflows/deploy-firebase.yml`). The GitHub service account needs three roles in Google Cloud → IAM: **Firebase Rules Admin**, **Service Usage Consumer** and **Cloud Datastore Viewer**.
 

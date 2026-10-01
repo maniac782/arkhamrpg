@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="../favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="../icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Arkham Ledger">
+<meta name="application-name" content="Arkham RPG Player Ledger">
+<meta name="theme-color" content="#1b2230">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Arkham Ledger — Beta</title>
+<script>
+/* Paste your Firebase web app settings here (Firebase console > Project settings > Your apps). */
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCzibyyquTc6L_S1mTQyVvkxVIJR2qv4j4",
+  authDomain: "arkham-ledger.firebaseapp.com",
+  projectId: "arkham-ledger",
+  storageBucket: "arkham-ledger.firebasestorage.app",
+  messagingSenderId: "789653165049",
+  appId: "1:789653165049:web:23629583d7d0a3fc8de328"
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#e9ebe4; --surface:#f7f7f2; --surface2:#dfe2d8; --ink:#1b2230; --muted:#4f5664; --line:#b8bcae;
+  --brass:#7e5a12; --brass-soft:#efe3c6; --horror:#2f6b4f; --horror-soft:#d5e8dc;
+  --danger:#a3322a; --danger-soft:#f4dcd8; --ok:#2f6b4f; --warn:#8a5a00; --focus:#2d5bd1;
+  --display:'Bodoni Moda',Didot,'Times New Roman',serif; --body:'Libre Franklin','Helvetica Neue',Arial,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#11151c; --surface:#1a2029; --surface2:#242b36; --ink:#e8e5da; --muted:#a9adb5; --line:#3a4250;
+  --brass:#d6ab52; --brass-soft:#3a3120; --horror:#63b98e; --horror-soft:#1f3a2e; --danger:#ef7c70; --danger-soft:#43221f; --ok:#63b98e; --warn:#e2b04a; --focus:#8fb0ff;}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#11151c; --surface:#1a2029; --surface2:#242b36; --ink:#e8e5da; --muted:#a9adb5; --line:#3a4250;
+  --brass:#d6ab52; --brass-soft:#3a3120; --horror:#63b98e; --horror-soft:#1f3a2e; --danger:#ef7c70; --danger-soft:#43221f; --ok:#63b98e; --warn:#e2b04a; --focus:#8fb0ff;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:980px;margin:0 auto;padding:12px 16px 0;display:flex;flex-direction:column;gap:8px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--display);font-weight:700;font-size:24px;margin:0;letter-spacing:.3px}
+.brand small{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tab{border:0;background:none;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
+main{max-width:980px;margin:0 auto;padding-block:18px 60px;padding-inline:16px;display:flex;flex-direction:column;gap:16px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sec h2{font-family:var(--display);font-size:20px;margin:0;font-weight:700;text-wrap:balance}
+.sec-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lbl{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:8px 12px;min-height:40px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{background:var(--surface2)}
+.btn.pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn.dng{color:var(--danger);border-color:var(--danger)}
+.btn.hor{color:var(--horror);border-color:var(--horror)}
+.btn.sm{min-height:32px;padding:4px 9px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon{width:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+input.f,select.f,textarea.f{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 2px;border-radius:0}
+.avatar{flex:none;border-radius:50%;object-fit:cover;background:var(--surface2);border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--display);font-weight:700;overflow:hidden}
+.avatar.lg{width:88px;height:88px;font-size:34px}.avatar.sm{width:48px;height:48px;font-size:20px}
+.crop-bg{position:fixed;inset:0;z-index:20;background:rgba(10,12,16,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.crop{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:14px;align-items:center;width:min(340px,100%)}
+.crop h2{margin:0;font-family:var(--display);font-size:20px}
+.crop canvas{width:260px;height:260px;max-width:100%;border-radius:50%;touch-action:none;cursor:grab;background:var(--surface2);box-shadow:0 0 0 3px var(--brass)}
+.crop canvas:active{cursor:grabbing}
+.crop input[type=range]{width:100%;accent-color:var(--brass)}
+.pic-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+select{background-color:var(--surface);color:var(--ink)}
+select option,select optgroup{background-color:var(--surface);color:var(--ink)}
+select optgroup{font-weight:700;color:var(--muted)}
+select.f{appearance:none;-webkit-appearance:none;padding-right:26px;background-color:var(--surface);background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 55%,calc(100% - 8px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+textarea.f{border:1px solid var(--line);border-radius:4px;padding:8px;min-height:60px;resize:vertical}
+input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--brass);outline:none}
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.namein{font-family:var(--display);font-size:30px;font-weight:700;border:0;border-bottom:1px solid transparent;background:transparent;width:100%;padding:0}
+.namein:focus{border-bottom-color:var(--brass);outline:none}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.chip.ok{background:var(--horror-soft);color:var(--ok)}
+.chip.bad{background:var(--danger-soft);color:var(--danger)}
+.chip.warn{background:var(--brass-soft);color:var(--warn)}
+/* dice pool */
+.pool{display:flex;gap:6px;flex-wrap:wrap}
+.die{width:40px;height:40px;border-radius:7px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.die.reg::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.die.hor{background:var(--horror);border-color:var(--horror)}
+.die.hor::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--surface)}
+.die.empty{border-style:dashed;border-color:var(--line)}
+.die.pend{border-color:var(--horror);border-style:solid;box-shadow:0 0 0 3px var(--horror-soft)}
+.die.lost{border:2px solid var(--danger-soft);background:repeating-linear-gradient(45deg,var(--danger-soft) 0 4px,transparent 4px 8px)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.stat{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--surface2);border-radius:4px;min-width:110px}
+.stat b{font-family:var(--mono);font-size:20px}
+.stepper{display:inline-flex;align-items:center;gap:6px}
+/* skills */
+.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.skill{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px dotted var(--line)}
+.skill .nm{flex:1;font-weight:600}
+.rate{width:42px;height:42px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px}
+.maxsel{width:58px;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:4px}
+/* lists */
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tier{font-family:var(--mono);font-size:12px;border:1px solid var(--brass);color:var(--brass);border-radius:3px;padding:2px 6px;white-space:nowrap}
+.effect{font-size:13px;color:var(--muted)}
+.wgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ammo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pip{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);background:var(--ink);cursor:pointer;padding:0}
+.pip.spent{background:transparent;border-color:var(--line)}
+.note{font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:6px;font-size:14px;max-width:calc(100% - 32px);z-index:9}
+.roll{border:1px solid var(--brass);background:var(--brass-soft);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+details.sec>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"+";font-family:var(--mono);font-size:20px;color:var(--muted)}
+details.sec[open]>summary::after{content:"–"}
+/* party */
+.party{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;text-align:left;cursor:pointer}
+.pcard:hover{border-color:var(--brass)}
+.pcard h3{margin:0;font-family:var(--display);font-size:21px}
+.mini .die{width:24px;height:24px;border-radius:5px;border-width:2px}
+.mini .die::after{width:5px!important;height:5px!important}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.kv div{display:flex;flex-direction:column;background:var(--surface2);border-radius:4px;padding:6px 8px}
+.kv b{font-family:var(--mono);font-size:15px}
+.log{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.chip:not(.ok):not(.bad):not(.warn){background:var(--surface2);color:var(--muted)}
+.turnbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--horror);background:var(--horror-soft);border-radius:6px;padding:10px 14px}
+.turnbar.adv{border-color:var(--danger);background:var(--danger-soft)}
+.turnbar .ph{font-weight:700;font-family:var(--display);font-size:18px}
+.enemy{border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.enemy.out{opacity:.55}
+.npcp{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:8px}
+.skgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.skgrid span{display:flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:4px;padding:3px 2px}
+.skgrid small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.linkish{align-self:flex-start}
+.clues{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.clue{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface);display:flex;flex-direction:column;gap:4px}
+.clue.draft{border-style:dashed}
+.clue h3{margin:4px 0 0;font-family:var(--display);font-size:18px}
+.handout{width:100%;border-radius:4px;margin-top:6px}
+.rollout{display:flex;gap:6px;flex-wrap:wrap}
+.rd{width:36px;height:36px;border-radius:7px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;opacity:.55}
+.rd.s{opacity:1;box-shadow:0 0 0 3px var(--brass-soft)}
+.rd.h{background:var(--horror);border-color:var(--horror);color:var(--surface)}
+ul.recap{margin:4px 0 0;padding-left:18px}
+@media (max-width:560px){.skgrid{grid-template-columns:repeat(5,minmax(0,1fr))}.skgrid small{font-size:9px}}
+.banner{border:1px solid var(--line);background:var(--surface2);border-radius:6px;padding:12px 14px;font-size:14px}
+.costs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;font-size:13px}
+.costs span:nth-child(even){text-align:right;font-family:var(--mono)}
+@media (max-width:640px){
+  .skills,.party,.grid2{grid-template-columns:minmax(0,1fr)}
+  .wgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .namein{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+.auth{max-width:420px;margin:24px auto;display:flex;flex-direction:column;gap:14px}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.camps{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.camp{text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.camp:hover{border-color:var(--brass)}
+.camp h3{margin:0;font-family:var(--display);font-size:19px}
+.who{display:flex;align-items:center;gap:8px}
+.beta{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:middle}
+.err{color:var(--danger);font-size:13px;margin:0}
+.wide{width:100%}
+a{color:var(--brass)}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="brand"><h1>Arkham Ledger<span class="beta">Beta</span></h1><small id="who"></small></div>
+</div></div>
+<main id="app"><p class="note" style="padding:24px 16px">Loading…</p></main>
+<div class="toast" id="toast" hidden role="status"></div>
+<script>
+(function(){
+'use strict';
+const app=document.getElementById('app'),whoEl=document.getElementById('who'),toastEl=document.getElementById('toast');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,3200);}
+const MAX_OWNED=10;
+// state
+let fb=null,auth=null,db=null,user=null,profile=undefined,camps=[],campUnsub=null,profUnsub=null;
+const ui={mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,newOpen:false};
+
+function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c.projectId).startsWith('PASTE')&&window.firebase;}
+
+// ---------- rendering ----------
+function render(){
+ const a=document.activeElement,keep=a&&a.id&&app.contains(a)?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;
+ // keep whatever people have typed when the page redraws
+ const vals={};app.querySelectorAll('input[id],textarea[id]').forEach(el=>{if(el.type!=='file')vals[el.id]=el.value;});
+ if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
+ else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
+ else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
+ else{whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
+ Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el))el.value=vals[id];});
+ if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
+}
+const signOutHtml=()=>' <button class="btn sm" data-a="signout">Sign out</button>';
+const errHtml=()=>ui.err?'<p class="err" role="alert">'+esc(ui.err)+'</p>':'';
+function field(id,label,type,extra){return '<label class="field wide"><span class="lbl">'+label+'</span><input class="f" id="'+id+'" type="'+type+'" '+(extra||'')+'></label>';}
+
+function authView(){
+ const up=ui.mode==='signup',reset=ui.mode==='reset';
+ let h='<section class="sec auth"><h2>'+(reset?'Reset your password':up?'Create an account':'Sign in')+'</h2>';
+ if(!reset)h+='<button class="btn gbtn" data-a="google" '+(ui.busy?'disabled':'')+'><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.5z"/></svg>Continue with Google</button><div class="or">or with email</div>';
+ h+='<form id="authform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('em','Email','email','autocomplete="email" required')+
+  (reset?'':field('pw','Password','password','autocomplete="'+(up?'new-password':'current-password')+'" minlength="6" required'))+
+  (up?field('pw2','Confirm password','password','autocomplete="new-password" required'):'')+errHtml()+
+  '<button class="btn pri wide" type="submit" '+(ui.busy?'disabled':'')+'>'+(reset?'Send reset email':up?'Create account':'Sign in')+'</button></form>';
+ h+='<div class="row" style="justify-content:space-between">'+(reset?'<button class="btn sm" data-a="mode" data-m="signin">Back to sign in</button>':
+  (up?'<span class="note">Already have an account?</span><button class="btn sm" data-a="mode" data-m="signin">Sign in</button>':'<button class="btn sm" data-a="mode" data-m="reset">Forgot password?</button><button class="btn sm" data-a="mode" data-m="signup">Create an account</button>'))+'</div>';
+ h+='<p class="note" style="margin:0">This is a test version of the ledger with accounts and campaigns. Your group’s current sheets live on the <a href="../">main site</a> and aren’t affected.</p></section>';
+ return h;
+}
+function usernameView(){
+ return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">Friends will use it to invite you to campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+
+  '<form id="unform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('un','Username','text','autocomplete="username" maxlength="20" autocapitalize="off" spellcheck="false" required')+errHtml()+
+  '<button class="btn pri wide" type="submit" '+(ui.busy?'disabled':'')+'>Save username</button></form></section>';
+}
+function roleOf(c){return (c.roles||{})[user.uid]||'player';}
+const ROLE={owner:'Owner',gm:'Game Master',player:'Player'};
+function campCard(c){const n=(c.memberIds||[]).length;return '<button class="camp" data-a="open" data-id="'+esc(c.id)+'"><h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px"><span class="chip'+(roleOf(c)==='owner'?' ok':'')+'">'+ROLE[roleOf(c)]+'</span><span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></button>';}
+function homeView(){
+ const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
+ let h='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length<MAX_OWNED?'<button class="btn sm pri" data-a="newopen">New campaign</button>':'')+'</div>';
+ if(ui.newOpen)h+='<form id="newform" class="row" style="align-items:flex-end" novalidate>'+'<label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="cname" maxlength="60" placeholder="e.g. The Dunwich Legacy" required></label><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create</button><button class="btn" type="button" data-a="newclose">Cancel</button></form>'+errHtml();
+ h+=owned.length?'<div class="camps">'+owned.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">You don’t own any campaigns yet. Start one and you’ll be its owner.</p>';
+ h+='</section><section class="sec"><div class="sec-head"><h2>Campaigns you’re in</h2></div>'+
+  (member.length?'<div class="camps">'+member.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">None yet. When a friend invites you, it’ll show up here.</p>')+'</section>';
+ return h;
+}
+function campView(){
+ const c=camps.find(x=>x.id===ui.cid);if(!c){ui.view='home';return homeView();}
+ const own=c.ownerUid===user.uid,names=c.names||{};
+ let h='<div class="row"><button class="btn sm" data-a="home">← My campaigns</button></div>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+'</h2><span class="chip'+(own?' ok':'')+'">'+ROLE[roleOf(c)]+'</span></div>';
+ if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'"></label><button class="btn" type="submit">Rename</button></form>';
+ h+='<div><span class="lbl">Members</span><div class="list">'+(c.memberIds||[]).map(u=>'<div class="item"><div class="grow"><b>'+esc(names[u]||'Unknown')+'</b>'+(u===user.uid?' <span class="note">(you)</span>':'')+'</div><span class="chip">'+ROLE[(c.roles||{})[u]||'player']+'</span></div>').join('')+'</div></div>';
+ h+='<p class="note" style="margin:0">Coming next: investigators, the GM tools and the Journal inside this campaign, then invites.</p></section>';
+ if(own)h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
+ return h;
+}
+
+// ---------- auth ----------
+const AUTH_MSG={'auth/invalid-email':'That email address doesn’t look right.','auth/missing-password':'Enter your password.','auth/weak-password':'Use at least 6 characters for your password.',
+ 'auth/email-already-in-use':'There’s already an account with that email. Sign in instead.','auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong email or password.','auth/user-not-found':'Wrong email or password.',
+ 'auth/too-many-requests':'Too many tries. Wait a minute and try again.','auth/popup-closed-by-user':'','auth/cancelled-popup-request':'','auth/network-request-failed':'Can’t reach the server. Check your connection.',
+ 'auth/unauthorized-domain':'This web address isn’t allowed to sign in yet (Firebase → Authentication → Settings → Authorized domains).','auth/operation-not-allowed':'That sign-in method isn’t turned on in Firebase yet.'};
+const authErr=e=>{const c=e&&e.code;return c in AUTH_MSG?AUTH_MSG[c]:'Something went wrong ('+(c||'unknown')+'). Try again.';};
+async function busy(fn){ui.busy=true;ui.err='';render();try{await fn();}catch(e){console.warn(e);ui.err=e&&e.code&&String(e.code).startsWith('auth/')?authErr(e):(e&&e.msg)||('Couldn’t do that ('+((e&&e.code)||'error')+'). Try again.');}ui.busy=false;render();}
+async function google(){const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
+ try{await auth.signInWithPopup(p);}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await auth.signInWithRedirect(p);else throw e;}}
+async function emailSubmit(){
+ const v=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+ const em=v('em'),pw=document.getElementById('pw')?document.getElementById('pw').value:'';
+ if(!em)throw {msg:'Enter your email.'};
+ if(ui.mode==='reset'){await auth.sendPasswordResetEmail(em);ui.mode='signin';toast('If that email has an account, a reset link is on its way.');return;}
+ if(!pw)throw {msg:'Enter your password.'};
+ if(ui.mode==='signup'){if(pw!==document.getElementById('pw2').value)throw {msg:'The passwords don’t match.'};const cred=await auth.createUserWithEmailAndPassword(em,pw);try{await cred.user.sendEmailVerification();}catch(e){}}
+ else await auth.signInWithEmailAndPassword(em,pw);
+}
+
+// ---------- username ----------
+async function saveUsername(){
+ const raw=(document.getElementById('un')||{}).value||'';const name=raw.trim();
+ if(!/^[A-Za-z0-9_]{3,20}$/.test(name))throw {msg:'Use 3–20 letters, numbers or underscores.'};
+ const lower=name.toLowerCase();const uref=db.doc('usernames/'+lower);
+ await db.runTransaction(async t=>{const s=await t.get(uref);if(s.exists&&s.data().uid!==user.uid)throw {msg:'That username is taken. Try another.'};
+  t.set(uref,{uid:user.uid});t.set(db.doc('users/'+user.uid),{username:name,usernameLower:lower,created:firebase.firestore.FieldValue.serverTimestamp()});});
+ toast('Welcome, '+name+'.');
+}
+
+// ---------- campaigns ----------
+function watchCampaigns(){if(campUnsub)campUnsub();
+ campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));render();},e=>{console.warn(e);toast('Couldn’t load your campaigns.');});}
+async function createCampaign(){
+ const name=((document.getElementById('cname')||{}).value||'').trim();
+ if(!name)throw {msg:'Give the campaign a name.'};
+ if(camps.filter(c=>c.ownerUid===user.uid).length>=MAX_OWNED)throw {msg:'You can own up to '+MAX_OWNED+' campaigns.'};
+ const ref=db.collection('campaigns').doc();
+ await ref.set({name:name.slice(0,60),ownerUid:user.uid,memberIds:[user.uid],roles:{[user.uid]:'owner'},names:{[user.uid]:profile.username},created:firebase.firestore.FieldValue.serverTimestamp()});
+ ui.newOpen=false;ui.view='camp';ui.cid=ref.id;toast('Campaign created. You’re its owner.');
+}
+
+// ---------- events ----------
+app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
+ if(id==='authform')busy(emailSubmit);
+ else if(id==='unform')busy(saveUsername);
+ else if(id==='newform')busy(createCampaign);
+ else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});toast('Renamed.');});
+});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
+ switch(a){
+  case 'google':busy(google);break;
+  case 'mode':ui.mode=b.dataset.m;ui.err='';render();break;
+  case 'signout':auth.signOut();break;
+  case 'newopen':ui.newOpen=true;ui.err='';render();const i=document.getElementById('cname');if(i)i.focus();break;
+  case 'newclose':ui.newOpen=false;ui.err='';render();break;
+  case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.err='';render();window.scrollTo(0,0);break;
+  case 'home':ui.view='home';ui.err='';render();break;
+  case 'delask':ui.confirmDel=true;render();break;
+  case 'delno':ui.confirmDel=false;render();break;
+  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;db.doc('campaigns/'+id).delete().then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
+ }
+});
+
+// ---------- boot ----------
+if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase isn’t set up for this page.</p>';return;}
+// A separate Firebase app name keeps these accounts apart from the main site's anonymous device sign-in.
+fb=firebase.initializeApp(window.FIREBASE_CONFIG,'beta');auth=fb.auth();db=fb.firestore();
+auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
+auth.onAuthStateChanged(u=>{
+ if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}
+ user=u&&!u.isAnonymous?u:null;profile=undefined;camps=[];ui.view='home';ui.err='';ui.busy=false;
+ if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{const had=!!profile;profile=s.exists?s.data():null;if(profile&&!had)watchCampaigns();render();},e=>{console.warn(e);profile=null;render();});}
+ render();
+});
+render();
+})();
+</script>
+</body>
+</html>

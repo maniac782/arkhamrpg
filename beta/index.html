@@ -330,7 +330,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
 // ---------- boot ----------
 if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase isn’t set up for this page.</p>';return;}
 // A separate Firebase app name keeps these accounts apart from the main site's anonymous device sign-in.
-fb=firebase.initializeApp(window.FIREBASE_CONFIG,'beta');auth=fb.auth();db=fb.firestore();
+// Sign in through this same site (arkhamrpg.web.app/__/auth/...) rather than firebaseapp.com.
+// Browsers that block cross-site storage (Safari, newer Chrome) otherwise break the Google pop-up.
+const cfg=Object.assign({},window.FIREBASE_CONFIG);
+if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
+fb=firebase.initializeApp(cfg,'beta');auth=fb.auth();db=fb.firestore();
 auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
 auth.onAuthStateChanged(u=>{
  if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}

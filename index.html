@@ -182,6 +182,7 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .beta{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:middle}
 .err{color:var(--danger);font-size:13px;margin:0}
 .wide{width:100%}
+a.btn{text-decoration:none}
 a{color:var(--brass)}
 </style>
 <script src="house-rules.js"></script>
@@ -192,7 +193,7 @@ a{color:var(--brass)}
 </head>
 <body>
 <div class="top"><div class="top-in">
-  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v106</small></span></div>
+  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v107</small></span></div>
 </div></div>
 <main id="app"><p class="note" style="padding:24px 16px">Loading…</p></main>
 <div class="toast" id="toast" hidden role="status"></div>
@@ -219,6 +220,7 @@ function render(){
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
  else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
+ syncRename();
  // Keep the address in step with the page, so reloading a campaign's Settings stays there.
  if(user&&profile){const want=ui.view==='camp'&&ui.cid?'?settings='+encodeURIComponent(ui.cid):'';if(location.search!==want&&!/[?&]join=/.test(location.search)){try{history.replaceState(null,'',location.pathname+want);}catch(e){}}}
  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
@@ -268,7 +270,7 @@ function campView(){
  const own=c.ownerUid===user.uid,names=c.names||{};
  let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button><a class="btn sm pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a></div>';
  h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+' \u00b7 '+(own?'settings':'members')+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
- if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'"></label><button class="btn" type="submit">Rename</button></form>';
+ if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form>';
  h+='</section>';
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
@@ -456,8 +458,11 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
  else if(id==='unform')busy(saveUsername);
  else if(id==='newform')busy(createCampaign);
  else if(id==='invform')busy(sendInvite);
- else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});toast('Renamed.');});
+ else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});const c0=camps.find(x=>x.id===ui.cid);if(c0)c0.name=n.slice(0,60);toast('Renamed.');});
 });
+// Rename is only clickable when the name has actually been changed.
+function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
+app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();});
 app.addEventListener('change',e=>{houseChange(e.target);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
  switch(a){

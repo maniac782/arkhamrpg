@@ -219,6 +219,8 @@ function render(){
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
  else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
+ // Keep the address in step with the page, so reloading a campaign's Settings stays there.
+ if(user&&profile){const want=ui.view==='camp'&&ui.cid?'?settings='+encodeURIComponent(ui.cid):'';if(location.search!==want&&!/[?&]join=/.test(location.search)){try{history.replaceState(null,'',location.pathname+want);}catch(e){}}}
  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
 const signOutHtml=()=>' <button class="btn sm" data-a="signout">Sign out</button>';
@@ -496,7 +498,7 @@ if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase i
 const cfg=Object.assign({},window.FIREBASE_CONFIG);
 if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
 fb=firebase.initializeApp(cfg,'beta');auth=fb.auth();db=fb.firestore();
-try{const st=new URLSearchParams(location.search).get('settings');if(st&&/^[A-Za-z0-9]{10,40}$/.test(st)){ui.view='camp';ui.cid=st;ui.waitCid=st;history.replaceState(null,'',location.pathname);}}catch(e){}
+try{const st=new URLSearchParams(location.search).get('settings');if(st&&/^[A-Za-z0-9]{10,40}$/.test(st)){ui.view='camp';ui.cid=st;ui.waitCid=st;}}catch(e){}
 try{const q=new URLSearchParams(location.search).get('join');const n=new URLSearchParams(location.search).get('n');
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
  if(q)history.replaceState(null,'',location.pathname);

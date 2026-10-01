@@ -326,7 +326,7 @@ async function saveUsername(){
 
 // ---------- campaigns ----------
 function watchCampaigns(){if(campUnsub)campUnsub();
- campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));render();},e=>{console.warn(e);toast('Couldn’t load your campaigns.');});}
+ campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));saveBC();render();},e=>{console.warn(e);toast('Couldn’t load your campaigns.');});}
 async function createCampaign(){
  const name=((document.getElementById('cname')||{}).value||'').trim();
  if(!name)throw {msg:'Give the campaign a name.'};
@@ -529,10 +529,19 @@ try{const q=new URLSearchParams(location.search).get('join');const n=new URLSear
  if(q)history.replaceState(null,'',location.pathname);
  if(!pendingJoin){const sj=JSON.parse(sessionStorage.getItem('apl-join')||'null');if(sj&&sj.cid&&sj.code)pendingJoin=sj;}}catch(e){}
 auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
+// Remember who was signed in and their campaigns, so a reload shows the page straight away.
+const BC='apl-beta-cache';let bc=null,watching=false;
+try{bc=JSON.parse(localStorage.getItem(BC)||'null');}catch(e){}
+function saveBC(){try{if(user&&profile)localStorage.setItem(BC,JSON.stringify({uid:user.uid,email:user.email||'',profile,camps}));}catch(e){}}
+if(bc&&bc.uid&&bc.profile){user={uid:bc.uid,email:bc.email,emailVerified:true,isAnonymous:false,providerData:[{providerId:'google.com'}],sendEmailVerification:async()=>{}};profile=bc.profile;camps=bc.camps||[];}
 auth.onAuthStateChanged(u=>{
  if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}if(inboxUnsub){inboxUnsub();inboxUnsub=null;}if(outUnsub){outUnsub();outUnsub=null;}outCid=null;inbox=[];outbox=[];
- user=u&&!u.isAnonymous?u:null;profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';ui.err='';ui.busy=false;
- if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{const had=!!profile;profile=s.exists?s.data():null;if(profile&&!had){watchCampaigns();watchInbox();}render();},e=>{console.warn(e);profile=null;render();});}
+ const same=!!(u&&bc&&bc.uid===u.uid);
+ user=u&&!u.isAnonymous?u:null;watching=false;
+ if(!same){profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';}
+ if(!user){try{localStorage.removeItem(BC);}catch(e){}bc=null;}
+ ui.err='';ui.busy=false;
+ if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{console.warn(e);profile=null;render();});}
  render();
 });
 render();

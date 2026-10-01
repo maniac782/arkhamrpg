@@ -526,10 +526,12 @@ let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
 // Last-seen party, kept on this device so a refresh shows the sheets right away while Firebase reconnects.
 const CACHE_KEY='apl-cache-v1'+(CAMP?'-'+CAMP:'');
-try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+let CACHED=null;
+try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');CACHED=k;
+ if(CAMP&&k&&k.camp&&k.uid){camp=k.camp;authUid=k.uid;}
  if(k&&Array.isArray(k.slots)&&k.slots.length&&k.slots.every(isSlotId)){SLOTS=k.slots;SLOTS.forEach(x=>{if(k.chars&&k.chars[x])chars[x]=norm(k.chars[x],slotNum(x));});(k.keys||[]).forEach(x=>keys[x]=true);gmClaimed=!!k.gm;}}catch(e){}
 let cacheT;
-function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{const d={slots:SLOTS,chars:{},keys:Object.keys(keys).filter(k=>keys[k]),gm:gmClaimed,table};SLOTS.forEach(x=>d.chars[x]=chars[x]);
+function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{const d={slots:SLOTS,chars:{},keys:Object.keys(keys).filter(k=>keys[k]),gm:gmClaimed,table,house,...(CAMP?{camp,uid:authUid}:{})};SLOTS.forEach(x=>d.chars[x]=chars[x]);
  try{localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e){try{SLOTS.forEach(x=>d.chars[x]={...chars[x],portrait:''});localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e2){}}},400);}
 try{const t=localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
 SLOTS.forEach(s=>{if(!chars[s])chars[s]=blank(slotNum(s));});
@@ -832,6 +834,7 @@ function activeEffects(c){
 }
 const edit={xp:false};
 let house={on:false};
+if(CAMP&&CACHED&&CACHED.house)house=CACHED.house;
 function gunKey(w){return String(w.name||'').trim().toLowerCase();}
 function sameGuns(ws,w){const k=gunKey(w);return k&&!w.fr?ws.filter(x=>!x.fr&&gunKey(x)===k):[w];}
 function gunPool(ws,w){return sameGuns(ws,w).reduce((a,x)=>a+(x.reloads||0),0);}
@@ -1195,7 +1198,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v102 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v103 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1507,17 +1510,20 @@ async function bootCampaign(syncEl){
  if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();syncEl.textContent='Not connected';return;}
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
  const fb=firebase.initializeApp(cfg,'beta');const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
+ const brand=document.querySelector('.brand h1');
+ const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="beta/?v=100">My campaigns</a><a class="btn sm" href="beta/?settings='+encodeURIComponent(CAMP)+'&v=100">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live \u00b7 v103</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='beta/');};};syncLine();window.__syncLine=syncLine;
+ // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
+ if(camp){if(brand)brand.textContent=camp.name;document.title=camp.name+' \u2014 Arkham Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
  if(!u||u.isAnonymous){location.replace('beta/');return;}
  authUid=u.uid;
  db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch()};
- const brand=document.querySelector('.brand h1');
  raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
   if(!snap.exists){halted='This campaign was deleted.';render();return;}
   camp=snap.data();
   if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
   if(brand)brand.textContent=camp.name;document.title=camp.name+' \u2014 Arkham Ledger';
-  applyRoles();if(window.__syncLine)window.__syncLine();render();
+  applyRoles();if(window.__syncLine)window.__syncLine();render();saveCache();
  },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
  gmBoot();
  db.doc('settings/house').onSnapshot(snap=>{const d=snap.exists?snap.data():{};house={on:!!d.on,weapons:Array.isArray(d.weapons)?d.weapons:[],gear:Array.isArray(d.gear)?d.gear:[],rules:Array.isArray(d.rules)?d.rules:[]};render();},()=>{});
@@ -1531,7 +1537,6 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="beta/?v=100">My campaigns</a><a class="btn sm" href="beta/?settings='+encodeURIComponent(CAMP)+'&v=100">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live \u00b7 v102</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>window.__campAuth.signOut().then(()=>location.href='beta/');};syncLine();window.__syncLine=syncLine;
 }
 
 // ---------- boot ----------
@@ -1547,7 +1552,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v102';
+ syncEl.textContent='Live · synced for the party · v103';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

@@ -121,22 +121,70 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
       allow delete: if realUser() && resource.data.uid == request.auth.uid;
     }
-    // Campaigns: members can see them; only the owner can create, rename or delete.
+    // Campaigns: members can see them. The owner creates, renames, picks the GM, removes members and deletes.
+    // An invited player can add themselves; any member except the owner can leave.
     match /campaigns/{cid} {
-      allow read: if realUser() && request.auth.uid in resource.data.memberIds;
+      function oldC() { return resource.data; }
+      function newC() { return request.resource.data; }
+      function me() { return request.auth.uid; }
+      function changedOnly(keys) { return newC().diff(oldC()).affectedKeys().hasOnly(keys); }
+      function isOwner() { return oldC().ownerUid == me(); }
+      function goodName() { return newC().name is string && newC().name.size() > 0 && newC().name.size() <= 60; }
+      function gmOf(d) { return d.get('gmUid', null); }
+      function ownerManages() {
+        return isOwner() && changedOnly(['memberIds', 'roles', 'names', 'gmUid'])
+          && oldC().memberIds.hasAll(newC().memberIds)
+          && me() in newC().memberIds && newC().roles[me()] == 'owner'
+          && newC().roles.keys().hasOnly(newC().memberIds)
+          && newC().names.keys().hasOnly(newC().memberIds)
+          && (gmOf(newC()) == null || gmOf(newC()) in newC().memberIds);
+      }
+      function joining() {
+        return !(me() in oldC().memberIds)
+          && exists(/databases/$(database)/documents/invites/$(cid + '_' + me()))
+          && changedOnly(['memberIds', 'roles', 'names'])
+          && newC().memberIds == oldC().memberIds.concat([me()])
+          && newC().memberIds.size() <= 12
+          && newC().roles.diff(oldC().roles).affectedKeys().hasOnly([me()]) && newC().roles[me()] == 'player'
+          && newC().names.diff(oldC().names).affectedKeys().hasOnly([me()])
+          && newC().names[me()] == get(/databases/$(database)/documents/users/$(me())).data.username;
+      }
+      function leaving() {
+        return me() in oldC().memberIds && !isOwner()
+          && changedOnly(['memberIds', 'roles', 'names', 'gmUid'])
+          && newC().memberIds == oldC().memberIds.removeAll([me()])
+          && !(me() in newC().roles) && newC().roles.diff(oldC().roles).affectedKeys().hasOnly([me()])
+          && !(me() in newC().names) && newC().names.diff(oldC().names).affectedKeys().hasOnly([me()])
+          && (gmOf(newC()) == gmOf(oldC()) || (gmOf(oldC()) == me() && gmOf(newC()) == null));
+      }
+      allow read: if realUser() && me() in resource.data.memberIds;
       allow create: if realUser()
-        && request.resource.data.keys().hasOnly(['name', 'ownerUid', 'memberIds', 'roles', 'names', 'created'])
-        && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.memberIds == [request.auth.uid]
-        && request.resource.data.roles.keys().hasOnly([request.auth.uid])
-        && request.resource.data.roles[request.auth.uid] == 'owner'
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60;
-      allow update: if realUser() && resource.data.ownerUid == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60;
-      allow delete: if realUser() && resource.data.ownerUid == request.auth.uid;
+        && newC().keys().hasOnly(['name', 'ownerUid', 'memberIds', 'roles', 'names', 'created'])
+        && newC().ownerUid == me()
+        && newC().memberIds == [me()]
+        && newC().roles.keys().hasOnly([me()]) && newC().roles[me()] == 'owner'
+        && goodName();
+      allow update: if realUser() && (
+        (isOwner() && changedOnly(['name']) && goodName())
+        || ownerManages() || joining() || leaving());
+      allow delete: if realUser() && isOwner();
+    }
+
+    // Invites: the owner invites someone by username; the invitee joins or declines; either side can delete it.
+    match /invites/{iid} {
+      function camp(c) { return get(/databases/$(database)/documents/campaigns/$(c)).data; }
+      function uname(u) { return get(/databases/$(database)/documents/users/$(u)).data.username; }
+      allow read: if realUser() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+      allow create: if realUser()
+        && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toUid', 'toName', 'created'])
+        && iid == request.resource.data.cid + '_' + request.resource.data.toUid
+        && request.resource.data.fromUid == request.auth.uid
+        && camp(request.resource.data.cid).ownerUid == request.auth.uid
+        && !(request.resource.data.toUid in camp(request.resource.data.cid).memberIds)
+        && request.resource.data.campaignName == camp(request.resource.data.cid).name
+        && request.resource.data.toName == uname(request.resource.data.toUid)
+        && request.resource.data.fromName == uname(request.auth.uid);
+      allow delete: if realUser() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
     }
 
     match /{document=**} {

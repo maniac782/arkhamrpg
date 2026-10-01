@@ -201,8 +201,8 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,3200);}
 const MAX_OWNED=10;
 // state
-let fb=null,auth=null,db=null,user=null,profile=undefined,camps=[],campUnsub=null,profUnsub=null;
-const ui={mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,newOpen:false};
+let fb=null,auth=null,db=null,user=null,profile=undefined,camps=[],campUnsub=null,profUnsub=null,inbox=[],outbox=[],inboxUnsub=null,outUnsub=null,outCid=null;
+const ui={mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,confirmLeave:false,kick:null,newOpen:false,clear:new Set()};
 
 function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c.projectId).startsWith('PASTE')&&window.firebase;}
 
@@ -214,8 +214,8 @@ function render(){
  if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
- Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el))el.value=vals[id];});
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);whoEl.innerHTML='<span class="who"><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
+ Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
 const signOutHtml=()=>' <button class="btn sm" data-a="signout">Sign out</button>';
@@ -240,12 +240,14 @@ function usernameView(){
   '<form id="unform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('un','Username','text','autocomplete="username" maxlength="20" autocapitalize="off" spellcheck="false" required')+errHtml()+
   '<button class="btn pri wide" type="submit" '+(ui.busy?'disabled':'')+'>Save username</button></form></section>';
 }
-function roleOf(c){return (c.roles||{})[user.uid]||'player';}
-const ROLE={owner:'Owner',gm:'Game Master',player:'Player'};
-function campCard(c){const n=(c.memberIds||[]).length;return '<button class="camp" data-a="open" data-id="'+esc(c.id)+'"><h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px"><span class="chip'+(roleOf(c)==='owner'?' ok':'')+'">'+ROLE[roleOf(c)]+'</span><span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></button>';}
+const MAX_MEMBERS=12;
+function chipsFor(c,u){const r=(c.roles||{})[u];let h='';if(r==='owner')h+='<span class="chip ok">Owner</span>';if(c.gmUid&&c.gmUid===u)h+='<span class="chip warn">GM</span>';if(r!=='owner'&&c.gmUid!==u)h+='<span class="chip">Player</span>';return h;}
+function campCard(c){const n=(c.memberIds||[]).length;return '<button class="camp" data-a="open" data-id="'+esc(c.id)+'"><h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></button>';}
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
- let h='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length<MAX_OWNED?'<button class="btn sm pri" data-a="newopen">New campaign</button>':'')+'</div>';
+ let h='';
+ if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>Invitations</h2></div><div class="list">'+inbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.campaignName)+'</b><span class="effect">'+esc(i.fromName)+' invited you to join</span></div><button class="btn sm pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join</button><button class="btn sm" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div>').join('')+'</div></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length<MAX_OWNED?'<button class="btn sm pri" data-a="newopen">New campaign</button>':'')+'</div>';
  if(ui.newOpen)h+='<form id="newform" class="row" style="align-items:flex-end" novalidate>'+'<label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="cname" maxlength="60" placeholder="e.g. The Dunwich Legacy" required></label><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create</button><button class="btn" type="button" data-a="newclose">Cancel</button></form>'+errHtml();
  h+=owned.length?'<div class="camps">'+owned.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">You don’t own any campaigns yet. Start one and you’ll be its owner.</p>';
  h+='</section><section class="sec"><div class="sec-head"><h2>Campaigns you’re in</h2></div>'+
@@ -256,11 +258,26 @@ function campView(){
  const c=camps.find(x=>x.id===ui.cid);if(!c){ui.view='home';return homeView();}
  const own=c.ownerUid===user.uid,names=c.names||{};
  let h='<div class="row"><button class="btn sm" data-a="home">← My campaigns</button></div>';
- h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+'</h2><span class="chip'+(own?' ok':'')+'">'+ROLE[roleOf(c)]+'</span></div>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
  if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'"></label><button class="btn" type="submit">Rename</button></form>';
- h+='<div><span class="lbl">Members</span><div class="list">'+(c.memberIds||[]).map(u=>'<div class="item"><div class="grow"><b>'+esc(names[u]||'Unknown')+'</b>'+(u===user.uid?' <span class="note">(you)</span>':'')+'</div><span class="chip">'+ROLE[(c.roles||{})[u]||'player']+'</span></div>').join('')+'</div></div>';
- h+='<p class="note" style="margin:0">Coming next: investigators, the GM tools and the Journal inside this campaign, then invites.</p></section>';
- if(own)h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
+ h+='<p class="note" style="margin:0">Coming next: investigators, the GM tools and the Journal inside this campaign.</p></section>';
+ // members
+ h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
+  const nm=names[u]||'Unknown';let act='';
+  if(own){act+=c.gmUid===u?'<button class="btn sm" data-a="gm" data-u="">Remove GM</button>':'<button class="btn sm" data-a="gm" data-u="'+esc(u)+'">Make GM</button>';
+   if(u!==c.ownerUid)act+=ui.kick===u?'<span class="note">Remove '+esc(nm)+'?</span><button class="btn sm dng" data-a="kickyes" data-u="'+esc(u)+'">Remove</button><button class="btn sm" data-a="kickno">Cancel</button>':'<button class="btn sm" data-a="kick" data-u="'+esc(u)+'">Remove</button>';}
+  return '<div class="item" style="flex-wrap:wrap"><div class="grow"><b>'+esc(nm)+'</b>'+(u===user.uid?' <span class="note">(you)</span>':'')+'</div><span class="row" style="gap:6px">'+chipsFor(c,u)+act+'</span></div>';}).join('')+'</div>';
+ if(own)h+='<p class="note" style="margin:0">The GM runs the GM tools. You can make yourself the GM, or hand it to a player.</p>';
+ h+='</section>';
+ if(own){
+  h+='<section class="sec"><div class="sec-head"><h2>Invite players</h2></div><form id="invform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:200px"><span class="lbl">Their username</span><input class="f" id="iname" maxlength="21" autocapitalize="off" spellcheck="false" placeholder="e.g. Wallace_M"></label><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Invite</button></form>'+errHtml()+
+   '<p class="note" style="margin:0">They need an account first. Have them sign up at this page, pick a username and tell it to you. The invite shows up on their My campaigns page.</p>';
+  if(outbox.length)h+='<div><span class="lbl">Waiting to join</span><div class="list">'+outbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.toName)+'</b><span class="effect">Invited</span></div><button class="btn sm" data-a="icancel" data-id="'+esc(i.id)+'">Cancel invite</button></div>').join('')+'</div></div>';
+  h+='</section>';
+  h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
+ }else{
+  h+='<section class="sec"><div class="sec-head"><h2>Leave campaign</h2></div>'+(ui.confirmLeave?'<p class="note" style="margin:0">Leave “'+esc(c.name)+'”? You’ll need a new invite to come back.</p><div class="row"><button class="btn dng" data-a="leaveyes">Yes, leave</button><button class="btn" data-a="leaveno">Cancel</button></div>':'<div class="row"><button class="btn" data-a="leaveask">Leave this campaign…</button></div>')+'</section>';
+ }
  return h;
 }
 
@@ -305,11 +322,43 @@ async function createCampaign(){
  ui.newOpen=false;ui.view='camp';ui.cid=ref.id;toast('Campaign created. You’re its owner.');
 }
 
+// ---------- invites & members ----------
+const FV=()=>firebase.firestore.FieldValue;
+function watchInbox(){if(inboxUnsub)inboxUnsub();
+ inboxUnsub=db.collection('invites').where('toUid','==',user.uid).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
+ outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+async function sendInvite(){
+ const c=camps.find(x=>x.id===ui.cid);if(!c)return;
+ const name=((document.getElementById('iname')||{}).value||'').trim().replace(/^@/,'');
+ if(!/^[A-Za-z0-9_]{3,20}$/.test(name))throw {msg:'Enter their username (3–20 letters, numbers or underscores).'};
+ const us=await db.doc('usernames/'+name.toLowerCase()).get();
+ if(!us.exists)throw {msg:'Nobody has the username “'+name+'” yet. Check the spelling, or have them sign up first.'};
+ const to=us.data().uid;
+ if(to===user.uid)throw {msg:'That’s you.'};
+ if((c.memberIds||[]).includes(to))throw {msg:name+' is already in this campaign.'};
+ if(outbox.some(i=>i.toUid===to))throw {msg:name+' already has an invite waiting.'};
+ if((c.memberIds||[]).length+outbox.length>=MAX_MEMBERS)throw {msg:'A campaign can have up to '+MAX_MEMBERS+' members, counting invites.'};
+ const p=await db.doc('users/'+to).get();const toName=p.exists?p.data().username:name;
+ await db.doc('invites/'+c.id+'_'+to).set({cid:c.id,campaignName:c.name,fromUid:user.uid,fromName:profile.username,toUid:to,toName,created:FV().serverTimestamp()});
+ ui.clear.add('iname');toast('Invite sent to '+toName+'.');
+}
+async function joinInvite(id){
+ const inv=inbox.find(x=>x.id===id);if(!inv)return;
+ const b=db.batch();
+ b.update(db.doc('campaigns/'+inv.cid),{memberIds:FV().arrayUnion(user.uid),['roles.'+user.uid]:'player',['names.'+user.uid]:profile.username});
+ b.delete(db.doc('invites/'+id));
+ try{await b.commit();toast('You joined '+inv.campaignName+'.');}
+ catch(e){console.warn(e);if(e&&e.code==='not-found'){await db.doc('invites/'+id).delete().catch(()=>{});toast('That campaign no longer exists.');}else toast('Couldn’t join. Try again.');}
+}
+function memberOut(c,u){const p={memberIds:FV().arrayRemove(u),['roles.'+u]:FV().delete(),['names.'+u]:FV().delete()};if(c.gmUid===u)p.gmUid=null;return db.doc('campaigns/'+c.id).update(p);}
+
 // ---------- events ----------
 app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
  if(id==='authform')busy(emailSubmit);
  else if(id==='unform')busy(saveUsername);
  else if(id==='newform')busy(createCampaign);
+ else if(id==='invform')busy(sendInvite);
  else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});toast('Renamed.');});
 });
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
@@ -319,11 +368,21 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'signout':auth.signOut();break;
   case 'newopen':ui.newOpen=true;ui.err='';render();const i=document.getElementById('cname');if(i)i.focus();break;
   case 'newclose':ui.newOpen=false;ui.err='';render();break;
-  case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.err='';render();window.scrollTo(0,0);break;
+  case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;
   case 'home':ui.view='home';ui.err='';render();break;
   case 'delask':ui.confirmDel=true;render();break;
   case 'delno':ui.confirmDel=false;render();break;
-  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;db.doc('campaigns/'+id).delete().then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
+  case 'ijoin':joinInvite(b.dataset.id);break;
+  case 'idecline':db.doc('invites/'+b.dataset.id).delete().then(()=>toast('Invite declined.'),()=>toast('Couldn\u2019t do that.'));break;
+  case 'icancel':db.doc('invites/'+b.dataset.id).delete().then(()=>toast('Invite cancelled.'),()=>toast('Couldn\u2019t do that.'));break;
+  case 'gm':{const c=camps.find(x=>x.id===ui.cid);if(!c)break;const u=b.dataset.u||null;db.doc('campaigns/'+c.id).update({gmUid:u}).then(()=>toast(u?(c.names||{})[u]+' is now the GM.':'No GM for now.'),()=>toast('Couldn\u2019t change the GM.'));break;}
+  case 'kick':ui.kick=b.dataset.u;render();break;
+  case 'kickno':ui.kick=null;render();break;
+  case 'kickyes':{const c=camps.find(x=>x.id===ui.cid);ui.kick=null;if(c)memberOut(c,b.dataset.u).then(()=>toast('Removed from the campaign.'),()=>toast('Couldn\u2019t remove them.'));render();break;}
+  case 'leaveask':ui.confirmLeave=true;render();break;
+  case 'leaveno':ui.confirmLeave=false;render();break;
+  case 'leaveyes':{const c=camps.find(x=>x.id===ui.cid);ui.confirmLeave=false;ui.view='home';render();if(c)memberOut(c,user.uid).then(()=>toast('You left '+c.name+'.'),()=>toast('Couldn\u2019t leave. Try again.'));break;}
+  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;Promise.all(outbox.filter(i=>i.cid===id).map(i=>db.doc('invites/'+i.id).delete())).catch(()=>{}).then(()=>db.doc('campaigns/'+id).delete()).then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
  }
 });
 
@@ -337,9 +396,9 @@ if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=loca
 fb=firebase.initializeApp(cfg,'beta');auth=fb.auth();db=fb.firestore();
 auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
 auth.onAuthStateChanged(u=>{
- if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}
+ if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}if(inboxUnsub){inboxUnsub();inboxUnsub=null;}if(outUnsub){outUnsub();outUnsub=null;}outCid=null;inbox=[];outbox=[];
  user=u&&!u.isAnonymous?u:null;profile=undefined;camps=[];ui.view='home';ui.err='';ui.busy=false;
- if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{const had=!!profile;profile=s.exists?s.data():null;if(profile&&!had)watchCampaigns();render();},e=>{console.warn(e);profile=null;render();});}
+ if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{const had=!!profile;profile=s.exists?s.data():null;if(profile&&!had){watchCampaigns();watchInbox();}render();},e=>{console.warn(e);profile=null;render();});}
  render();
 });
 render();

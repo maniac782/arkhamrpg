@@ -1201,7 +1201,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v91 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v92 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1523,7 +1523,7 @@ async function bootCampaign(syncEl){
   camp=snap.data();
   if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
   if(brand)brand.textContent=camp.name;document.title=camp.name+' \u2014 Arkham Ledger';
-  applyRoles();render();
+  applyRoles();if(window.__syncLine)window.__syncLine();render();
  },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
  gmBoot();
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
@@ -1537,7 +1537,7 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 v91';
+ const syncLine=()=>{syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 <a href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Campaign settings':'Members')+'</a> \u00b7 v92';};syncLine();window.__syncLine=syncLine;
 }
 
 // ---------- boot ----------
@@ -1553,7 +1553,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v91';
+ syncEl.textContent='Live · synced for the party · v92';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

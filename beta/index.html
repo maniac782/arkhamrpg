@@ -174,8 +174,9 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
 .or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .camps{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.camp{text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.camp{text-align:left;display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .camp:hover{border-color:var(--brass)}
+.campmain{display:flex;flex-direction:column;gap:6px;color:inherit;text-decoration:none}
 .camp h3{margin:0;font-family:var(--display);font-size:19px}
 .who{display:flex;align-items:center;gap:8px}
 .beta{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:middle}
@@ -242,7 +243,8 @@ function usernameView(){
 }
 const MAX_MEMBERS=12;
 function chipsFor(c,u){const r=(c.roles||{})[u];let h='';if(r==='owner')h+='<span class="chip ok">Owner</span>';if(c.gmUid&&c.gmUid===u)h+='<span class="chip warn">GM</span>';if(r!=='owner'&&c.gmUid!==u)h+='<span class="chip">Player</span>';return h;}
-function campCard(c){const n=(c.memberIds||[]).length;return '<button class="camp" data-a="open" data-id="'+esc(c.id)+'"><h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></button>';}
+function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp"><a class="campmain" href="'+ledgerUrl(c.id)+'"><h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
+const ledgerUrl=id=>'../?c='+encodeURIComponent(id);
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
  let h='';
@@ -260,10 +262,10 @@ function campView(){
  const c=camps.find(x=>x.id===ui.cid);if(!c){if(ui.waitCid===ui.cid)return '<p class="note" style="padding:24px 0">Opening the campaign\u2026</p>';ui.view='home';return homeView();}
  if(ui.waitCid===c.id)ui.waitCid=null;
  const own=c.ownerUid===user.uid,names=c.names||{};
- let h='<div class="row"><button class="btn sm" data-a="home">← My campaigns</button></div>';
- h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
+ let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button><a class="btn sm pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a></div>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+esc(c.name)+' \u00b7 '+(own?'settings':'members')+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
  if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'"></label><button class="btn" type="submit">Rename</button></form>';
- h+='<div class="row"><a class="btn pri" href="../?c='+encodeURIComponent(c.id)+'">Open the ledger \u2192</a></div><p class="note" style="margin:0">The party, investigator sheets, Journal and GM tools for this campaign.</p></section>';
+ h+='</section>';
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
   const nm=names[u]||'Unknown';let act='';
@@ -354,7 +356,7 @@ async function joinByLink(){
  b.set(db.doc('joinreq/'+j.cid+'_'+user.uid),{cid:j.cid,code:j.code});
  b.update(db.doc('campaigns/'+j.cid),{memberIds:FV().arrayUnion(user.uid),['roles.'+user.uid]:'player',['names.'+user.uid]:profile.username});
  try{await b.commit();}catch(e){console.warn(e);throw {msg:e&&e.code==='not-found'?'That campaign no longer exists.':'This invite link doesn’t work anymore. Ask for a new one.'};}
- setPendingJoin(null);ui.view='camp';ui.cid=j.cid;ui.waitCid=j.cid;toast('You joined '+(j.name||'the campaign')+'.');
+ setPendingJoin(null);location.href=ledgerUrl(j.cid);return;toast('You joined '+(j.name||'the campaign')+'.');
 }
 let pendingJoin=null;
 function setPendingJoin(v){pendingJoin=v;try{v?sessionStorage.setItem('apl-join',JSON.stringify(v)):sessionStorage.removeItem('apl-join');}catch(e){}}
@@ -422,6 +424,7 @@ if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase i
 const cfg=Object.assign({},window.FIREBASE_CONFIG);
 if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
 fb=firebase.initializeApp(cfg,'beta');auth=fb.auth();db=fb.firestore();
+try{const st=new URLSearchParams(location.search).get('settings');if(st&&/^[A-Za-z0-9]{10,40}$/.test(st)){ui.view='camp';ui.cid=st;ui.waitCid=st;history.replaceState(null,'',location.pathname);}}catch(e){}
 try{const q=new URLSearchParams(location.search).get('join');const n=new URLSearchParams(location.search).get('n');
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
  if(q)history.replaceState(null,'',location.pathname);
@@ -429,7 +432,7 @@ try{const q=new URLSearchParams(location.search).get('join');const n=new URLSear
 auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
 auth.onAuthStateChanged(u=>{
  if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}if(inboxUnsub){inboxUnsub();inboxUnsub=null;}if(outUnsub){outUnsub();outUnsub=null;}outCid=null;inbox=[];outbox=[];
- user=u&&!u.isAnonymous?u:null;profile=undefined;camps=[];ui.view='home';ui.err='';ui.busy=false;
+ user=u&&!u.isAnonymous?u:null;profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';ui.err='';ui.busy=false;
  if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{const had=!!profile;profile=s.exists?s.data():null;if(profile&&!had){watchCampaigns();watchInbox();}render();},e=>{console.warn(e);profile=null;render();});}
  render();
 });

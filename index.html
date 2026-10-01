@@ -528,7 +528,7 @@ const keys={};// slot, 'master' or 'gm' -> this device holds a key
 const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log'];
 let gmClaimed=false;
 const gmCan=s=>canEdit(s)||isGM();
-function canEdit(s){if(!db)return true;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
+function canEdit(s){if(!db)return localMode;const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
 try{const t=localStorage.getItem('apl-tab');if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
@@ -698,7 +698,7 @@ function lockPanel(s){
 }
 function renderChar(s){ const body=renderCharBody(s); return turnBar()+lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>')+removePanel(s); }
 function removePanel(s){
- const can=!db||!!keys.master;const c=chars[s];
+ const can=(!db&&localMode)||!!keys.master;const c=chars[s];
  if(!can)return '<p class="note" style="margin:0">Only the master key can remove an investigator from the party.</p>';
  if(edit.rm===s)return '<section class="sec"><div class="roll" role="status"><span>Remove <b>'+esc(c.name||'this investigator')+'</b> from the party? Their sheet is deleted for everyone. This can\u2019t be undone.</span><div class="row"><button class="btn sm dng" data-act="rmyes">Remove '+esc(c.name||'investigator')+'</button><button class="btn sm" data-act="rmno">Cancel</button></div></div></section>';
  return '<div class="row"><button class="btn sm dng" data-act="rmslot">Remove this investigator from the party…</button></div>';
@@ -826,7 +826,7 @@ function gmPinHtml(){
 function houseToggle(){
  const hr=window.HOUSE_RULES||{};const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n);
  if(!names.length)return '';
- const can=!db||!!keys.master;
+ const can=(!db&&localMode)||!!keys.master;
  return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>House rules '+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' Only the master key can change this.')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
 }
 function traitField(s,c){
@@ -1158,11 +1158,11 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v85 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v86 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
- db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});gmMasterState=null;gmSubscribe();render();},
-  ()=>{[...SLOTS,'master','gm'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});});
+ db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;gmMasterState=null;gmSubscribe();render();},
+  ()=>{keysReady=true;[...SLOTS,'master','gm'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});});
 }
 
 
@@ -1172,7 +1172,8 @@ let table={scene:'',fight:false,phase:'',round:0,first:'investigators',session:1
 let enemies={},clues={},campaign={date:'',locations:[],npcs:[],threads:[]},gmNotes='',history=[],historySession=null;
 const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:'',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
 let gmUnsubs=[],gmMasterState=null;
-const isGM=()=>!db||(!!keys.gm&&gmClaimed);
+const isGM=()=>db?(!!keys.gm&&gmClaimed):localMode;
+let keysReady=false,gmFlagReady=false;
 const isGMView=()=>isGM()||!!keys.master;
 const gmId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 async function gmSet(path,data,merge){if(!db)return;try{await db.doc(path).set(data,merge?{merge:true}:undefined);}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README) and use the master key.':'Couldn’t save that. Try again.');}}
@@ -1344,6 +1345,7 @@ function renderJournal(){
  return h;
 }
 function renderGM(){
+ if(!localMode&&!(db&&keysReady&&gmFlagReady))return '<section class="sec"><h2>Game Master</h2><p class="note">Checking this device\u2019s GM PIN\u2026</p></section>';
  if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>Game Master</h2><p class="note">These are the Game Master\u2019s tools. Players don\u2019t need anything here.</p></section>';
  const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
  let h=turnBar()+gmPinHtml();
@@ -1467,14 +1469,14 @@ render();
 (async()=>{
  const syncEl=document.getElementById('sync');
  const cfg=window.FIREBASE_CONFIG;
- if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
- try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
- try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;render();return;}
+ if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){localMode=true;render();syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
+ try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
+ try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;localMode=true;render();return;}
  watchKeys();
  gmBoot();
- db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmMasterState=null;gmSubscribe();render();},()=>{});
+ db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v85';
+ syncEl.textContent='Live · synced for the party · v86';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

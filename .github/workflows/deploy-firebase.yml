@@ -16,3 +16,21 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: arkham-ledger
           channelId: live
+
+  # Publishes firestore.rules on every push, so the rules never need pasting by hand.
+  # Needs the "Firebase Rules Admin" role on the GitHub service account.
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Publish Firestore security rules
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx -y firebase-tools@latest deploy --only firestore:rules --project arkham-ledger --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"

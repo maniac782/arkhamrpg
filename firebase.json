@@ -2,6 +2,17 @@
   "hosting": {
     "site": "arkhamrpg",
     "public": ".",
-    "ignore": ["firebase.json", ".firebaserc", "README.md", "firestore.rules", ".github/**", "**/.*", "**/node_modules/**"]
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "README.md",
+      "firestore.rules",
+      ".github/**",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

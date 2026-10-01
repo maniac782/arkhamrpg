@@ -700,14 +700,17 @@ function openCrop(file,slot){
  img.src=url;
 }
 function ownerPanel(s){
- const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master,gone=!!own&&!names[own];
- let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(mine?'ok':own&&!gone?'':'warn')+'">'+(mine?'Your investigator':own&&!gone?'Played by '+esc(names[own]):'Unclaimed')+'</span><span class="note">'+
-  (mine?'Only you, the campaign owner and the GM can change it.':own&&!gone?(boss?'You can edit it as the campaign owner.':'Only its player can change it.'):'Nobody plays this investigator yet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
+ const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
+ const who=own&&!gone?names[own]:null;
+ // The owner picks the player right in the header; everyone else just sees who plays it.
+ const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">Played by</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" aria-label="Who plays this investigator" style="width:auto;font-weight:600"><option value="">Nobody yet</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||'Member')+(u===authUid?' (you)':'')+'</option>').join('')+'</select></label>'
+  :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?'Your investigator':who?'Played by '+esc(who):'Unclaimed')+'</span>';
+ const note=mine?'Only you, the campaign owner and the GM can change it.':boss?'You can edit any investigator as the campaign owner.':who?'Only its player can change it.':'Nobody plays this investigator yet.';
+ let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row" style="align-items:center">'+head+'<span class="note">'+note+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  let row='';
- if((!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';
- if(mine)row+='<button class="btn sm" data-act="release">Give up this investigator</button>';
- if(boss&&camp)row+='<label class="field" style="flex:none;width:auto;min-width:0" for="assign-'+s+'"><span class="lbl">Assigned to</span><select class="f" id="assign-'+s+'" data-assign="'+s+'" style="width:calc('+Math.max(6,String(own&&names[own]?names[own]:'Nobody').length)+'ch + 44px);field-sizing:content;min-width:0"><option value="">Nobody</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||'Member')+'</option>').join('')+'</select></label>';
- if(row)h+='<div class="row" style="align-items:flex-end">'+row+'</div>';
+ if(!boss&&(!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';
+ if(mine&&!boss)row+='<button class="btn sm" data-act="release">Give up this investigator</button>';
+ if(row)h+='<div class="row">'+row+'</div>';
  return h+'</section>';
 }
 function applyRoles(){
@@ -1201,7 +1204,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v95 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v96 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1537,7 +1540,7 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- const syncLine=()=>{syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 <a href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Campaign settings':'Members')+'</a> \u00b7 v95';};syncLine();window.__syncLine=syncLine;
+ const syncLine=()=>{syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 <a href="beta/?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Campaign settings':'Members')+'</a> \u00b7 v96';};syncLine();window.__syncLine=syncLine;
 }
 
 // ---------- boot ----------
@@ -1553,7 +1556,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v95';
+ syncEl.textContent='Live · synced for the party · v96';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

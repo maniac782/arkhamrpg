@@ -368,7 +368,7 @@ async function joinInvite(id){
 }
 // Firestore doesn't delete a campaign's contents with it, so clear each part first.
 async function wipeCampaign(id){
- for(const col of ['characters','table','campaign','enemies','clues','gm','gmlog','history','settings']){
+ for(const col of ['characters','players','table','campaign','enemies','clues','gm','gmlog','history','settings']){
   try{const qs=await db.collection('campaigns/'+id+'/'+col).get();await Promise.all(qs.docs.map(d=>d.ref.delete()));}catch(e){console.warn('wipe',col,e);}
  }
 }

@@ -643,18 +643,19 @@ function poolHtml(c,mini){
 }
 function renderTabs(){
  const t=document.getElementById('tabs');
- t.innerHTML=['party',...SLOTS,'journal','gm','create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
+ t.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
 }
 function renderParty(){
  let h=turnBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
-  (SLOTS.length<MAX_SLOTS?'<div class="row"><button class="btn" data-act="addslot">+ Add an investigator</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
+  (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">You have your investigator. Only the campaign owner can add more.</p>':'')+
+  (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?'+ Create my investigator':'+ Add an investigator')+'</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
   '<div class="party">';
  SLOTS.forEach(s=>{const c=chars[s];const [cls,lab]=status(c);const lr=(c.log||[])[0];
   h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · ')||'Unassigned')+'</div></div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
- h+='</div><section class="sec"><div class="sec-head"><h2>Game Master</h2></div>'+houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. '+(CAMP?'This covers every investigator in the campaign.':'With the master key or the GM PIN this covers every sheet.')+'</p>':'<p class="note" style="margin:0">'+(CAMP?'Starting a new session and refilling every pool are for the GM or the campaign owner.':'Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.')+'</p>')+(!localMode&&!CAMP?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
+ h+='</div><section class="sec"><div class="sec-head"><h2>Game Master</h2></div>'+houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. '+(CAMP?'This covers every investigator in the campaign.':'With the master key or the GM PIN this covers every sheet.')+'</p>':'<p class="note" style="margin:0">'+(CAMP?'Starting a new session and refilling every pool are for the GM.':'Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.')+'</p>')+(!localMode&&!CAMP?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
@@ -703,7 +704,7 @@ function ownerPanel(s){
  let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(mine?'ok':own&&!gone?'':'warn')+'">'+(mine?'Your investigator':own&&!gone?'Played by '+esc(names[own]):'Unclaimed')+'</span><span class="note">'+
   (mine?'Only you, the campaign owner and the GM can change it.':own&&!gone?(boss?'You can edit it as the campaign owner.':'Only its player can change it.'):'Nobody plays this investigator yet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  let row='';
- if(!own||gone)row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';
+ if((!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';
  if(mine)row+='<button class="btn sm" data-act="release">Give up this investigator</button>';
  if(boss&&camp)row+='<label class="row note" style="gap:6px" for="assign-'+s+'">Assign to <select class="maxsel" id="assign-'+s+'" data-assign="'+s+'"><option value="">Nobody</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||'Member')+'</option>').join('')+'</select></label>';
  if(row)h+='<div class="row">'+row+'</div>';
@@ -735,18 +736,23 @@ function removePanel(s){
  if(edit.rm===s)return '<section class="sec"><div class="roll" role="status"><span>Remove <b>'+esc(c.name||'this investigator')+'</b> from the party? Their sheet is deleted for everyone. This can\u2019t be undone.</span><div class="row"><button class="btn sm dng" data-act="rmyes">Remove '+esc(c.name||'investigator')+'</button><button class="btn sm" data-act="rmno">Cancel</button></div></div></section>';
  return '<div class="row"><button class="btn sm dng" data-act="rmslot">Remove this investigator from the party…</button></div>';
 }
+const ownsSheet=()=>SLOTS.some(x=>chars[x]&&chars[x].ownerUid===authUid);
+// In a campaign the owner can add any number of investigators; everyone else gets one of their own.
+const canAddSheet=()=>!CAMP||!!keys.master||!ownsSheet();
 function freeSlot(){for(let i=1;i<=MAX_SLOTS;i++){const id='p'+i;if(!SLOTS.includes(id))return id;}return null;}
 async function addSlot(data){
  if(rosterLocked)return toast('Publish the updated Firestore rules first (see README).'),null;
+ if(!canAddSheet())return toast('You already have your investigator. Only the campaign owner can add more.'),null;
  const id=freeSlot();if(!id)return toast('The party is full ('+MAX_SLOTS+' investigators).'),null;
  const c=norm(data||blank(slotNum(id)),slotNum(id));c.locked=false;if(CAMP){c.ownerUid=authUid;if(camp&&camp.names&&camp.names[authUid]&&!data)c.player=camp.names[authUid];}
  chars[id]=c;SLOTS=[...SLOTS,id].sort((a,b)=>slotNum(a)-slotNum(b));
- if(db){try{await db.doc('characters/'+id).set(JSON.parse(JSON.stringify(c)));}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README).':'Couldn\u2019t add the investigator. Try again.');SLOTS=SLOTS.filter(x=>x!==id);delete chars[id];render();return null;}}
+ if(db){try{if(CAMP&&!keys.master){const b=db.batch();b.set(db.doc('characters/'+id),JSON.parse(JSON.stringify(c)));b.set(db.doc('players/'+authUid),{slot:id});await b.commit();}else await db.doc('characters/'+id).set(JSON.parse(JSON.stringify(c)));}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README).':'Couldn\u2019t add the investigator. Try again.');SLOTS=SLOTS.filter(x=>x!==id);delete chars[id];render();return null;}}
  return id;
 }
 async function removeSlot(s){
  const name=chars[s]&&chars[s].name;
- if(db){try{await db.doc('characters/'+s).delete();await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?'Only the campaign owner can remove investigators.':'Only the master key can remove investigators (and the updated rules must be published).'):'Couldn\u2019t remove that investigator. Try again.');return;}}
+ const pu=CAMP&&chars[s]&&chars[s].ownerUid;
+ if(db){try{await db.doc('characters/'+s).delete();if(CAMP){if(pu)await db.doc('players/'+pu).delete().catch(()=>{});}else await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?'Only the campaign owner can remove investigators.':'Only the master key can remove investigators (and the updated rules must be published).'):'Couldn\u2019t remove that investigator. Try again.');return;}}
  SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast((name||'Investigator')+' was removed from the party.');
 }
 function renderCharBody(s){
@@ -1018,7 +1024,7 @@ function renderCreator(){
  const checks=crChecks();const ok=checks.every(x=>x[0]);
  h+='<section class="sec"><h2>8 · Finish</h2><div class="row"><div class="stat"><span class="lbl">XP left</span><b class="num">'+(xpB-xpS)+'</b></div><div class="stat"><span class="lbl">Cash left</span><b class="num">'+money(left)+'</b></div><div class="stat"><span class="lbl">Insight limit</span><b class="num">'+(cr.bonus==='insight'?2:1)+'</b></div></div>'+
  '<div class="list">'+checks.map(([g,l])=>'<div class="item" style="padding:6px 0"><span class="chip '+(g?'ok':'warn')+'">'+(g?'Done':'To do')+'</span><span>'+esc(l)+'</span></div>').join('')+'</div>'+
- '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in the party</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+(SLOTS.length<MAX_SLOTS?'<option value="new"'+(cr.slot==='new'?' selected':'')+'>A new spot in the party</option>':'')+''+SLOTS.filter(canEdit).map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Replace '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
+ '<div class="row"><label class="field" style="min-width:200px"><span class="lbl">Put them in the party</span><select class="f" id="cr-slot" data-cf="slot"><option value="">Choose…</option>'+(SLOTS.length<MAX_SLOTS&&canAddSheet()?'<option value="new"'+(cr.slot==='new'?' selected':'')+'>A new spot in the party</option>':'')+''+SLOTS.filter(canEdit).map((s,i)=>'<option value="'+s+'"'+(cr.slot===s?' selected':'')+'>Replace '+esc(chars[s].name)+'</option>').join('')+'</select></label></div>'+
  (cr.slot&&cr.slot!=='new'?'<label class="row note" for="cr-confirm"><input type="checkbox" id="cr-confirm" data-cconfirm="1"'+(cr.confirm?' checked':'')+'> Replace '+esc(chars[cr.slot].name)+'’s sheet with this one</label>':'')+
  '<div class="row"><button class="btn pri" data-cact="place" '+(ok&&cr.slot&&(cr.slot==='new'||cr.confirm)?'':'disabled')+'>Add to party</button><button class="btn" data-cact="print" '+(ok?'':'disabled')+'>Open printable sheet</button><button class="btn dng" data-cact="reset">Start over</button></div></section>';
  return h;
@@ -1108,8 +1114,8 @@ app.addEventListener('click',e=>{
   case 'xpamt':{const el=document.getElementById('xpamt-'+s);const v=Math.round(Number(el&&el.value)||xpAmt[s]||1);xpAmt[s]=Math.max(1,Math.min(30,v+n));render();break;}
   case 'xpaward':{const el=document.getElementById('xpamt-'+s);const v=Math.max(1,Math.min(30,Math.round(Number(el&&el.value)||1)));xpAmt[s]=1;R.addXp(s,v);break;}
   case 'xpfix':edit.xp=!edit.xp;render();break;
-  case 'claim':if(CAMP&&db)db.doc('characters/'+s).update({ownerUid:authUid,player:((camp&&camp.names)||{})[authUid]||c.player}).then(()=>toast('This investigator is yours now.'),()=>toast('Couldn\u2019t claim it. Someone may have just taken it.'));break;
-  case 'release':if(CAMP&&db)db.doc('characters/'+s).update({ownerUid:null}).then(()=>toast('You gave up this investigator. Anyone in the campaign can claim it.'),()=>toast('Couldn\u2019t do that. Try again.'));break;
+  case 'claim':{if(!CAMP||!db)break;if(!canAddSheet())return toast('You already have your investigator.');const b=db.batch();b.update(db.doc('characters/'+s),{ownerUid:authUid,player:((camp&&camp.names)||{})[authUid]||c.player});if(!keys.master)b.set(db.doc('players/'+authUid),{slot:s});b.commit().then(()=>toast('This investigator is yours now.'),()=>toast('Couldn\u2019t claim it. Someone may have just taken it.'));break;}
+  case 'release':{if(!CAMP||!db)break;const b=db.batch();b.update(db.doc('characters/'+s),{ownerUid:null});if(!keys.master)b.delete(db.doc('players/'+authUid));b.commit().then(()=>toast('You gave up this investigator. Anyone in the campaign without one can claim it.'),()=>toast('Couldn\u2019t do that. Try again.'));break;}
   case 'printc':downloadSheet(c);break;
   case 'traitxp':if(edit.trait&&c.xpUnused>=2)setTrait(s,edit.trait.t,2);break;
   case 'traitfree':if(edit.trait)setTrait(s,edit.trait.t,0);break;
@@ -1149,7 +1155,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(gmChange(el))return;
- if(el.dataset.assign){const t=el.dataset.assign,u=el.value||null;if(CAMP&&db&&keys.master)db.doc('characters/'+t).update({ownerUid:u,...(u?{player:((camp&&camp.names)||{})[u]||''}:{})}).then(()=>toast(u?'Assigned to '+((camp.names||{})[u]||'them')+'.':'Now unclaimed.'),()=>toast('Couldn\u2019t change that.'));return;}
+ if(el.dataset.assign){const t=el.dataset.assign,u=el.value||null,old=chars[t]&&chars[t].ownerUid;if(CAMP&&db&&keys.master){const b=db.batch();b.update(db.doc('characters/'+t),{ownerUid:u,...(u?{player:((camp&&camp.names)||{})[u]||''}:{})});if(old&&old!==u&&old!==camp.ownerUid)b.delete(db.doc('players/'+old));if(u&&u!==camp.ownerUid)b.set(db.doc('players/'+u),{slot:t});b.commit().then(()=>toast(u?'Assigned to '+((camp.names||{})[u]||'them')+'.':'Now unclaimed.'),()=>toast('Couldn\u2019t change that.'));}return;}
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
   openCrop(f,s);el.value='';return;}
  if(el.dataset.xpamt){xpAmt[s]=Math.max(1,Math.min(30,Math.round(Number(el.value)||1)));return;}
@@ -1195,7 +1201,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v90 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v91 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1212,7 +1218,7 @@ const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'invest
 let gmUnsubs=[],gmMasterState=null;
 const isGM=()=>localMode||(!!keys.gm&&gmClaimed);
 let keysReady=false,gmFlagReady=false;
-const isGMView=()=>isGM()||!!keys.master;
+const isGMView=()=>CAMP?isGM():(isGM()||!!keys.master);
 const gmId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 async function gmSet(path,data,merge){if(!db)return;try{await db.doc(path).set(data,merge?{merge:true}:undefined);}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README) and use the master key.':'Couldn’t save that. Try again.');}}
 async function gmDel(path){if(!db)return;try{await db.doc(path).delete();}catch(e){toast('Couldn’t delete that. Try again.');}}
@@ -1510,7 +1516,7 @@ async function bootCampaign(syncEl){
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
  if(!u||u.isAnonymous){location.replace('beta/');return;}
  authUid=u.uid;
- db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p)};
+ db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch()};
  const brand=document.querySelector('.brand h1');
  raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
   if(!snap.exists){halted='This campaign was deleted.';render();return;}
@@ -1531,7 +1537,7 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 v90';
+ syncEl.innerHTML='Live \u00b7 <a href="beta/">My campaigns</a> \u00b7 v91';
 }
 
 // ---------- boot ----------
@@ -1547,7 +1553,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v90';
+ syncEl.textContent='Live · synced for the party · v91';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

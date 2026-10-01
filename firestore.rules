@@ -185,24 +185,39 @@ service cloud.firestore {
       function member() { return realUser() && request.auth.uid in C().memberIds; }
       function cOwner() { return realUser() && C().ownerUid == request.auth.uid; }
       function cGM() { return realUser() && C().get('gmUid', null) == request.auth.uid; }
-      function gmSees() { return cGM() || cOwner(); }
+      function gmSees() { return cGM(); }
+      function playerDoc() { return /databases/$(database)/documents/campaigns/$(cid)/players/$(request.auth.uid); }
+      // A player (not the owner) gets exactly one investigator: players/{uid} records which one.
+      function takesOnly(slot) { return !exists(playerDoc()) && getAfter(playerDoc()).data.slot == slot; }
       function sheetOwner(s) { return get(/databases/$(database)/documents/campaigns/$(cid)/characters/$(s)).data.get('ownerUid', null); }
       function plays(s) { return isSlot(s) && sheetOwner(s) == request.auth.uid; }
 
-      // Investigators: everyone in the campaign can see them. A player edits their own; the owner edits any;
-      // the GM can award XP, start sessions and refill pools. Unclaimed sheets (or ones whose player left) can be claimed.
+      // Investigators: everyone in the campaign can see them. A player edits their own; the owner edits any and can make
+      // any number; other players make or claim one. The GM can award XP, start sessions and refill pools.
       match /characters/{slot} {
         function oldOwner() { return resource.data.get('ownerUid', null); }
         function newOwner() { return request.resource.data.get('ownerUid', null); }
         function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
         allow read: if member();
-        allow create: if member() && isSlot(slot) && (newOwner() == request.auth.uid || cOwner());
+        allow create: if isSlot(slot) && (cOwner() || (member() && newOwner() == request.auth.uid && takesOnly(slot)));
         allow update: if member() && isSlot(slot) && (
           cOwner()
           || (oldOwner() == request.auth.uid && (newOwner() == request.auth.uid || newOwner() == null))
           || (cGM() && changed().hasOnly(['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log']))
-          || ((oldOwner() == null || !(oldOwner() in C().memberIds)) && newOwner() == request.auth.uid && changed().hasOnly(['ownerUid', 'player'])));
+          || ((oldOwner() == null || !(oldOwner() in C().memberIds)) && newOwner() == request.auth.uid && changed().hasOnly(['ownerUid', 'player']) && takesOnly(slot)));
         allow delete: if cOwner();
+      }
+      // Which investigator each player has (see takesOnly). The owner can change it when assigning sheets.
+      match /players/{uid} {
+        function slotOwner(s) { return getAfter(/databases/$(database)/documents/campaigns/$(cid)/characters/$(s)).data.get('ownerUid', null); }
+        allow read: if member();
+        allow create: if cOwner() || (member() && uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['slot']) && isSlot(request.resource.data.slot)
+          && slotOwner(request.resource.data.slot) == request.auth.uid);
+        allow update: if cOwner();
+        allow delete: if cOwner() || (uid == request.auth.uid
+          && (!existsAfter(/databases/$(database)/documents/campaigns/$(cid)/characters/$(resource.data.slot))
+            || slotOwner(resource.data.slot) != request.auth.uid));
       }
       // Turn tracker and campaign tracker: everyone reads, the GM writes.
       match /table/{doc} {

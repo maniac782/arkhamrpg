@@ -192,7 +192,7 @@ a{color:var(--brass)}
 </head>
 <body>
 <div class="top"><div class="top-in">
-  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v105</small></span></div>
+  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v106</small></span></div>
 </div></div>
 <main id="app"><p class="note" style="padding:24px 16px">Loading…</p></main>
 <div class="toast" id="toast" hidden role="status"></div>
@@ -348,10 +348,13 @@ const GEAR_CATS=['Protection','Useful items','Tools and personal','Outdoors','Tr
 // Ready-made house rules the owner can switch on one by one.
 const clean=t=>String(t||'').replace(/^House rule\.\s*/,'');
 const rid=()=>Math.random().toString(36).slice(2,9);
+// Last-seen house rules and pending invites per campaign, so Settings doesn't flash empty on reload.
+const memo=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('apl-memo-'+k)||'null');localStorage.setItem('apl-memo-'+k,JSON.stringify(v));}catch(e){return null;}};
 function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
- hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
+ hr=memo('hr-'+cid)||null;
+ hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};memo('hr-'+cid,hr);render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
 function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
- db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
+ memo('hr-'+cid,hr);db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
 function descOf(kind,x){
  if(kind==='weapon')return [x.s,x.d!==''&&x.d!=null?'damage '+x.d:'',x.i&&x.i!=='–'?'injury '+x.i:'',x.r?'range '+x.r:'',x.a?x.a+' shots':'',x.fr?'free reloads':'',x.c?'$'+x.c:'costs nothing'].filter(Boolean).join(', ')+'.'+(clean(x.sp)&&clean(x.sp)!=='Free reloads.'?' '+clean(x.sp):'');
  if(kind==='gear')return (x.cat?x.cat+', ':'')+(x.c?'$'+x.c:'costs nothing')+'.'+(clean(x.note)?' '+clean(x.note):'');
@@ -406,7 +409,8 @@ function houseChange(el){if(!hr)return false;
   it[k]=el.type==='checkbox'?el.checked:NUMK.includes(k)?Math.max(0,Number(el.value)||0):el.value.slice(0,300);saveHouse();return true;}
  return false;}
 function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
- outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+ outbox=memo('out-'+cid)||[];
+ outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));memo('out-'+cid,outbox);render();},e=>console.warn(e));}
 const joinLink=c=>c.joinCode?location.origin+location.pathname+'?join='+encodeURIComponent(c.id+'.'+c.joinCode)+'&n='+encodeURIComponent(c.name):'';
 function newCode(){const a=new Uint8Array(15);crypto.getRandomValues(a);return Array.from(a,x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');}
 async function sendInvite(){
@@ -514,7 +518,7 @@ auth.onAuthStateChanged(u=>{
  const same=!!(u&&bc&&bc.uid===u.uid);
  user=u&&!u.isAnonymous?u:null;watching=false;
  if(!same){profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';}
- if(!user){try{localStorage.removeItem(BC);}catch(e){}bc=null;}
+ if(!user){try{localStorage.removeItem(BC);Object.keys(localStorage).filter(k=>k.startsWith('apl-memo-')).forEach(k=>localStorage.removeItem(k));}catch(e){}bc=null;}
  ui.err='';ui.busy=false;
  if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{console.warn(e);profile=null;render();});}
  render();

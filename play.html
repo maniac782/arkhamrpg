@@ -180,7 +180,7 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 </head>
 <body>
 <div class="top"><div class="top-in">
-  <div class="brand"><h1>Arkham RPG Player Ledger</h1><small id="sync">Connecting…</small></div>
+  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="sync">Connecting…</small><small class="note" id="ver">v105</small></span></div>
   <div class="tabs" role="tablist" id="tabs"></div>
 </div></div>
 <main id="app"></main>
@@ -1512,7 +1512,7 @@ async function bootCampaign(syncEl){
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
  const fb=firebase.initializeApp(cfg,'beta');const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
  const brand=document.querySelector('.brand h1');
- const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="./">My campaigns</a><a class="btn sm" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live \u00b7 v104</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');};};syncLine();window.__syncLine=syncLine;
+ const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="./">My campaigns</a><a class="btn sm" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');};};syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
  if(camp){if(brand)brand.textContent=camp.name;document.title=camp.name+' \u2014 Arkham Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
@@ -1553,7 +1553,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v104';
+ syncEl.textContent='Live · synced for the party ';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

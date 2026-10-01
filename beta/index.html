@@ -349,7 +349,7 @@ const GEAR_CATS=['Protection','Useful items','Tools and personal','Outdoors','Tr
 const clean=t=>String(t||'').replace(/^House rule\.\s*/,'');
 const rid=()=>Math.random().toString(36).slice(2,9);
 function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
- hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
+ hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
 function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
  db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
 function descOf(kind,x){
@@ -403,7 +403,7 @@ function houseChange(el){if(!hr)return false;
  if(el.dataset.hp!=null){const p=presets()[Number(el.dataset.hp)];if(p)setPreset(p,el.checked);return true;}
  if(el.dataset.hc){const it=findCustom(el.dataset.hc);if(it){if(el.checked)delete it.off;else it.off=true;saveHouse();}return true;}
  if(el.dataset.hx){const it=findCustom(el.dataset.hx);if(!it)return true;const k=el.dataset.k;
-  it[k]=el.type==='checkbox'?el.checked:NUMK.includes(k)?Math.max(0,Number(el.value)||0):el.value.slice(0,300);saveHouse();render();return true;}
+  it[k]=el.type==='checkbox'?el.checked:NUMK.includes(k)?Math.max(0,Number(el.value)||0):el.value.slice(0,300);saveHouse();return true;}
  return false;}
 function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
  outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}

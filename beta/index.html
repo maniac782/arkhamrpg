@@ -341,16 +341,16 @@ const myEmail=()=>String((user&&user.email)||'').toLowerCase();
 function watchInbox(){if(inboxUnsub)inboxUnsub();inbox=[];if(!myEmail())return;
  inboxUnsub=db.collection('invites').where('toEmail','==',myEmail()).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
 // ---------- house rules (stored per campaign) ----------
-let hr=null,hrCid=null,hrUnsub=null,hrT=null;
+let hr=null,hrCid=null,hrUnsub=null,hrT=null,hrErr='';
 const UA={id:'universalAmmo',n:'Universal ammo',note:'Reloads are shared: any gun can use any gun’s extra reloads.'};
 const GEAR_CATS=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
 const rid=()=>Math.random().toString(36).slice(2,9);
-function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrCid=cid;if(!cid)return;
- hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>console.warn(e));}
+function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
+ hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
 function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
  db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
 function houseHtml(c,own){
- if(!hr)return '';
+ if(!hr)return '<section class="sec"><div class="sec-head"><h2>House rules</h2></div><p class="note" style="margin:0">'+(hrErr?'Couldn\u2019t load the house rules ('+esc(hrErr)+'). Reload the page; if it keeps happening, the latest database rules may not be published yet.':'Loading\u2026')+'</p></section>';
  const ua=hr.rules.some(r=>r.id==='universalAmmo');
  let h='<section class="sec"><div class="sec-head"><h2>House rules</h2>'+(own?'<label class="row note" style="gap:6px"><input type="checkbox" id="hr-on" data-hr="on"'+(hr.on?' checked':'')+'> Turned on</label>':'<span class="chip'+(hr.on?' ok':'')+'">'+(hr.on?'On':'Off')+'</span>')+'</div>';
  if(!own){const all=[...(ua?[UA]:[]),...hr.weapons,...hr.gear].filter(x=>x.n);

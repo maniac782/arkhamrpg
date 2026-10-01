@@ -836,7 +836,7 @@ function gunKey(w){return String(w.name||'').trim().toLowerCase();}
 function sameGuns(ws,w){const k=gunKey(w);return k&&!w.fr?ws.filter(x=>!x.fr&&gunKey(x)===k):[w];}
 function gunPool(ws,w){return sameGuns(ws,w).reduce((a,x)=>a+(x.reloads||0),0);}
 // Campaigns keep their house rules in the database (Settings); the original site uses house-rules.js.
-const HR=()=>CAMP?{weapons:house.weapons||[],gear:house.gear||[],rules:house.rules||[]}:(window.HOUSE_RULES||{});
+const HR=()=>CAMP?{weapons:(house.weapons||[]).filter(x=>!x.off&&x.n),gear:(house.gear||[]).filter(x=>!x.off&&x.n),rules:(house.rules||[]).filter(x=>!x.off&&x.n)}:(window.HOUSE_RULES||{});
 function sharedAmmo(){return !!(house.on&&(HR().rules||[]).some(r=>r.id==='universalAmmo'));}
 function W(){return house.on?[...A.WEAPONS,...(HR().weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
 function GR(){return house.on?[...A.GEAR,...(HR().gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
@@ -1195,7 +1195,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v101 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v102 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1531,7 +1531,7 @@ async function bootCampaign(syncEl){
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
  },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
- const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="beta/?v=100">My campaigns</a><a class="btn sm" href="beta/?settings='+encodeURIComponent(CAMP)+'&v=100">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live \u00b7 v101</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>window.__campAuth.signOut().then(()=>location.href='beta/');};syncLine();window.__syncLine=syncLine;
+ const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="beta/?v=100">My campaigns</a><a class="btn sm" href="beta/?settings='+encodeURIComponent(CAMP)+'&v=100">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live \u00b7 v102</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>window.__campAuth.signOut().then(()=>location.href='beta/');};syncLine();window.__syncLine=syncLine;
 }
 
 // ---------- boot ----------
@@ -1547,7 +1547,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v101';
+ syncEl.textContent='Live · synced for the party · v102';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

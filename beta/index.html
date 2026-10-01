@@ -347,47 +347,64 @@ const UA={id:'universalAmmo',n:'Universal ammo',note:'Reloads are shared: any gu
 const GEAR_CATS=['Protection','Useful items','Tools and personal','Outdoors','Transport'];
 // Ready-made house rules the owner can switch on one by one.
 const clean=t=>String(t||'').replace(/^House rule\.\s*/,'');
-function presets(){const o=window.HOUSE_RULES||{};
- return [{key:'rule:universalAmmo',kind:'rule',item:UA,name:UA.n,desc:'Reloads are shared: any gun can use any other gun’s extra reloads, instead of each gun keeping its own.'}]
-  .concat((o.weapons||[]).map(w=>({key:'w:'+w.n,kind:'weapon',item:w,name:w.n,desc:'A weapon for the picker: '+[w.s,'damage '+w.d,w.i&&w.i!=='–'?'injury '+w.i:'',w.r?'range '+w.r:'',w.a?w.a+' shots':'',w.fr?'free reloads':'',w.c?'$'+w.c:'costs nothing'].filter(Boolean).join(', ')+'.'+(clean(w.sp)&&clean(w.sp)!=='Free reloads.'?' '+clean(w.sp):'')})))
-  .concat((o.gear||[]).map(g=>({key:'g:'+g.n,kind:'gear',item:g,name:g.n,desc:(g.cat?g.cat+', ':'')+'$'+g.c+'. '+clean(g.note)})));}
-function presetOn(p){return p.kind==='rule'?hr.rules.some(r=>r.id===p.item.id):(p.kind==='weapon'?hr.weapons:hr.gear).some(x=>x.n===p.item.n);}
-function setPreset(p,on){if(p.kind==='rule'){hr.rules=hr.rules.filter(r=>r.id!==p.item.id);if(on)hr.rules.push(p.item);}
- else{const k=p.kind==='weapon'?'weapons':'gear';hr[k]=hr[k].filter(x=>x.n!==p.item.n);if(on)hr[k].push({id:rid(),...p.item});}saveHouse();render();}
 const rid=()=>Math.random().toString(36).slice(2,9);
 function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
  hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
 function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
  db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
+function descOf(kind,x){
+ if(kind==='weapon')return [x.s,x.d!==''&&x.d!=null?'damage '+x.d:'',x.i&&x.i!=='–'?'injury '+x.i:'',x.r?'range '+x.r:'',x.a?x.a+' shots':'',x.fr?'free reloads':'',x.c?'$'+x.c:'costs nothing'].filter(Boolean).join(', ')+'.'+(clean(x.sp)&&clean(x.sp)!=='Free reloads.'?' '+clean(x.sp):'');
+ if(kind==='gear')return (x.cat?x.cat+', ':'')+(x.c?'$'+x.c:'costs nothing')+'.'+(clean(x.note)?' '+clean(x.note):'');
+ return clean(x.note)||'';}
+function presets(){const o=window.HOUSE_RULES||{};
+ return [{kind:'rule',item:UA,name:UA.n,desc:'Reloads are shared: any gun can use any other gun’s extra reloads, instead of each gun keeping its own.'}]
+  .concat((o.weapons||[]).map(w=>({kind:'weapon',item:w,name:w.n,desc:'Weapon: '+descOf('weapon',w)})))
+  .concat((o.gear||[]).map(g=>({kind:'gear',item:g,name:g.n,desc:'Equipment: '+descOf('gear',g)})));}
+function presetOn(p){return p.kind==='rule'?hr.rules.some(r=>r.id===p.item.id):(p.kind==='weapon'?hr.weapons:hr.gear).some(x=>x.n===p.item.n);}
+function setPreset(p,on){if(p.kind==='rule'){hr.rules=hr.rules.filter(r=>r.id!==p.item.id);if(on)hr.rules.push(p.item);}
+ else{const k=p.kind==='weapon'?'weapons':'gear';hr[k]=hr[k].filter(x=>x.n!==p.item.n);if(on)hr[k].push({id:rid(),...p.item});}saveHouse();render();}
+const LIST={weapon:'weapons',gear:'gear',rule:'rules'},KIND_LABEL={weapon:'Weapon',gear:'Equipment',rule:'Rule'};
+// The owner's own house rules: weapons/equipment not in the presets, plus custom rule text.
+function customs(){const pn=presets().map(p=>p.name);
+ return [...hr.rules.filter(r=>r.custom).map(x=>({kind:'rule',x})),...hr.weapons.filter(w=>!pn.includes(w.n)).map(x=>({kind:'weapon',x})),...hr.gear.filter(g=>!pn.includes(g.n)).map(x=>({kind:'gear',x}))];}
 function houseHtml(c,own){
- if(!hr)return '<section class="sec"><div class="sec-head"><h2>House rules</h2></div><p class="note" style="margin:0">'+(hrErr?'Couldn\u2019t load the house rules ('+esc(hrErr)+'). Reload the page; if it keeps happening, the latest database rules may not be published yet.':'Loading\u2026')+'</p></section>';
- const ua=hr.rules.some(r=>r.id==='universalAmmo');
+ if(!hr)return '<section class="sec"><div class="sec-head"><h2>House rules</h2></div><p class="note" style="margin:0">'+(hrErr?'Couldn’t load the house rules ('+esc(hrErr)+'). Reload the page; if it keeps happening, the latest database rules may not be published yet.':'Loading…')+'</p></section>';
+ const ps=presets(),cs=customs();
  let h='<section class="sec"><div class="sec-head"><h2>House rules</h2>'+(own?'<label class="row note" style="gap:6px"><input type="checkbox" id="hr-on" data-hr="on"'+(hr.on?' checked':'')+'> Turned on</label>':'<span class="chip'+(hr.on?' ok':'')+'">'+(hr.on?'On':'Off')+'</span>')+'</div>';
- if(!own){const all=[...(ua?[UA]:[]),...hr.weapons,...hr.gear].filter(x=>x.n);
-  return h+(all.length?'<div class="list">'+all.map(x=>'<div class="item"><div class="grow"><b>'+esc(x.n)+'</b>'+((x.note||x.sp)?'<span class="effect">'+esc(x.note||x.sp)+'</span>':'')+'</div></div>').join('')+'</div>':'<p class="note" style="margin:0">None.</p>')+'</section>';}
- h+='<p class="note" style="margin:0">Pick the optional rules you want and add your own weapons and equipment. While house rules are turned on, they apply to everyone in this campaign.</p>';
- const ps=presets(),pnames=ps.map(p=>p.name);
- h+='<div><span class="lbl">Optional rules</span><div class="list">'+ps.map((p,i)=>'<label class="item" style="gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="hp-'+i+'" data-hp="'+i+'"'+(presetOn(p)?' checked':'')+' style="margin-top:4px"><div class="grow"><b>'+esc(p.name)+'</b><span class="effect">'+esc(p.desc)+'</span></div></label>').join('')+'</div></div>';
- const inp=(pre,x,k,ph,type,w)=>'<label class="field"'+(w?' style="'+w+'"':'')+'><span class="lbl">'+ph+'</span><input class="f" id="'+pre+'-'+x.id+'-'+k+'" data-'+pre+'="'+x.id+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(x[k]==null?'':x[k])+'"'+(type==='number'?' min="0" step="any"':'')+'></label>';
- const cw=hr.weapons.filter(w=>!pnames.includes(w.n)),cg=hr.gear.filter(g=>!pnames.includes(g.n));
- h+='<div><span class="lbl">Your own weapons</span><div class="list">'+(cw.length?cw.map(w=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
-   inp('hw',w,'n','Name')+'<label class="field"><span class="lbl">Skill</span><select class="f" id="hw-'+w.id+'-s" data-hw="'+w.id+'" data-k="s">'+['Ranged Combat','Melee Combat'].map(o=>'<option'+(w.s===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
-   inp('hw',w,'d','Damage')+inp('hw',w,'i','Injury rating')+inp('hw',w,'r','Range')+inp('hw',w,'a','Ammo','number')+inp('hw',w,'c','Price $','number')+inp('hw',w,'rc','Reload price $','number')+inp('hw',w,'sp','Special')+
-   '<label class="row note" style="gap:6px;align-self:end"><input type="checkbox" id="hw-'+w.id+'-fr" data-hw="'+w.id+'" data-k="fr"'+(w.fr?' checked':'')+'> Free reloads</label></div></div><button class="btn sm icon" data-a="hwdel" data-id="'+esc(w.id)+'" aria-label="Remove weapon">×</button></div>').join(''):'<p class="note">None.</p>')+'</div><div class="row"><button class="btn sm" data-a="hwadd">Add a weapon</button></div></div>';
- h+='<div><span class="lbl">Your own equipment</span><div class="list">'+(cg.length?cg.map(g=>'<div class="item" style="align-items:flex-start"><div class="grow"><div class="wgrid">'+
-   '<label class="field"><span class="lbl">Category</span><select class="f" id="hg-'+g.id+'-cat" data-hg="'+g.id+'" data-k="cat">'+GEAR_CATS.map(o=>'<option'+(g.cat===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
-   inp('hg',g,'n','Name')+inp('hg',g,'c','Price $','number')+inp('hg',g,'note','What it does','text','grid-column:1/-1')+'</div></div><button class="btn sm icon" data-a="hgdel" data-id="'+esc(g.id)+'" aria-label="Remove equipment">×</button></div>').join(''):'<p class="note">None.</p>')+'</div><div class="row"><button class="btn sm" data-a="hgadd">Add equipment</button></div></div>';
+ if(!own){const rows=[...ps.filter(presetOn).map(p=>[p.name,p.desc]),...cs.filter(c=>!c.x.off&&c.x.n).map(c=>[c.x.n,(c.kind==='rule'?'':KIND_LABEL[c.kind]+': ')+descOf(c.kind,c.x)])];
+  return h+(rows.length?'<div class="list">'+rows.map(([n,d])=>'<div class="item"><div class="grow"><b>'+esc(n)+'</b>'+(d?'<span class="effect">'+esc(d)+'</span>':'')+'</div></div>').join('')+'</div>':'<p class="note" style="margin:0">None.</p>')+'</section>';}
+ h+='<p class="note" style="margin:0">Tick the house rules your group uses. You can write your own too. While house rules are turned on, ticked ones apply to everyone in this campaign.</p>';
+ const row=(id,checked,data,name,desc,extra)=>'<div class="item" style="gap:10px;align-items:flex-start;flex-wrap:wrap"><input type="checkbox" id="'+id+'" '+data+(checked?' checked':'')+' style="margin-top:4px" aria-label="Use '+esc(name||'this rule')+'"><label class="grow" for="'+id+'" style="cursor:pointer"><b>'+esc(name||'(no name yet)')+'</b><span class="effect">'+esc(desc)+'</span></label>'+(extra||'')+'</div>';
+ let list=ps.map((p,i)=>row('hp-'+i,presetOn(p),'data-hp="'+i+'"',p.name,p.desc));
+ const inp=(x,k,ph,type,w)=>'<label class="field"'+(w?' style="'+w+'"':'')+'><span class="lbl">'+ph+'</span><input class="f" id="hx-'+x.id+'-'+k+'" data-hx="'+x.id+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(x[k]==null?'':x[k])+'"'+(type==='number'?' min="0" step="any"':'')+'></label>';
+ cs.forEach(({kind,x})=>{
+  const editing=ui.hedit===x.id;
+  const btns='<span class="row" style="gap:6px">'+(editing?'':'<button class="btn sm" data-a="hedit" data-id="'+esc(x.id)+'">Edit</button>')+'<button class="btn sm" data-a="hdel" data-id="'+esc(x.id)+'" data-kind="'+kind+'">Remove</button></span>';
+  let form='';
+  if(editing){
+   form='<div style="flex-basis:100%;display:flex;flex-direction:column;gap:8px;padding-left:26px"><div class="wgrid">';
+   if(kind==='rule')form+=inp(x,'n','Name')+inp(x,'note','What it does','text','grid-column:1/-1');
+   if(kind==='weapon')form+=inp(x,'n','Name')+'<label class="field"><span class="lbl">Skill</span><select class="f" id="hx-'+x.id+'-s" data-hx="'+x.id+'" data-k="s">'+['Ranged Combat','Melee Combat'].map(o=>'<option'+(x.s===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+
+    inp(x,'d','Damage')+inp(x,'i','Injury rating')+inp(x,'r','Range')+inp(x,'a','Ammo','number')+inp(x,'c','Price $','number')+inp(x,'rc','Reload price $','number')+inp(x,'sp','Special rules')+
+    '<label class="row note" style="gap:6px;align-self:end"><input type="checkbox" id="hx-'+x.id+'-fr" data-hx="'+x.id+'" data-k="fr"'+(x.fr?' checked':'')+'> Free reloads</label>';
+   if(kind==='gear')form+='<label class="field"><span class="lbl">Category</span><select class="f" id="hx-'+x.id+'-cat" data-hx="'+x.id+'" data-k="cat">'+GEAR_CATS.map(o=>'<option'+(x.cat===o?' selected':'')+'>'+o+'</option>').join('')+'</select></label>'+inp(x,'n','Name')+inp(x,'c','Price $','number')+inp(x,'note','What it does','text','grid-column:1/-1');
+   form+='</div><div class="row"><button class="btn sm pri" data-a="hdone">Done</button></div></div>';
+  }
+  list.push(row('hc-'+x.id,!x.off,'data-hc="'+esc(x.id)+'" data-kind="'+kind+'"',x.n,(kind==='rule'?'':KIND_LABEL[kind]+': ')+descOf(kind,x),btns+form));
+ });
+ h+='<div class="list">'+list.join('')+'</div>';
+ h+='<div class="row"><span class="note">Write your own:</span><button class="btn sm" data-a="hnew" data-kind="rule">+ Rule</button><button class="btn sm" data-a="hnew" data-kind="weapon">+ Weapon</button><button class="btn sm" data-a="hnew" data-kind="gear">+ Equipment</button></div>';
  return h+'</section>';
 }
 const NUMK=['a','c','rc'];
+function findCustom(id){for(const k of ['rules','weapons','gear']){const it=hr[k].find(x=>x.id===id);if(it)return it;}return null;}
 function houseChange(el){if(!hr)return false;
  if(el.dataset.hr==='on'){hr.on=el.checked;saveHouse();return true;}
  if(el.dataset.hp!=null){const p=presets()[Number(el.dataset.hp)];if(p)setPreset(p,el.checked);return true;}
- if(el.dataset.hr==='ua'){hr.rules=hr.rules.filter(r=>r.id!=='universalAmmo');if(el.checked)hr.rules.push(UA);saveHouse();return true;}
- const list=el.dataset.hw?hr.weapons:el.dataset.hg?hr.gear:null;if(!list)return false;
- const it=list.find(x=>x.id===(el.dataset.hw||el.dataset.hg));if(!it)return true;const k=el.dataset.k;
- it[k]=el.type==='checkbox'?el.checked:NUMK.includes(k)?Math.max(0,Number(el.value)||0):el.value.slice(0,200);
- saveHouse();return true;}
+ if(el.dataset.hc){const it=findCustom(el.dataset.hc);if(it){if(el.checked)delete it.off;else it.off=true;saveHouse();}return true;}
+ if(el.dataset.hx){const it=findCustom(el.dataset.hx);if(!it)return true;const k=el.dataset.k;
+  it[k]=el.type==='checkbox'?el.checked:NUMK.includes(k)?Math.max(0,Number(el.value)||0):el.value.slice(0,300);saveHouse();render();return true;}
+ return false;}
 function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
  outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
 const joinLink=c=>c.joinCode?location.origin+location.pathname+'?join='+encodeURIComponent(c.id+'.'+c.joinCode)+'&n='+encodeURIComponent(c.name):'';
@@ -469,11 +486,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'newclose':ui.newOpen=false;ui.err='';render();break;
   case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;
   case 'home':ui.view='home';ui.err='';render();break;
-  case 'hwadd':if(hr){hr.weapons.push({id:rid(),n:'',s:'Ranged Combat',d:'',i:'',r:'',a:0,c:0,rc:0,fr:false,sp:''});saveHouse();render();}break;
-  case 'hgadd':if(hr){hr.gear.push({id:rid(),cat:'Useful items',n:'',c:0,note:''});saveHouse();render();}break;
-  case 'hwdel':if(hr){hr.weapons=hr.weapons.filter(x=>x.id!==b.dataset.id);saveHouse();render();}break;
-  case 'hgdel':if(hr){hr.gear=hr.gear.filter(x=>x.id!==b.dataset.id);saveHouse();render();}break;
-  case 'hrcopy':{const o=window.HOUSE_RULES||{};if(hr){(o.weapons||[]).forEach(w=>{if(!hr.weapons.some(x=>x.n===w.n))hr.weapons.push({id:rid(),...w});});(o.gear||[]).forEach(g=>{if(!hr.gear.some(x=>x.n===g.n))hr.gear.push({id:rid(),...g});});saveHouse();render();toast('Added. Turn house rules on to use them.');}break;}
+  case 'hnew':if(hr){const k=b.dataset.kind,id=rid();const base=k==='rule'?{id,n:'',note:'',custom:true}:k==='weapon'?{id,n:'',s:'Ranged Combat',d:'',i:'',r:'',a:0,c:0,rc:0,fr:false,sp:''}:{id,cat:'Useful items',n:'',c:0,note:''};hr[LIST[k]].push(base);ui.hedit=id;saveHouse();render();const f=document.getElementById('hx-'+id+'-n');if(f)f.focus();}break;
+  case 'hedit':ui.hedit=b.dataset.id;render();break;
+  case 'hdone':ui.hedit=null;render();break;
+  case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
   case 'impask':ui.confirmImport=true;render();break;
   case 'impno':ui.confirmImport=false;render();break;
   case 'impyes':{const c=camps.find(x=>x.id===ui.cid);ui.confirmImport=false;if(c)importLegacy(c).catch(e=>{console.warn(e);ui.importing='';render();toast('The import stopped partway ('+((e&&e.code)||'error')+'). You can run it again.');});break;}

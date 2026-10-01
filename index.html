@@ -650,7 +650,7 @@ function renderParty(){
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
- h+='</div><section class="sec"><div class="sec-head"><h2>Game Master</h2></div>'+houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. With the master key or the GM PIN this covers every sheet.</p>':'<p class="note" style="margin:0">Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.</p>')+(db?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
+ h+='</div><section class="sec"><div class="sec-head"><h2>Game Master</h2></div>'+houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. With the master key or the GM PIN this covers every sheet.</p>':'<p class="note" style="margin:0">Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.</p>')+(!localMode?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'')+'</section>';
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
@@ -696,7 +696,7 @@ function openCrop(file,slot){
 }
 function lockPanel(s){
  const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'Master key':'Unlocked on this device'):'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'Others need the passcode to edit it.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
- if(!db)return h+'</section>';
+ if(localMode)return h+'</section>';
  const inp=(id,ph)=>'<input class="maxsel" style="width:150px" type="password" id="'+id+'-'+s+'" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
  if(!c.locked)h+='<div class="row">'+inp('lockset','New passcode')+'<button class="btn sm" data-act="lockset">Lock with passcode</button></div>';
  else if(!canEdit(s))h+='<div class="row">'+inp('unlock','Passcode')+'<button class="btn sm pri" data-act="unlock">Unlock</button></div>';
@@ -798,7 +798,7 @@ function renderCharBody(s){
 
  h+='<details class="sec"><summary><h2>Background</h2></summary><div class="grid2">'+fld('bg.origin','Place of origin',c.bg.origin)+fld('bg.family','Family & friends',c.bg.family)+fld('bg.employment','Employment',c.bg.employment)+fld('bg.salary','Weekly salary',c.bg.salary)+fld('bg.encounter','First supernatural encounter',c.bg.encounter)+fld('bg.enemies','Notable enemies',c.bg.enemies)+'</div></details>';
 
- const gm=!!keys.master&&!!db;
+ const gm=!!keys.master&&!localMode;
  h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">Clear all</button>':'')+'<button class="btn sm" data-act="session">New session</button></div></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+new Date(l.t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div>'+(gm?'<p class="note" style="margin:0">Master key: you can remove entries.</p>':'')+'</section>';
  return h;
 }
@@ -816,7 +816,7 @@ function sharedAmmo(){return !!(house.on&&((window.HOUSE_RULES||{}).rules||[]).s
 function W(){return house.on?[...A.WEAPONS,...((window.HOUSE_RULES||{}).weapons||[]).map(w=>({...w,house:true}))]:A.WEAPONS;}
 function GR(){return house.on?[...A.GEAR,...((window.HOUSE_RULES||{}).gear||[]).map(g=>({...g,house:true}))]:A.GEAR;}
 function gmPinHtml(){
- if(!db)return '';
+ if(localMode)return '';
  const gmk=isGM(),mk=!!keys.master;
  const [cls,lab,note]=!gmClaimed?['warn','No GM PIN','Whoever runs the game sets a PIN here. After that only devices with the PIN can run these tools.']
   :gmk?['ok','Unlocked on this device','Others need the GM PIN to run these tools.']
@@ -1165,7 +1165,7 @@ async function lockAction(a,s){
   else if(a==='gmclear'){gmLog('GM PIN removed',false);await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();await db.doc('grants/'+authUid+'/keys/gm').delete().catch(()=>{});toast('GM PIN removed. The next GM can set their own.');}
   else if(a==='gmreset'){await db.doc('settings/gm').set({set:false});await db.doc('locks/gm').delete();toast('GM PIN cleared. The GM can choose a new one.');}
   else if(a==='mforget'){await db.doc('grants/'+authUid+'/keys/master').delete();toast('Master key removed from this device.');}
- }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v87 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
+ }catch(e){const code=(e&&e.code)||'unknown';console.warn('lock action failed',a,e);toast(code==='permission-denied'?(a==='munlock'?'That master key isn\u2019t right.':a==='unlock'?'Wrong passcode.':a==='gmunlock'?'That GM PIN isn\u2019t right.':a==='gmset'&&gmClaimed&&!isGM()?'A GM PIN is already set.':'Firebase refused that change (permission-denied). Check the site says v88 and the rules are up to date.'):'Couldn\u2019t do that ('+code+'). Try again.');}
 }
 function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
@@ -1484,7 +1484,7 @@ render();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party · v87';
+ syncEl.textContent='Live · synced for the party · v88';
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{

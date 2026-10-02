@@ -51,7 +51,15 @@ function usernameView(){
 }
 const MAX_MEMBERS=12;
 function chipsFor(c,u){const r=(c.roles||{})[u];let h='';if(r==='owner')h+='<span class="chip ok">Owner</span>';if(c.gmUid&&c.gmUid===u)h+='<span class="chip warn">GM</span>';if(r!=='owner'&&c.gmUid!==u)h+='<span class="chip">Player</span>';return h;}
-function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp"><a class="campmain" href="'+ledgerUrl(c.id)+'"><h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
+const photoOk=p=>typeof p==='string'&&/^data:image\/jpeg;base64,/.test(p);
+// Shrink a chosen picture to a small JPEG (wide 16:9 crop) and save it on the campaign.
+function campPhoto(f){if(!f||!/^image\//.test(f.type))return toast('Choose an image file.');const url=URL.createObjectURL(f),img=new Image();
+ img.onload=()=>{URL.revokeObjectURL(url);let W=img.naturalWidth,Hh=img.naturalHeight,cw=W,ch=Math.round(W*9/16);if(ch>Hh){ch=Hh;cw=Math.round(Hh*16/9);}const sx=(W-cw)/2,sy=(Hh-ch)/2;
+  const cv=document.createElement('canvas');let w=Math.min(800,cw),q=0.8,d='';
+  for(let k=0;k<8;k++){cv.width=w;cv.height=Math.round(w*9/16);cv.getContext('2d').drawImage(img,sx,sy,cw,ch,0,0,cv.width,cv.height);d=cv.toDataURL('image/jpeg',q);if(d.length<140000)break;w=Math.round(w*0.85);q=Math.max(0.5,q-0.05);}
+  db.doc('campaigns/'+ui.cid).update({photo:d}).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the picture. Try again.');});};
+ img.onerror=()=>{URL.revokeObjectURL(url);toast('Couldn\u2019t read that image.');};img.src=url;}
+function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp'+(photoOk(c.photo)?' hasimg':'')+'"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+(photoOk(c.photo)?'<img class="campimg" src="'+c.photo+'" alt="">':'')+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
@@ -72,7 +80,9 @@ function campView(){
  const own=c.ownerUid===user.uid,names=c.names||{};
  let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button><a class="btn sm pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a></div>';
  h+='<section class="sec"><div class="sec-head"><h2>'+(own?'Campaign settings':esc(c.name))+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
- if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form><label class="row" style="gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-ownedit'+(c.ownerEdits===false?'':' checked')+' style="margin-top:3px"><span><b>Let me edit every investigator</b><br><span class="note">Untick to lock other players\u2019 investigators to them, as they are for everyone else. You can still choose who plays each one.</span></span></label>';
+ if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form><label class="row" style="gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-ownedit'+(c.ownerEdits===false?'':' checked')+' style="margin-top:3px"><span><b>Let me edit every investigator</b><br><span class="note">Untick to lock other players\u2019 investigators to them, as they are for everyone else. You can still choose who plays each one.</span></span></label>'+
+  '<div class="field"><span class="lbl">Campaign picture</span><div class="row" style="align-items:center;gap:12px">'+(photoOk(c.photo)?'<img class="setimg" src="'+c.photo+'" alt="Campaign picture">':'<span class="setimg empty" aria-hidden="true"></span>')+'<label class="btn sm" for="cphoto" style="cursor:pointer">'+(photoOk(c.photo)?'Change picture':'Add a picture')+'</label><input type="file" id="cphoto" accept="image/*" hidden>'+(photoOk(c.photo)?'<button class="btn sm" data-a="cphotodel">Remove</button>':'')+'</div><span class="note">Shows on the campaign\u2019s card and next to its name in the ledger.</span></div>';
+ else if(photoOk(c.photo))h+='<img class="setimg wide" src="'+c.photo+'" alt="">';
  h+='</section>';
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
@@ -269,7 +279,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 // Rename is only clickable when the name has actually been changed.
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();});
-app.addEventListener('change',e=>{const t=e.target;if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
+app.addEventListener('change',e=>{const t=e.target;if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
  switch(a){
   case 'google':busy(google);break;
@@ -282,6 +292,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hnew':if(hr){const k=b.dataset.kind,id=rid();const base=k==='rule'?{id,n:'',note:'',custom:true}:k==='weapon'?{id,n:'',s:'Ranged Combat',d:'',i:'',r:'',a:0,c:0,rc:0,fr:false,sp:''}:{id,cat:'Useful items',n:'',c:0,note:''};hr[LIST[k]].push(base);ui.hedit=id;saveHouse();render();const f=document.getElementById('hx-'+id+'-n');if(f)f.focus();}break;
   case 'hphide':if(hr){const p=presets()[Number(b.dataset.i)];if(p){hr.hidden=[...(hr.hidden||[]).filter(n=>n!==p.name),p.name];setPreset(p,false);}}break;
   case 'hpedit':if(hr){const p=presets()[Number(b.dataset.i)];if(!p||p.kind==='rule')break;const k=LIST[p.kind];let it=hr[k].find(x=>x.n===p.name);if(!it){it={id:rid(),...JSON.parse(JSON.stringify(p.item)),off:true};hr[k].push(it);}hr.hidden=[...(hr.hidden||[]).filter(n=>n!==p.name),p.name];ui.hedit=it.id;saveHouse();render();}break;
+  case 'cphotodel':db.doc('campaigns/'+ui.cid).update({photo:FV().delete()}).then(()=>toast('Picture removed.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'hprestore':if(hr){const g=goneOnly();hr.hidden=(hr.hidden||[]).filter(n=>!g.includes(n));saveHouse();render();}break;
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;

@@ -13,3 +13,9 @@
 .wide{width:100%}
 a.btn{text-decoration:none}
 a{color:var(--brass)}
+
+/* Campaign pictures */
+.camp.hasimg{padding-top:0;overflow:hidden}
+.campimg{display:block;max-width:none;width:calc(100% + 28px);margin:0 -14px 4px;aspect-ratio:16/9;object-fit:cover;background:var(--surface2)}
+.setimg{width:128px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--surface2);display:block}
+.setimg.wide{width:100%;max-width:480px}

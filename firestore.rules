@@ -270,11 +270,12 @@ service cloud.firestore {
         allow delete: if cOwner();
         allow read: if member();
         allow write: if cOwner() && doc == 'house'
-          && request.resource.data.keys().hasOnly(['on', 'weapons', 'gear', 'rules'])
+          && request.resource.data.keys().hasOnly(['on', 'weapons', 'gear', 'rules', 'hidden'])
           && request.resource.data.get('on', false) is bool
           && request.resource.data.get('weapons', []) is list && request.resource.data.get('weapons', []).size() <= 40
           && request.resource.data.get('gear', []) is list && request.resource.data.get('gear', []).size() <= 60
-          && request.resource.data.get('rules', []) is list && request.resource.data.get('rules', []).size() <= 10;
+          && request.resource.data.get('rules', []) is list && request.resource.data.get('rules', []).size() <= 10
+          && request.resource.data.get('hidden', []) is list && request.resource.data.get('hidden', []).size() <= 100;
       }
     }
 

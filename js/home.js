@@ -156,9 +156,9 @@ const rid=()=>Math.random().toString(36).slice(2,9);
 const memo=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('apl-memo-'+k)||'null');localStorage.setItem('apl-memo-'+k,JSON.stringify(v));}catch(e){return null;}};
 function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
  hr=memo('hr-'+cid)||null;
- hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};memo('hr-'+cid,hr);render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));hrErr=(e&&e.code)||'error';render();});}
+ hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[],hidden:d.hidden||[]};memo('hr-'+cid,hr);render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));hrErr=(e&&e.code)||'error';render();});}
 function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
- memo('hr-'+cid,hr);db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{(window.quotaHit&&quotaHit(e),console.warn(e));toast('Couldn’t save the house rules.');});},350);}
+ memo('hr-'+cid,hr);db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules,hidden:hr.hidden||[]},{merge:true}).catch(e=>{(window.quotaHit&&quotaHit(e),console.warn(e));toast('Couldn’t save the house rules.');});},350);}
 function descOf(kind,x){
  if(kind==='weapon')return [x.s,x.d!==''&&x.d!=null?'damage '+x.d:'',x.i&&x.i!=='–'?'injury '+x.i:'',x.r?'range '+x.r:'',x.a?x.a+' shots':'',x.fr?'free reloads':'',x.c?'$'+x.c:'costs nothing'].filter(Boolean).join(', ')+'.'+(clean(x.sp)&&clean(x.sp)!=='Free reloads.'?' '+clean(x.sp):'');
  if(kind==='gear')return (x.cat?x.cat+', ':'')+(x.c?'$'+x.c:'costs nothing')+'.'+(clean(x.note)?' '+clean(x.note):'');
@@ -167,22 +167,25 @@ function presets(){const o=window.HOUSE_RULES||{};
  return [{kind:'rule',item:UA,name:UA.n,desc:'Reloads are shared: any gun can use any other gun’s extra reloads, instead of each gun keeping its own.'}]
   .concat((o.weapons||[]).map(w=>({kind:'weapon',item:w,name:w.n,desc:'Weapon: '+descOf('weapon',w)})))
   .concat((o.gear||[]).map(g=>({kind:'gear',item:g,name:g.n,desc:'Equipment: '+descOf('gear',g)})));}
+function shownPresets(){const hd=(hr&&hr.hidden)||[];return presets().map((p,i)=>({...p,i})).filter(p=>!hd.includes(p.name));}
+// Suggestions the owner removed outright (an edited suggestion lives on as their own rule).
+function goneOnly(){const have=[...hr.weapons,...hr.gear].map(x=>x.n);return ((hr&&hr.hidden)||[]).filter(n=>!have.includes(n));}
 function presetOn(p){return p.kind==='rule'?hr.rules.some(r=>r.id===p.item.id):(p.kind==='weapon'?hr.weapons:hr.gear).some(x=>x.n===p.item.n);}
 function setPreset(p,on){if(p.kind==='rule'){hr.rules=hr.rules.filter(r=>r.id!==p.item.id);if(on)hr.rules.push(p.item);}
  else{const k=p.kind==='weapon'?'weapons':'gear';hr[k]=hr[k].filter(x=>x.n!==p.item.n);if(on)hr[k].push({id:rid(),...p.item});}saveHouse();render();}
 const LIST={weapon:'weapons',gear:'gear',rule:'rules'},KIND_LABEL={weapon:'Weapon',gear:'Equipment',rule:'Rule'};
 // The owner's own house rules: weapons/equipment not in the presets, plus custom rule text.
-function customs(){const pn=presets().map(p=>p.name);
+function customs(){const pn=shownPresets().map(p=>p.name);
  return [...hr.rules.filter(r=>r.custom).map(x=>({kind:'rule',x})),...hr.weapons.filter(w=>!pn.includes(w.n)).map(x=>({kind:'weapon',x})),...hr.gear.filter(g=>!pn.includes(g.n)).map(x=>({kind:'gear',x}))];}
 function houseHtml(c,own){
  if(!hr)return '<section class="sec"><div class="sec-head"><h2>House rules</h2></div><p class="note" style="margin:0">'+(hrErr?'Couldn’t load the house rules ('+esc(hrErr)+'). Reload the page; if it keeps happening, the latest database rules may not be published yet.':'Loading…')+'</p></section>';
- const ps=presets(),cs=customs();
+ const ps=shownPresets(),cs=customs(),nHidden=goneOnly().length;
  let h='<section class="sec"><div class="sec-head"><h2>House rules</h2>'+(own?'<label class="row note" style="gap:6px"><input type="checkbox" id="hr-on" data-hr="on"'+(hr.on?' checked':'')+'> Turned on</label>':'<span class="chip'+(hr.on?' ok':'')+'">'+(hr.on?'On':'Off')+'</span>')+'</div>';
  if(!own){const rows=[...ps.filter(presetOn).map(p=>[p.name,p.desc]),...cs.filter(c=>!c.x.off&&c.x.n).map(c=>[c.x.n,(c.kind==='rule'?'':KIND_LABEL[c.kind]+': ')+descOf(c.kind,c.x)])];
   return h+(rows.length?'<div class="list">'+rows.map(([n,d])=>'<div class="item"><div class="grow"><b>'+esc(n)+'</b>'+(d?'<span class="effect">'+esc(d)+'</span>':'')+'</div></div>').join('')+'</div>':'<p class="note" style="margin:0">None.</p>')+'</section>';}
  h+='<p class="note" style="margin:0">Tick the house rules your group uses. You can write your own too. While house rules are turned on, ticked ones apply to everyone in this campaign.</p>';
  const row=(id,checked,data,name,desc,extra)=>'<div class="item" style="gap:10px;align-items:flex-start;flex-wrap:wrap"><input type="checkbox" id="'+id+'" '+data+(checked?' checked':'')+' style="margin-top:4px" aria-label="Use '+esc(name||'this rule')+'"><label class="grow" for="'+id+'" style="cursor:pointer"><b>'+esc(name||'(no name yet)')+'</b><span class="effect">'+esc(desc)+'</span></label>'+(extra||'')+'</div>';
- let list=ps.map((p,i)=>row('hp-'+i,presetOn(p),'data-hp="'+i+'"',p.name,p.desc));
+ let list=ps.map(p=>row('hp-'+p.i,presetOn(p),'data-hp="'+p.i+'"',p.name,p.desc,'<span class="row" style="gap:6px">'+(p.kind==='rule'?'':'<button class="btn sm" data-a="hpedit" data-i="'+p.i+'">Edit</button>')+'<button class="btn sm" data-a="hphide" data-i="'+p.i+'">Remove</button></span>'));
  const inp=(x,k,ph,type,w)=>'<label class="field"'+(w?' style="'+w+'"':'')+'><span class="lbl">'+ph+'</span><input class="f" id="hx-'+x.id+'-'+k+'" data-hx="'+x.id+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(x[k]==null?'':x[k])+'"'+(type==='number'?' min="0" step="any"':'')+'></label>';
  cs.forEach(({kind,x})=>{
   const editing=ui.hedit===x.id;
@@ -201,6 +204,7 @@ function houseHtml(c,own){
  });
  h+='<div class="list">'+list.join('')+'</div>';
  h+='<div class="row"><span class="note">Write your own:</span><button class="btn sm" data-a="hnew" data-kind="rule">+ Rule</button><button class="btn sm" data-a="hnew" data-kind="weapon">+ Weapon</button><button class="btn sm" data-a="hnew" data-kind="gear">+ Equipment</button></div>';
+ if(nHidden)h+='<p class="note" style="margin:0">'+nHidden+' suggested rule'+(nHidden>1?'s':'')+' removed. <button class="btn sm" data-a="hprestore">Bring '+(nHidden>1?'them':'it')+' back</button></p>';
  return h+'</section>';
 }
 const NUMK=['a','c','rc'];
@@ -276,6 +280,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;
   case 'home':ui.view='home';ui.err='';render();break;
   case 'hnew':if(hr){const k=b.dataset.kind,id=rid();const base=k==='rule'?{id,n:'',note:'',custom:true}:k==='weapon'?{id,n:'',s:'Ranged Combat',d:'',i:'',r:'',a:0,c:0,rc:0,fr:false,sp:''}:{id,cat:'Useful items',n:'',c:0,note:''};hr[LIST[k]].push(base);ui.hedit=id;saveHouse();render();const f=document.getElementById('hx-'+id+'-n');if(f)f.focus();}break;
+  case 'hphide':if(hr){const p=presets()[Number(b.dataset.i)];if(p){hr.hidden=[...(hr.hidden||[]).filter(n=>n!==p.name),p.name];setPreset(p,false);}}break;
+  case 'hpedit':if(hr){const p=presets()[Number(b.dataset.i)];if(!p||p.kind==='rule')break;const k=LIST[p.kind];let it=hr[k].find(x=>x.n===p.name);if(!it){it={id:rid(),...JSON.parse(JSON.stringify(p.item)),off:true};hr[k].push(it);}hr.hidden=[...(hr.hidden||[]).filter(n=>n!==p.name),p.name];ui.hedit=it.id;saveHouse();render();}break;
+  case 'hprestore':if(hr){const g=goneOnly();hr.hidden=(hr.hidden||[]).filter(n=>!g.includes(n));saveHouse();render();}break;
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;

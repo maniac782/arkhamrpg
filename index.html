@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="boot">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Arkham Ledger">
 <meta name="application-name" content="Arkham RPG Player Ledger">
 <meta name="theme-color" content="#1b2230">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}html.boot body{visibility:hidden}</style>
+<script>setTimeout(function(){document.documentElement.classList.remove('boot')},3000)</script>
 <title>Arkham Ledger</title>
 <script src="js/config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,10 +25,11 @@
 </head>
 <body>
 <div class="top"><div class="top-in">
-  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v109</small></span></div>
+  <div class="brand"><h1>Arkham Ledger</h1><span class="row" style="gap:10px;align-items:center"><small id="who"></small><small class="note" id="ver">v110</small></span></div>
 </div></div>
 <main id="app"><p class="note" style="padding:24px 16px">Loading…</p></main>
 <div class="toast" id="toast" hidden role="status"></div>
 <script src="js/home.js"></script>
+<script>document.documentElement.classList.remove('boot')</script>
 </body>
 </html>

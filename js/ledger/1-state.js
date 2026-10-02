@@ -92,6 +92,6 @@ async function save(slot,patch,logMsg){
  if(!db)return;
  try{await db.doc('characters/'+slot).update(patch);}
  catch(e){
-  try{await db.doc('characters/'+slot).set(JSON.parse(JSON.stringify(c)));}catch(e2){toast(e2&&e2.code==='permission-denied'?'That sheet’s passcode has changed. Unlock it again to edit.':'Couldn’t save that change. Check your connection and try again.');}
+  try{await db.doc('characters/'+slot).set(JSON.parse(JSON.stringify(c)));}catch(e2){if(window.quotaHit&&quotaHit(e2))return;toast(e2&&e2.code==='permission-denied'?'That sheet’s passcode has changed. Unlock it again to edit.':'Couldn’t save that change. Check your connection and try again.');}
  }
 }

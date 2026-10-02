@@ -104,7 +104,7 @@ const AUTH_MSG={'auth/invalid-email':'That email address doesn’t look right.',
  'auth/too-many-requests':'Too many tries. Wait a minute and try again.','auth/popup-closed-by-user':'','auth/cancelled-popup-request':'','auth/network-request-failed':'Can’t reach the server. Check your connection.',
  'auth/unauthorized-domain':'This web address isn’t allowed to sign in yet (Firebase → Authentication → Settings → Authorized domains).','auth/operation-not-allowed':'That sign-in method isn’t turned on in Firebase yet.'};
 const authErr=e=>{const c=e&&e.code;return c in AUTH_MSG?AUTH_MSG[c]:'Something went wrong ('+(c||'unknown')+'). Try again.';};
-async function busy(fn){ui.busy=true;ui.err='';render();try{await fn();}catch(e){console.warn(e);ui.err=e&&e.code&&String(e.code).startsWith('auth/')?authErr(e):(e&&e.msg)||('Couldn’t do that ('+((e&&e.code)||'error')+'). Try again.');}ui.busy=false;render();}
+async function busy(fn){ui.busy=true;ui.err='';render();try{await fn();}catch(e){(window.quotaHit&&quotaHit(e),console.warn(e));ui.err=e&&e.code&&String(e.code).startsWith('auth/')?authErr(e):(e&&e.msg)||('Couldn’t do that ('+((e&&e.code)||'error')+'). Try again.');}ui.busy=false;render();}
 async function google(){const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
  try{await auth.signInWithPopup(p);}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await auth.signInWithRedirect(p);else throw e;}}
 async function emailSubmit(){
@@ -129,7 +129,7 @@ async function saveUsername(){
 
 // ---------- campaigns ----------
 function watchCampaigns(){if(campUnsub)campUnsub();
- campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));saveBC();render();},e=>{console.warn(e);toast('Couldn’t load your campaigns.');});}
+ campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));toast('Couldn’t load your campaigns.');});}
 async function createCampaign(){
  const name=((document.getElementById('cname')||{}).value||'').trim();
  if(!name)throw {msg:'Give the campaign a name.'};
@@ -143,7 +143,7 @@ async function createCampaign(){
 const FV=()=>firebase.firestore.FieldValue;
 const myEmail=()=>String((user&&user.email)||'').toLowerCase();
 function watchInbox(){if(inboxUnsub)inboxUnsub();inbox=[];if(!myEmail())return;
- inboxUnsub=db.collection('invites').where('toEmail','==',myEmail()).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>console.warn(e));}
+ inboxUnsub=db.collection('invites').where('toEmail','==',myEmail()).onSnapshot(qs=>{inbox=[];qs.forEach(d=>inbox.push({...d.data(),id:d.id}));render();},e=>(window.quotaHit&&quotaHit(e),console.warn(e)));}
 // ---------- house rules (stored per campaign) ----------
 let hr=null,hrCid=null,hrUnsub=null,hrT=null,hrErr='';
 const UA={id:'universalAmmo',n:'Universal ammo',note:'Reloads are shared: any gun can use any gun’s extra reloads.'};
@@ -155,9 +155,9 @@ const rid=()=>Math.random().toString(36).slice(2,9);
 const memo=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('apl-memo-'+k)||'null');localStorage.setItem('apl-memo-'+k,JSON.stringify(v));}catch(e){return null;}};
 function watchHouse(cid){if(hrCid===cid)return;if(hrUnsub){hrUnsub();hrUnsub=null;}hr=null;hrErr='';hrCid=cid;if(!cid)return;
  hr=memo('hr-'+cid)||null;
- hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};memo('hr-'+cid,hr);render();},e=>{console.warn(e);hrErr=(e&&e.code)||'error';render();});}
+ hrUnsub=db.doc('campaigns/'+cid+'/settings/house').onSnapshot(sn=>{if(hrT||ui.hedit)return;const d=sn.exists?sn.data():{};hr={on:!!d.on,weapons:(d.weapons||[]).map(w=>({id:w.id||rid(),...w})),gear:(d.gear||[]).map(g=>({id:g.id||rid(),...g})),rules:d.rules||[]};memo('hr-'+cid,hr);render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));hrErr=(e&&e.code)||'error';render();});}
 function saveHouse(){clearTimeout(hrT);hrT=setTimeout(()=>{hrT=null;const cid=hrCid;if(!cid||!hr)return;
- memo('hr-'+cid,hr);db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{console.warn(e);toast('Couldn’t save the house rules.');});},350);}
+ memo('hr-'+cid,hr);db.doc('campaigns/'+cid+'/settings/house').set({on:!!hr.on,weapons:hr.weapons,gear:hr.gear,rules:hr.rules},{merge:true}).catch(e=>{(window.quotaHit&&quotaHit(e),console.warn(e));toast('Couldn’t save the house rules.');});},350);}
 function descOf(kind,x){
  if(kind==='weapon')return [x.s,x.d!==''&&x.d!=null?'damage '+x.d:'',x.i&&x.i!=='–'?'injury '+x.i:'',x.r?'range '+x.r:'',x.a?x.a+' shots':'',x.fr?'free reloads':'',x.c?'$'+x.c:'costs nothing'].filter(Boolean).join(', ')+'.'+(clean(x.sp)&&clean(x.sp)!=='Free reloads.'?' '+clean(x.sp):'');
  if(kind==='gear')return (x.cat?x.cat+', ':'')+(x.c?'$'+x.c:'costs nothing')+'.'+(clean(x.note)?' '+clean(x.note):'');
@@ -213,7 +213,7 @@ function houseChange(el){if(!hr)return false;
  return false;}
 function watchOutbox(cid){if(outCid===cid)return;if(outUnsub){outUnsub();outUnsub=null;}outbox=[];outCid=cid;if(!cid)return;
  outbox=memo('out-'+cid)||[];
- outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));memo('out-'+cid,outbox);render();},e=>console.warn(e));}
+ outUnsub=db.collection('invites').where('cid','==',cid).where('fromUid','==',user.uid).onSnapshot(qs=>{outbox=[];qs.forEach(d=>outbox.push({...d.data(),id:d.id}));memo('out-'+cid,outbox);render();},e=>(window.quotaHit&&quotaHit(e),console.warn(e)));}
 const joinLink=c=>c.joinCode?location.origin+location.pathname+'?join='+encodeURIComponent(c.id+'.'+c.joinCode)+'&n='+encodeURIComponent(c.name):'';
 function newCode(){const a=new Uint8Array(15);crypto.getRandomValues(a);return Array.from(a,x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');}
 async function sendInvite(){
@@ -231,7 +231,7 @@ async function joinByLink(){
  const b=db.batch();
  b.set(db.doc('joinreq/'+j.cid+'_'+user.uid),{cid:j.cid,code:j.code});
  b.update(db.doc('campaigns/'+j.cid),{memberIds:FV().arrayUnion(user.uid),['roles.'+user.uid]:'player',['names.'+user.uid]:profile.username});
- try{await b.commit();}catch(e){console.warn(e);throw {msg:e&&e.code==='not-found'?'That campaign no longer exists.':'This invite link doesn’t work anymore. Ask for a new one.'};}
+ try{await b.commit();}catch(e){(window.quotaHit&&quotaHit(e),console.warn(e));throw {msg:e&&e.code==='not-found'?'That campaign no longer exists.':'This invite link doesn’t work anymore. Ask for a new one.'};}
  setPendingJoin(null);location.href=ledgerUrl(j.cid);return;toast('You joined '+(j.name||'the campaign')+'.');
 }
 let pendingJoin=null;
@@ -242,7 +242,7 @@ async function joinInvite(id){
  b.update(db.doc('campaigns/'+inv.cid),{memberIds:FV().arrayUnion(user.uid),['roles.'+user.uid]:'player',['names.'+user.uid]:profile.username});
  b.delete(db.doc('invites/'+id));
  try{await b.commit();toast('You joined '+inv.campaignName+'.');}
- catch(e){console.warn(e);if(e&&e.code==='not-found'){await db.doc('invites/'+id).delete().catch(()=>{});toast('That campaign no longer exists.');}else toast('Couldn’t join. Try again.');}
+ catch(e){(window.quotaHit&&quotaHit(e),console.warn(e));if(e&&e.code==='not-found'){await db.doc('invites/'+id).delete().catch(()=>{});toast('That campaign no longer exists.');}else toast('Couldn’t join. Try again.');}
 }
 // Firestore doesn't delete a campaign's contents with it, so clear each part first.
 async function wipeCampaign(id){
@@ -326,7 +326,7 @@ auth.onAuthStateChanged(u=>{
  if(!same){profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';}
  if(!user){try{localStorage.removeItem(BC);Object.keys(localStorage).filter(k=>k.startsWith('apl-memo-')).forEach(k=>localStorage.removeItem(k));}catch(e){}bc=null;}
  ui.err='';ui.busy=false;
- if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{console.warn(e);profile=null;render();});}
+ if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));profile=null;render();});}
  render();
 });
 render();

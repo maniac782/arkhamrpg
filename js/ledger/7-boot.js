@@ -32,7 +32,7 @@ async function bootCampaign(syncEl){
   if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
- },err=>{if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
+ },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
 }
 
 // ---------- boot ----------
@@ -55,7 +55,7 @@ if(!STOP)render();
   ref.onSnapshot(snap=>{
    if(!snap.exists){ if(!created&&!snap.metadata.fromCache){created=true;ref.set(SEED[s]||blank(i+1)).catch(()=>{});} return; }
    chars[s]=norm(JSON.parse(JSON.stringify(snap.data())),i+1);render();saveCache();
-  },err=>{syncEl.textContent='Sync paused — reload to reconnect';});
+  },err=>{if(window.quotaHit&&quotaHit(err))return;syncEl.textContent='Sync paused — reload to reconnect';});
  });render();};
  let seeded=false;
  db.collection('characters').onSnapshot(qs=>{
@@ -68,5 +68,5 @@ if(!STOP)render();
   if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   render();saveCache();
- },err=>{if(err&&err.code==='permission-denied')legacy();else syncEl.textContent='Sync paused — reload to reconnect';});
+ },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied')legacy();else syncEl.textContent='Sync paused — reload to reconnect';});
 })();

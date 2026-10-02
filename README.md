@@ -4,7 +4,7 @@ Live character sheets for our Arkham Horror RPG group, plus a character creator 
 
 ## How the site is laid out
 - **`index.html`** (arkhamrpg.web.app): sign in, pick a username, and see the campaigns you own or belong to. Owners create campaigns, invite players (invite link or email address), pick the GM, and set house rules on each campaign's **Settings** page.
-- **`play.html?c=<campaign>`**: the ledger for one campaign: party, investigator sheets, creator, Journal and GM tools. Investigators belong to the player who made or claimed them; the owner can edit and assign any sheet (or untick **Let me edit every investigator** on a sheet to lock other players' investigators to them); only the GM sees the GM tab.
+- **`play.html?c=<campaign>`**: the ledger for one campaign: party, investigator sheets, creator, Journal and GM tools. Investigators belong to the player who made or claimed them; the owner can edit and assign any sheet (or untick **Let me edit every investigator** in the campaign's Settings to lock other players' investigators to them); only the GM sees the GM tab.
 - **`old/`** (arkhamrpg.web.app/old): the original single-party ledger with passcodes, master key and GM PIN, kept unchanged for reference. Its data is separate from the campaigns.
 - **`beta/`** just forwards old links (including invite links) to the main site.
 

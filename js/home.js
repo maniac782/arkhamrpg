@@ -71,7 +71,7 @@ function campView(){
  const own=c.ownerUid===user.uid,names=c.names||{};
  let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button><a class="btn sm pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a></div>';
  h+='<section class="sec"><div class="sec-head"><h2>'+(own?'Campaign settings':esc(c.name))+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
- if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form>';
+ if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form><label class="row" style="gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-ownedit'+(c.ownerEdits===false?'':' checked')+' style="margin-top:3px"><span><b>Let me edit every investigator</b><br><span class="note">Untick to lock other players\u2019 investigators to them, as they are for everyone else. You can still choose who plays each one.</span></span></label>';
  h+='</section>';
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
@@ -264,7 +264,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 // Rename is only clickable when the name has actually been changed.
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();});
-app.addEventListener('change',e=>{houseChange(e.target);});
+app.addEventListener('change',e=>{const t=e.target;if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
  switch(a){
   case 'google':busy(google);break;

@@ -8,6 +8,20 @@ Live character sheets for our Arkham Horror RPG group, plus a character creator 
 - **`old/`** (arkhamrpg.web.app/old): the original single-party ledger with passcodes, master key and GM PIN, kept unchanged for reference. Its data is separate from the campaigns.
 - **`beta/`** just forwards old links (including invite links) to the main site.
 
+### Where the code lives
+- `css/app.css`: styles shared by every page. `css/home.css`: extras for the home and Settings pages.
+- `js/config.js`: the Firebase settings (`window.FIREBASE_CONFIG`).
+- `js/home.js`: the home page: sign-in, usernames, My campaigns, invites and campaign Settings (including house rules).
+- `js/ledger/`: the ledger behind `play.html`, loaded in order:
+  1. `1-state.js`: campaign, roles, saving and the local cache
+  2. `2-rules.js`: game rules (dice pools, XP costs, gear)
+  3. `3-render.js`: drawing the party, sheets and Journal
+  4. `4-creator.js`: the New investigator creator
+  5. `5-events.js`: buttons and form edits
+  6. `6-gm.js`: GM tools, activity log and session recap
+  7. `7-boot.js`: connecting to Firebase and starting up
+- `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the built-in house-rule presets. `js/picker.js`: the searchable dropdowns.
+
 ## One-time setup (about 10 minutes)
 
 ### 1. Create the Firebase database
@@ -21,7 +35,7 @@ Live character sheets for our Arkham Horror RPG group, plus a character creator 
 ### 2. Get the settings for the website
 1. Click the gear icon next to **Project Overview** → **Project settings**.
 2. Under **Your apps**, click the web icon `</>`. Give it a nickname (e.g. `ledger`). Leave "Firebase Hosting" unchecked. **Register app**.
-3. Firebase shows a `firebaseConfig` block. Copy these four values into the `window.FIREBASE_CONFIG` block near the top of `index.html`:
+3. Firebase shows a `firebaseConfig` block. Copy these four values into the `window.FIREBASE_CONFIG` block in `js/config.js`:
    - `apiKey`, `authDomain`, `projectId`, `appId`
 
 These values are safe to have in a public repo. They only identify the project; the rules from step 1 decide what anyone can do.
@@ -76,7 +90,7 @@ The GM tab has:
 These need the current `firestore.rules`, which the deploy publishes automatically.
 
 ## House rules
-In a campaign (beta), the owner edits house rules on the campaign's **Settings** page: custom weapons, equipment, Universal ammo, and an on/off switch. On the original site, extra weapons, gear and rule changes live in `house-rules.js`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game Master section of the Party tab. The switch is shared with the whole party.
+In a campaign (beta), the owner edits house rules on the campaign's **Settings** page: custom weapons, equipment, Universal ammo, and an on/off switch. On the original site, extra weapons, gear and rule changes live in `js/house-rules.js`. Edit that list for your own group. A **Universal ammo** rule (any gun can use any gun's extra reloads) is included but commented out; remove the `//` in front of it to offer it. They stay hidden until someone with the master key turns them on in the Game Master section of the Party tab. The switch is shared with the whole party.
 
 ## Good to know
 - Anyone with the link can view every sheet. A player can lock their own sheet with a passcode at the top of it; after that, only devices that entered the passcode (or the master key on the Party tab) can edit it. Firebase enforces this, not just the page.

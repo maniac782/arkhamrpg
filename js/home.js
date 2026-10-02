@@ -40,6 +40,7 @@ function authView(){
   '<button class="btn pri wide" type="submit" '+(ui.busy?'disabled':'')+'>'+(reset?'Send reset email':up?'Create account':'Sign in')+'</button></form>';
  h+='<div class="row" style="justify-content:space-between">'+(reset?'<button class="btn sm" data-a="mode" data-m="signin">Back to sign in</button>':
   (up?'<span class="note">Already have an account?</span><button class="btn sm" data-a="mode" data-m="signin">Sign in</button>':'<button class="btn sm" data-a="mode" data-m="reset">Forgot password?</button><button class="btn sm" data-a="mode" data-m="signup">Create an account</button>'))+'</div>';
+ h+='<p class="note" style="margin:0;font-size:11px;text-align:center">Protected by reCAPTCHA. Google\u2019s <a href="https://policies.google.com/privacy" rel="noopener">Privacy Policy</a> and <a href="https://policies.google.com/terms" rel="noopener">Terms</a> apply. See our <a href="privacy.html">privacy policy</a>.</p>';
  h+='</section>';
  return h;
 }

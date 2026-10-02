@@ -82,7 +82,8 @@ function ownerPanel(s){
  // The owner picks the player right in the header; everyone else just sees who plays it.
  const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">Played by</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" aria-label="Who plays this investigator" style="width:auto;font-weight:600"><option value="">Nobody yet</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||'Member')+(u===authUid?' (you)':'')+'</option>').join('')+'</select></label>'
   :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?'Your investigator':who?'Played by '+esc(who):'Unclaimed')+'</span>';
- const note=mine?'Only you, the campaign owner and the GM can change it.':boss?'You can edit any investigator as the campaign owner.':who?'Only its player can change it.':'Nobody plays this investigator yet.';
+ const oe=!(camp&&camp.ownerEdits===false);
+ const note=mine?(oe?'Only you, the campaign owner and the GM can change it.':'Only you and the GM can change it.'):boss?'<label class="row" style="gap:6px;align-items:center;flex-wrap:nowrap;cursor:pointer"><input type="checkbox" data-ownedit'+(oe?' checked':'')+'> Let me edit every investigator</label>'+(oe?'':'<span>Locked to its player.</span>'):who?'Only its player can change it.':'Nobody plays this investigator yet.';
  let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row" style="align-items:center">'+head+'<span class="note">'+note+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
  let row='';
  if(!boss&&(!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';

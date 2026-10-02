@@ -64,7 +64,7 @@ const keys={};// slot, 'master' or 'gm' -> this device holds a key
 const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log'];
 let gmClaimed=false;
 const gmCan=s=>canEdit(s)||isGM();
-function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return !!keys.master||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
+function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return (!!keys.master&&!(camp&&camp.ownerEdits===false))||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
 // Last-seen party, kept on this device so a refresh shows the sheets right away while Firebase reconnects.

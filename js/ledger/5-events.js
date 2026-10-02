@@ -75,6 +75,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('change',e=>{
  const el=e.target,s=active;
  if(gmChange(el))return;
+ if(el.hasAttribute&&el.hasAttribute('data-ownedit')){const on=el.checked;if(camp)camp.ownerEdits=on;render();if(CAMP&&window.firebase)firebase.app('beta').firestore().doc('campaigns/'+CAMP).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});return;}
  if(el.dataset.assign){const t=el.dataset.assign,u=el.value||null,old=chars[t]&&chars[t].ownerUid;if(CAMP&&db&&keys.master){const b=db.batch();b.update(db.doc('characters/'+t),{ownerUid:u,...(u?{player:((camp&&camp.names)||{})[u]||''}:{})});if(old&&old!==u&&old!==camp.ownerUid)b.delete(db.doc('players/'+old));if(u&&u!==camp.ownerUid)b.set(db.doc('players/'+u),{slot:t});b.commit().then(()=>toast(u?'Assigned to '+((camp.names||{})[u]||'them')+'.':'Now unclaimed.'),()=>toast('Couldn\u2019t change that.'));}return;}
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Choose an image file.');
   openCrop(f,s);el.value='';return;}

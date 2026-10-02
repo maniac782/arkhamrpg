@@ -175,6 +175,7 @@ service cloud.firestore {
         && goodName();
       allow update: if realUser() && (
         (isOwner() && changedOnly(['name']) && goodName())
+        || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
         || ownerManages() || joining() || leaving());
       allow delete: if realUser() && isOwner();

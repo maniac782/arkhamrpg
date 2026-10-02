@@ -5,7 +5,7 @@ async function bootCampaign(syncEl){
  const cfg0=window.FIREBASE_CONFIG;
  if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();syncEl.textContent='Not connected';return;}
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
- const fb=firebase.initializeApp(cfg,'beta');const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
+ const fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
  const brand=document.querySelector('.brand h1');
  const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="links"><a class="btn sm" href="./">My campaigns</a><a class="btn sm" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'\u2699 Settings':'Members')+'</a>'+(me?'<b>'+esc(me)+'</b>':'')+'<button class="btn sm" id="signout" type="button">Sign out</button><span>Live</span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');};};syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
@@ -43,7 +43,7 @@ if(!STOP)render();
  if(CAMP){await bootCampaign(syncEl);return;}
  const cfg=window.FIREBASE_CONFIG;
  if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){localMode=true;render();syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
- try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
+ try{window.armAppCheck&&armAppCheck(firebase.initializeApp(cfg));db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;localMode=true;render();return;}
  watchKeys();
  gmBoot();

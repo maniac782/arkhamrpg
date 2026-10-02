@@ -21,10 +21,12 @@ window.FIREBASE_CONFIG = {
   appId: "1:789653165049:web:23629583d7d0a3fc8de328"
 };
 </script>
+<script src="../js/config.js"></script>
 <script src="../js/house-rules.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <title>Arkham RPG Player Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -1546,7 +1548,7 @@ render();
  if(CAMP){await bootCampaign(syncEl);return;}
  const cfg=window.FIREBASE_CONFIG;
  if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){localMode=true;render();syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
- try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
+ try{window.armAppCheck&&armAppCheck(firebase.initializeApp(cfg));db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
  try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;localMode=true;render();return;}
  watchKeys();
  gmBoot();

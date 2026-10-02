@@ -66,6 +66,18 @@ Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps w
 ## Automatic rules publishing
 Every push to `main` deploys the site and also publishes `firestore.rules` (the **rules** job in `.github/workflows/deploy-firebase.yml`). The GitHub service account needs three roles in Google Cloud → IAM: **Firebase Rules Admin**, **Service Usage Consumer** and **Cloud Datastore Viewer**.
 
+## Bot protection (App Check)
+App Check makes Firebase refuse requests that don't come from the real site, which stops scripts and bots from creating accounts or writing to the database directly. It uses invisible reCAPTCHA Enterprise; players never see a puzzle. The free allowance is 10,000 checks a month, and each visitor uses about one check per hour of use.
+1. In Google Cloud (same project), open **Security → reCAPTCHA** (it may ask you to enable the API) → **Create key** → type **Website**, domains `arkhamrpg.web.app`, `arkham-ledger.web.app`, `arkham-ledger.firebaseapp.com` and `localhost` → leave the checkbox challenge off → **Create**. Copy the key ID.
+2. Paste it into `window.APP_CHECK_KEY` in `js/config.js` and push.
+3. In Firebase → **Security → App Check → Apps**, register the web app with **reCAPTCHA Enterprise** and the same key.
+4. Leave enforcement off for a day or two and watch **App Check → APIs**: almost all requests should show as verified. Then press **Enforce** for **Cloud Firestore** and **Authentication**.
+
+If a page ever stops loading data after enforcing, turn enforcement off again in the same place.
+
+## Privacy policy
+`privacy.html` explains what the site stores and who can see it. Every page links to it in the footer. Update the date and text there if what the site stores changes.
+
 ## Adding and removing investigators
 - **+ Add an investigator** on the Party tab adds a blank sheet (up to 12). The **New investigator** tab can also put a finished character into **a new spot in the party**.
 - Only the master key can remove an investigator: open their sheet and use **Remove this investigator from the party…** at the bottom.

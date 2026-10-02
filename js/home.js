@@ -307,7 +307,7 @@ if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase i
 // Browsers that block cross-site storage (Safari, newer Chrome) otherwise break the Google pop-up.
 const cfg=Object.assign({},window.FIREBASE_CONFIG);
 if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
-fb=firebase.initializeApp(cfg,'beta');auth=fb.auth();db=fb.firestore();
+fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);auth=fb.auth();db=fb.firestore();
 try{const st=new URLSearchParams(location.search).get('settings');if(st&&/^[A-Za-z0-9]{10,40}$/.test(st)){ui.view='camp';ui.cid=st;ui.waitCid=st;}}catch(e){}
 try{const q=new URLSearchParams(location.search).get('join');const n=new URLSearchParams(location.search).get('n');
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}

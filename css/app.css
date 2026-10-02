@@ -144,3 +144,7 @@ ul.recap{margin:4px 0 0;padding-left:18px}
   .namein{font-size:26px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Site footer; the reCAPTCHA badge is hidden because the footer carries its notice. */
+.foot{max-width:980px;margin:0 auto;padding:0 16px 28px;font-size:12px;color:var(--muted);text-align:center}
+.foot a{color:inherit}
+.grecaptcha-badge{visibility:hidden!important}

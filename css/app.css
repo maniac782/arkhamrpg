@@ -145,7 +145,8 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* Site footer; the reCAPTCHA badge is hidden because the footer carries its notice. */
-.foot{max-width:980px;margin:0 auto;padding:8px 16px 28px;font-size:12px;text-align:center}
+.foot{max-width:980px;margin:0 auto;padding:8px 16px 28px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:center;gap:4px 0}
+.foot>*{opacity:.8}.foot>*+*::before{content:'\00b7';margin:0 8px;opacity:.7;display:inline-block;text-decoration:none}
 .foot a{color:var(--muted);text-decoration:none;opacity:.8}.foot a:hover{opacity:1;text-decoration:underline}
 .grecaptcha-badge{visibility:hidden!important}
 
@@ -166,3 +167,4 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .brand>.row{margin-left:auto;justify-content:flex-end}
 @media (max-width:600px){.brand>.row{width:100%}#sync{flex:1}#sync .nav{width:100%}#sync .acct{margin-left:auto}}
 .quota{background:var(--danger-soft);color:var(--ink);border-bottom:2px solid var(--danger);padding:10px 16px;font-size:14px;line-height:1.45;text-align:center}
+@media (max-width:600px){.foot>:first-child{display:none}.foot>:nth-child(2){flex-basis:100%;text-align:center}.foot>:nth-child(2)::before,.foot>:nth-child(3)::before{content:none}}

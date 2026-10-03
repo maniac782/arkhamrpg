@@ -96,7 +96,7 @@ The GM tab has:
 - **Campaign tracker.** The in-game date, open threads, NPCs and locations. Players see it on the Journal tab.
 - **End of session.** Award XP to everyone at once and mark the session as momentous, which lets each player buy Insight. It also moves the session counter on.
 - **Recent activity.** A log of what the GM did: scenes, fights and rounds, enemies added, hurt or taken down, clues revealed, XP awarded. Only the GM and the master key can see it.
-- **Session recap.** Builds a summary of any session from everyone's activity. It opens with **The story**: the scenes, fights, enemies the players saw and clues revealed to everyone, so nothing hidden leaks.
+- **Session recap.** Builds a summary of any session from everyone's activity. It opens with **The story**: the scenes, fights, enemies the players saw and clues revealed to everyone, so nothing hidden leaks. The GM can add an optional written summary to any session. Once a session is over (the GM has started the next one), players can read its recap, with the summary on top, under **Past sessions** on the Journal tab.
 - **GM notes and hidden roller.** Private notes and a dice roller only the GM sees.
 
 These need the current `firestore.rules`, which the deploy publishes automatically.

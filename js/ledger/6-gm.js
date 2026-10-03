@@ -20,7 +20,7 @@ function gmLog(m,pub){const e={id:gmId(),m,t:Date.now(),session:table.session||1
  const {id,...doc}=e;gmSet('gmlog/'+id,doc);
  if(pub)gmStory(m);render();}
 function gmStory(m){const e={t:Date.now(),session:table.session||1};{const h={slot:'gm',name:'The story',m,t:e.t,session:e.session};if(historySession===h.session){histLog=[...histLog,h];render();}if(db)db.collection('history').add(h).catch(()=>{});}}
-const recapGroups=()=>{const by={};histLog.forEach(x=>{const n=x.slot==='gm'?'The story':(x.name||x.slot);(by[n]=by[n]||[]).push(x);});return Object.entries(by).sort((a,b)=>(b[0]==='The story')-(a[0]==='The story'));};
+const recapGroups=(list=histLog)=>{const by={};list.forEach(x=>{const n=x.slot==='gm'?'The story':(x.name||x.slot);(by[n]=by[n]||[]).push(x);});return Object.entries(by).sort((a,b)=>(b[0]==='The story')-(a[0]==='The story'));};
 function logHistory(slot,m){const c=chars[slot];const h={slot,name:(c&&c.name)||'',m,t:Date.now(),session:table.session||1};
  if(historySession===h.session)histLog=[...histLog,h];
  if(db)db.collection('history').add(h).catch(()=>{});}
@@ -45,6 +45,11 @@ function gmBoot(){
  db.doc('campaign/main').onSnapshot(s=>{if(s.exists)campaign={date:'',locations:[],npcs:[],threads:[],...s.data()};render();},()=>{});
  gmSubscribe();
 }
+// The Journal's own copy of a finished session's recap (separate from the GM tab's picker).
+let jSession=null,jLog=[];
+async function loadJournalRecap(n){jSession=n;jLog=[];render();
+ if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>a.push(d.data()));if(jSession===n){jLog=a.sort((x,y)=>x.t-y.t);render();}}catch(e){}}
+const summaryOf=n=>String(((campaign.summaries||{})[n])||'').trim();
 async function loadRecap(n){historySession=n;histLog=[];render();
  if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>a.push(d.data()));histLog=a.sort((x,y)=>x.t-y.t);render();}catch(e){toast('Couldn’t load that session. Publish the updated rules (see README).');}}
 
@@ -177,6 +182,15 @@ function renderJournal(){
  const shownEn=Object.values(enemies).filter(e=>e.shown);
  if(shownEn.length)h+='<section class="sec"><div class="sec-head"><h2>Enemies</h2><span class="note">The GM is showing these.</span></div>'+shownEn.sort((a,b)=>a.t-b.t).map(enemyHtml).join('')+'</section>';
  h+='<section class="sec"><div class="sec-head"><h2>Campaign</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false)+'</section>';
+ // finished sessions only: the current one appears once the GM starts the next
+ const done=(table.session||1)-1;
+ if(done>=1){
+  if(jSession==null||jSession>done){jSession=done;setTimeout(()=>loadJournalRecap(done),0);}
+  const sm=summaryOf(jSession);
+  h+='<section class="sec"><div class="sec-head"><h2>Past sessions</h2><label class="row note" style="gap:6px">Session <select class="maxsel" data-jrecap="1" aria-label="Choose a session" style="width:auto">'+Array.from({length:done},(_,i)=>done-i).map(i=>'<option value="'+i+'"'+(jSession===i?' selected':'')+'>'+i+'</option>').join('')+'</select></label></div>'+
+   (sm?'<p class="recap-sum">'+esc(sm)+'</p>':'')+
+   (jLog.length?'<div class="grid2">'+recapGroups(jLog).map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(x.m)+'</li>').join('')+'</ul></div>').join('')+'</div>':(sm?'':'<p class="note" style="margin:0">Nothing was logged for session '+jSession+'.</p>'))+'</section>';
+ }
  return h;
 }
 function renderGM(){
@@ -229,6 +243,7 @@ function renderGM(){
  // recap
  h+='<section class="sec"><div class="sec-head"><h2>Session recap</h2></div><div class="row"><label class="field"><span class="lbl">Session</span><select class="f" data-grecap="1"><option value="">Choose…</option>'+ss.map(i=>'<option value="'+i+'"'+(historySession===i?' selected':'')+'>Session '+i+'</option>').join('')+'</select></label>'+(historySession&&histLog.length?'<button class="btn sm" data-gact="copyrecap">Copy as text</button>':'')+'</div>';
  if(historySession){
+  h+='<label class="field"><span class="lbl">Summary for players (optional)</span><textarea class="f" rows="3" maxlength="2000" data-gsum="'+historySession+'" placeholder="A few sentences on what happened. Players see it in the Journal once session '+historySession+' is over.">'+esc(summaryOf(historySession))+'</textarea></label>';
   h+=histLog.length?'<div class="grid2">'+recapGroups().map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(x.m)+'</li>').join('')+'</ul></div>').join('')+'</div>':'<p class="note" style="margin:0">Nothing logged for session '+historySession+'. (Recaps start from when this feature was added.)</p>';}
  h+='</section>';
  // campaign
@@ -294,6 +309,8 @@ function gmChange(el){
  if(el.dataset.gnotes){gmNotes=el.value;gmSet('gm/notes',{text:gmNotes});return true;}
  if(el.dataset.gwrap){const s=el.dataset.gwrap;if(s==='hours'){gm.wrap.hours=Math.max(0,Number(el.value)||0);return true;}
   const x=gm.wrap[s]||(gm.wrap[s]={xp:gm.wrap.hours||4,mom:false});if(el.dataset.k==='mom')x.mom=el.checked;else x.xp=Math.max(0,Number(el.value)||0);return true;}
+ if(el.dataset.jrecap){loadJournalRecap(Number(el.value));return true;}
+ if(el.dataset.gsum){const n=el.dataset.gsum;campaign.summaries={...(campaign.summaries||{}),[n]:el.value.trim().slice(0,2000)};saveCampaign();toast('Summary saved.');return true;}
  if(el.dataset.grecap){if(el.value)loadRecap(Number(el.value));else{historySession=null;render();}return true;}
  return false;
 }

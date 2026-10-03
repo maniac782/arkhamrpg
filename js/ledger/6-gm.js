@@ -234,10 +234,10 @@ function renderGM(){
  // campaign
  h+='<section class="sec"><div class="sec-head"><h2>Campaign</h2><span class="note">Players can read this on the Journal tab.</span></div><label class="field" style="max-width:320px"><span class="lbl">In-game date</span><input class="f" id="cp-date" data-gcpd="1" value="'+esc(campaign.date)+'" placeholder="e.g. Friday, October 14, 1927"></label>'+campaignHtml(true)+'</section>';
  // notes
- h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">Private: only the GM (and the '+(CAMP?'campaign owner':'master key')+') can read these.</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>GM notes</h2><span class="note">'+(CAMP?'Private: only the GM can read these.':'Private: only the GM (and the master key) can read these.')+'</span></div><textarea class="f" id="gm-notes" data-gnotes="1" rows="8"'+(isGM()?'':' readonly')+' placeholder="Secrets, plans, NPC motives…">'+esc(gmNotes)+'</textarea></section>';
  // activity
  const g=isGM(),tf=t=>new Date(t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'});
- h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><span class="note">Only the GM and the '+(CAMP?'campaign owner':'master key')+' see this.</span>'+(g&&gmLogList.length?'<button class="btn sm dng" data-gact="glclear">Clear all</button>':'')+'</div><div class="log">'+(gmLogList.length?gmLogList.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(g?'<button class="btn sm icon" style="min-height:24px;width:24px" data-gact="gldel" data-id="'+esc(l.id)+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+tf(l.t)+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><span class="note">'+(CAMP?'Only the GM sees this.':'Only the GM and the master key see this.')+'</span>'+(g&&gmLogList.length?'<button class="btn sm dng" data-gact="glclear">Clear all</button>':'')+'</div><div class="log">'+(gmLogList.length?gmLogList.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(g?'<button class="btn sm icon" style="min-height:24px;width:24px" data-gact="gldel" data-id="'+esc(l.id)+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+tf(l.t)+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div></section>';
  return h;
 }
 

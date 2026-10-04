@@ -2,13 +2,17 @@
    Part of the ledger; these files load in order and share their variables. */
 // ---------- creator ----------
 const A=window.APL;
-const CR_KEY='apl-creator-v1';
+// Drafts are kept per campaign, so one campaign (or the original site) never leaks into another.
+const CR_KEY='apl-creator-v1'+(CAMP?'-'+CAMP:'');
 function crBlank(){return {name:'',player:'',trait:'',archetype:'',five:[],four:'',bonus:'',freeKnack:'',ups:{},bought:[],cart:[],bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:''},cat:'Weapons',slot:'',confirm:false};}
 let cr=crBlank();
 // an unfinished character is kept as a draft on this device until it joins the party or is reset
-try{const t=JSON.parse(localStorage.getItem(CR_KEY)||'null');if(t)cr=Object.assign(crBlank(),t);}catch(e){}
-function crSave(){try{localStorage.setItem(CR_KEY,JSON.stringify(cr));}catch(e){}}
-function crDone(){cr=crBlank();try{localStorage.removeItem(CR_KEY);}catch(e){}}
+let crRestored=false;
+try{const t=JSON.parse(localStorage.getItem(CR_KEY)||'null');
+ // a draft older than two weeks is dropped rather than resumed
+ if(t&&(!t.savedAt||Date.now()-t.savedAt<14*86400000)){cr=Object.assign(crBlank(),t);crRestored=true;}else if(t)localStorage.removeItem(CR_KEY);}catch(e){}
+function crSave(){cr.savedAt=Date.now();try{localStorage.setItem(CR_KEY,JSON.stringify(cr));}catch(e){}}
+function crDone(){cr=crBlank();crRestored=false;try{localStorage.removeItem(CR_KEY);}catch(e){}}
 function crSkill(k){let r=6;if(cr.five.includes(k))r=5;if(cr.four===k)r=4;return r;}
 function crUpCost(k){let r=crSkill(k),cost=0;for(let i=0;i<(cr.ups[k]||0);i++){cost+=SKILL_COST[r];r--;}return cost;}
 function crRating(k){return crSkill(k)-(cr.ups[k]||0);}
@@ -59,6 +63,7 @@ function renderCreator(){
  const cf=(p,l,v,ph)=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="cr-'+p.replace('.','-')+'" data-cf="'+p+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></label>';
  const sname=k=>SKILLS.find(x=>x[0]===k)[1];
  let h='<div class="banner">Build a new investigator step by step, following the corebook’s character creation. Costs come off the gear budget and XP as you choose. When it’s done, put them in a party slot or open a sheet to print.</div>';
+ if(crRestored&&(cr.name||cr.archetype))h+='<div class="roll" role="status"><span>Picking up your unfinished investigator'+(cr.name?' <b>'+esc(cr.name)+'</b>':'')+(cr.savedAt?' from '+new Date(cr.savedAt).toLocaleDateString([], {month:'short',day:'numeric'}):'')+'.</span><div class="row"><button class="btn sm" data-cact="reset">Start over</button></div></div>';
  // 1
  h+='<section class="sec"><h2>1 · Background</h2><div class="grid2">'+cf('name','Investigator name',cr.name)+cf('player','Player',cr.player)+cf('bg.origin','Place of origin',cr.bg.origin)+cf('bg.family','Family & friends',cr.bg.family)+cf('bg.employment','Employment',cr.bg.employment)+cf('bg.salary','Weekly salary',cr.bg.salary)+cf('bg.encounter','First supernatural encounter',cr.bg.encounter)+cf('bg.enemies','Notable enemies',cr.bg.enemies)+'</div></section>';
  // 2

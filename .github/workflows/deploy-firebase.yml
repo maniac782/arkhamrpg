@@ -37,7 +37,8 @@ jobs:
 
   # Publishes storage.rules and the server functions (invite emails, session reminders).
   # Needs these roles on the GitHub service account as well: Cloud Functions Admin,
-  # Service Account User, Cloud Scheduler Admin, Secret Manager Viewer, Firebase Admin.
+  # Service Account User, Cloud Scheduler Admin, Secret Manager Admin, Service Usage Admin,
+  # Artifact Registry Administrator, Eventarc Admin (see README).
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -53,5 +54,13 @@ jobs:
         run: |
           printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npx -y firebase-tools@latest deploy --only storage,functions --project arkham-ledger --non-interactive --force
+          set +e
+          npx -y firebase-tools@latest deploy --only storage,functions --project arkham-ledger --non-interactive --force 2>&1 | tee "$RUNNER_TEMP/deploy.log"
+          code=${PIPESTATUS[0]}
           rm -f "$RUNNER_TEMP/sa.json"
+          if [ "$code" != "0" ]; then
+            # Put the end of the log in the run's annotations so it can be read without opening the log.
+            msg=$(grep -v '^npm warn' "$RUNNER_TEMP/deploy.log" | tail -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Deploy failed::$msg"
+          fi
+          exit $code

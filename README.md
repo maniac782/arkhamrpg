@@ -66,6 +66,16 @@ Until the secret exists, that workflow fails harmlessly and GitHub Pages keeps w
 ## Automatic rules publishing
 Every push to `main` deploys the site and also publishes `firestore.rules` (the **rules** job in `.github/workflows/deploy-firebase.yml`). The GitHub service account needs three roles in Google Cloud → IAM: **Firebase Rules Admin**, **Service Usage Consumer** and **Cloud Datastore Viewer**.
 
+## Managing users (admin page)
+`admin.html` (arkhamrpg.web.app/admin.html) lists every user and campaign with search, and lets a site admin:
+- **Suspend** an account: it can still sign in and look, but the database refuses every change it tries to make, and it's taken out of the campaigns it joined. Campaigns it owns stay so their players keep their sheets. **Unsuspend** lifts it (they'll need new invites).
+- **Change username**, for example to replace an offensive one.
+- **Delete** any campaign, including its hidden GM material.
+
+To make yourself an admin (one time): sign in on the site, then in Firebase → **Firestore** → **Data**, start a collection named `admins` and add a document whose ID is your user ID (find it in Firebase → **Authentication** → **Users**, the **User UID** column), with no fields. An **Admin** link then appears next to your name. Emails and sign-in accounts themselves are managed in Firebase → Authentication, which can also disable an account entirely.
+
+Players can delete their own account from the account page (click your name at the top). It removes their username, profile and sign-in, deletes campaigns they own and takes them out of the rest.
+
 ## Bot protection (App Check)
 App Check makes Firebase refuse requests that don't come from the real site, which stops scripts and bots from creating accounts or writing to the database directly. It uses invisible reCAPTCHA Enterprise; players never see a puzzle. The free allowance is 10,000 checks a month, and each visitor uses about one check per hour of use.
 1. In Google Cloud (same project), open **Security → reCAPTCHA** (it may ask you to enable the API) → **Create key** → type **Website**, domains `arkhamrpg.web.app`, `arkham-ledger.web.app`, `arkham-ledger.firebaseapp.com` and `localhost` → leave the checkbox challenge off → **Create**. Copy the key ID.

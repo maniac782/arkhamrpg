@@ -7,6 +7,7 @@ let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTim
 const MAX_OWNED=10;
 // state
 let fb=null,auth=null,db=null,user=null,profile=undefined,camps=[],campUnsub=null,profUnsub=null,inbox=[],outbox=[],inboxUnsub=null,outUnsub=null,outCid=null;
+let banned=false,isAdm=false,seenDone=false;
 const ui={importing:'',confirmImport:false,mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,confirmLeave:false,kick:null,newOpen:false,clear:new Set()};
 
 function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c.projectId).startsWith('PASTE')&&window.firebase;}
@@ -19,12 +20,43 @@ function render(){
  if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav"><span class="acct"><span class="av" aria-hidden="true">'+esc((profile.username||'?').charAt(0).toUpperCase())+'</span><b>'+esc(profile.username)+'</b>'+signOutHtml()+'</span></span>';app.innerHTML=ui.view==='camp'?campView():homeView();}
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+(isAdm?'<a class="nav-l" href="admin.html">Admin</a>':'')+'<span class="acct"><button class="acct-me" data-a="account" title="Your account"><span class="av" aria-hidden="true">'+esc((profile.username||'?').charAt(0).toUpperCase())+'</span><b>'+esc(profile.username)+'</b></button>'+signOutHtml()+'</span></span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  syncRename();
  // Keep the address in step with the page, so reloading a campaign's Settings stays there.
  if(user&&profile){const want=ui.view==='camp'&&ui.cid?'?settings='+encodeURIComponent(ui.cid):'';if(location.search!==want&&!/[?&]join=/.test(location.search)){try{history.replaceState(null,'',location.pathname+want);}catch(e){}}}
  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
+}
+function bannedView(){return '<section class="sec auth"><h2>Account suspended</h2><p class="note" style="margin:0">This account has been suspended, so it can\u2019t create or change anything. If you think this is a mistake, email <a href="mailto:maniac78@gmail.com?subject=Arkham%20Ledger%20account">maniac78@gmail.com</a>.</p></section>';}
+function provName(){const p=(auth&&auth.currentUser&&auth.currentUser.providerData[0])||{};return p.providerId==='google.com'?'Google':p.providerId==='password'?'Email and password':'—';}
+function freshLogin(){const u=auth&&auth.currentUser;if(!u)return false;const t=Date.parse(u.metadata&&u.metadata.lastSignInTime||'');return !!t&&Date.now()-t<5*60*1000;}
+function accountView(){
+ const own=camps.filter(c=>c.ownerUid===user.uid),inn=camps.filter(c=>c.ownerUid!==user.uid);
+ let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button></div>';
+ h+='<section class="sec"><h2>Your account</h2><div class="list">'+
+  [['Username',profile.username],['Email',(auth.currentUser&&auth.currentUser.email)||user.email||'—'],['Signed in with',provName()]].map(([k,v])=>'<div class="item"><div class="grow"><span class="lbl">'+k+'</span><b>'+esc(v)+'</b></div></div>').join('')+'</div></section>';
+ h+='<section class="sec"><h2>Delete my account</h2>';
+ if(ui.delBusy)return h+'<p class="note" style="margin:0">Deleting your account\u2026 keep this page open.</p></section>';
+ h+='<p class="note" style="margin:0">This removes your username and sign-in for good.'+(own.length?' Campaigns you own are deleted for everyone: <b>'+own.map(c=>esc(c.name)).join(', ')+'</b>.':'')+(inn.length?' You\u2019ll leave '+inn.map(c=>'<b>'+esc(c.name)+'</b>').join(', ')+'; investigators you played there stay with those campaigns.':'')+' This can\u2019t be undone.</p>';
+ if(!ui.delAsk)h+='<div class="row"><button class="btn dng" data-a="acctdelask">Delete my account\u2026</button></div>';
+ else if(!freshLogin())h+='<p class="note" style="margin:0">For your security, sign in again first. You\u2019ll come straight back here.</p><div class="row"><button class="btn pri" data-a="acctreauth">Sign in again</button><button class="btn" data-a="acctdelno">Cancel</button></div>';
+ else h+='<div class="row"><button class="btn dng" data-a="acctdelyes">Yes, delete everything</button><button class="btn" data-a="acctdelno">Cancel</button></div>';
+ return h+'</section>';
+}
+async function deleteAccount(){
+ const u=auth.currentUser;if(!u)return;const uid=u.uid;ui.delBusy=true;render();
+ try{
+  for(const c of camps.filter(x=>x.ownerUid===uid)){
+   await db.doc('campaigns/'+c.id).update({deleting:true}).catch(()=>{});
+   const iv=await db.collection('invites').where('cid','==',c.id).where('fromUid','==',uid).get().catch(()=>null);if(iv)await Promise.all(iv.docs.map(d=>d.ref.delete().catch(()=>{})));
+   await wipeCampaign(c.id);await db.doc('campaigns/'+c.id).delete();
+  }
+  for(const c of camps.filter(x=>x.ownerUid!==uid))await memberOut(c,uid).catch(()=>{});
+  const b=db.batch();if(profile&&profile.usernameLower)b.delete(db.doc('usernames/'+profile.usernameLower));b.delete(db.doc('users/'+uid));await b.commit();
+  try{Object.keys(localStorage).filter(k=>/^apl-(beta-cache|memo-|cache-v1-|creator-v1)/.test(k)).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  try{await u.delete();}catch(e){await auth.signOut().catch(()=>{});}
+  ui.delBusy=false;ui.delAsk=false;ui.view='home';toast('Your account was deleted.');
+ }catch(e){console.warn(e);ui.delBusy=false;if(window.quotaHit&&quotaHit(e))return render();toast('Couldn\u2019t finish deleting. Try again.');render();}
 }
 const signOutHtml=()=>'<button class="nav-l" data-a="signout">Sign out</button>';
 const errHtml=()=>ui.err?'<p class="err" role="alert">'+esc(ui.err)+'</p>':'';
@@ -297,6 +329,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
+  case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;
+  case 'acctdelask':ui.delAsk=true;render();break;
+  case 'acctdelno':ui.delAsk=false;render();break;
+  case 'acctreauth':try{sessionStorage.setItem('apl-del-after','1');}catch(e){}auth.signOut();break;
+  case 'acctdelyes':deleteAccount();break;
   case 'delask':ui.confirmDel=true;render();break;
   case 'delno':ui.confirmDel=false;render();break;
   case 'ijoin':joinInvite(b.dataset.id);break;
@@ -315,7 +352,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'leaveask':ui.confirmLeave=true;render();break;
   case 'leaveno':ui.confirmLeave=false;render();break;
   case 'leaveyes':{const c=camps.find(x=>x.id===ui.cid);ui.confirmLeave=false;ui.view='home';render();if(c)memberOut(c,user.uid).then(()=>toast('You left '+c.name+'.'),()=>toast('Couldn\u2019t leave. Try again.'));break;}
-  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;Promise.all(outbox.filter(i=>i.cid===id).map(i=>db.doc('invites/'+i.id).delete())).catch(()=>{}).then(()=>wipeCampaign(id)).then(()=>db.doc('campaigns/'+id).delete()).then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
+  case 'delyes':{const id=ui.cid;ui.view='home';ui.confirmDel=false;db.doc('campaigns/'+id).update({deleting:true}).catch(()=>{}).then(()=>Promise.all(outbox.filter(i=>i.cid===id).map(i=>db.doc('invites/'+i.id).delete()))).catch(()=>{}).then(()=>wipeCampaign(id)).then(()=>db.doc('campaigns/'+id).delete()).then(()=>toast('Campaign deleted.'),()=>toast('Couldn’t delete that.'));render();break;}
  }
 });
 
@@ -345,7 +382,13 @@ auth.onAuthStateChanged(u=>{
  if(!same){profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';}
  if(!user){try{localStorage.removeItem(BC);Object.keys(localStorage).filter(k=>k.startsWith('apl-memo-')).forEach(k=>localStorage.removeItem(k));}catch(e){}bc=null;}
  ui.err='';ui.busy=false;
- if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));profile=null;render();});}
+ banned=false;isAdm=false;seenDone=false;
+ if(user){const uid=user.uid;
+  db.doc('bans/'+uid).get().then(s=>{banned=s.exists;render();}).catch(()=>{});
+  db.doc('admins/'+uid).get().then(s=>{isAdm=s.exists;render();}).catch(()=>{});
+  try{if(sessionStorage.getItem('apl-del-after')){sessionStorage.removeItem('apl-del-after');ui.view='account';ui.delAsk=true;}}catch(e){}}
+ if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;
+  if(profile&&!seenDone&&!(profile.lastSeen>Date.now()-12*3600*1000)){seenDone=true;db.doc('users/'+user.uid).update({lastSeen:Date.now()}).catch(()=>{});}if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));profile=null;render();});}
  render();
 });
 render();

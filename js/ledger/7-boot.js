@@ -13,6 +13,7 @@ async function bootCampaign(syncEl){
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
  if(!u||u.isAnonymous){location.replace('./');return;}
  authUid=u.uid;
+ raw.doc('bans/'+u.uid).get().then(b=>{if(b.exists){halted='This account has been suspended, so it can\u2019t open campaigns. If you think this is a mistake, use Contact at the bottom of the page.';render();}}).catch(()=>{});
  db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch()};
  raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
   if(!snap.exists){halted='This campaign was deleted.';render();return;}

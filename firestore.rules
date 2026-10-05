@@ -102,24 +102,39 @@ service cloud.firestore {
 
     // ===== Beta: accounts and campaigns =====
     // A real account (Google or email), not the main site's anonymous device sign-in.
-    function realUser() { return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    // A suspended account (bans/{uid}) can still read but can't change anything.
+    function realUser() { return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'
+      && (request.method in ['get', 'list'] || !exists(/databases/$(database)/documents/bans/$(request.auth.uid))); }
+    // Site admins: an admins/{uid} document made by hand in the Firebase console.
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+    }
+    match /bans/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if isAdmin() && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['at', 'by', 'name']);
+      allow delete: if isAdmin();
+    }
 
     // Public profile: just a username. Emails are never stored here.
     match /users/{uid} {
       allow read: if realUser();
-      allow create, update: if realUser() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'created'])
+      allow create, update: if realUser() && (request.auth.uid == uid || isAdmin())
+        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'created', 'lastSeen'])
+        && request.resource.data.get('lastSeen', 0) is int
         && request.resource.data.username is string
         && request.resource.data.username.matches('[A-Za-z0-9_]{3,20}')
         && request.resource.data.usernameLower == request.resource.data.username.lower()
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.usernameLower)).data.uid == uid;
+      allow delete: if realUser() && (request.auth.uid == uid || isAdmin());
     }
     // Username claims, so two people can't take the same one.
     match /usernames/{name} {
       allow read: if realUser();
       allow create: if realUser() && name.matches('[a-z0-9_]{3,20}')
-        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == request.auth.uid;
-      allow delete: if realUser() && resource.data.uid == request.auth.uid;
+        && request.resource.data.keys().hasOnly(['uid']) && (request.resource.data.uid == request.auth.uid || isAdmin());
+      allow delete: if realUser() && (resource.data.uid == request.auth.uid || isAdmin());
     }
     // Campaigns: members can see them. The owner creates, renames, picks the GM, removes members and deletes.
     // An invited player can add themselves; any member except the owner can leave.
@@ -166,20 +181,25 @@ service cloud.firestore {
           && !(me() in newC().names) && newC().names.diff(oldC().names).affectedKeys().hasOnly([me()])
           && (gmOf(newC()) == gmOf(oldC()) || (gmOf(oldC()) == me() && gmOf(newC()) == null));
       }
-      allow read: if realUser() && me() in resource.data.memberIds;
+      allow read: if (realUser() && me() in resource.data.memberIds) || isAdmin();
       allow create: if realUser()
         && newC().keys().hasOnly(['name', 'ownerUid', 'memberIds', 'roles', 'names', 'created'])
         && newC().ownerUid == me()
         && newC().memberIds == [me()]
         && newC().roles.keys().hasOnly([me()]) && newC().roles[me()] == 'owner'
         && goodName();
-      allow update: if realUser() && (
+      // Once a campaign is marked for deletion nothing else about it can change, so the flag can't be used to keep reading GM material.
+      allow update: if realUser() && oldC().get('deleting', false) != true && (
         (isOwner() && changedOnly(['name']) && goodName())
         || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
         || (isOwner() && changedOnly(['photo']) && (!('photo' in newC()) || (newC().photo is string && newC().photo.matches('data:image/jpeg;base64,.*') && newC().photo.size() < 150000)))
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
-        || ownerManages() || joining() || leaving());
-      allow delete: if realUser() && isOwner();
+        || (isOwner() && changedOnly(['deleting']) && newC().deleting == true)
+        || ownerManages() || joining() || leaving()
+        || (isAdmin() && changedOnly(['memberIds', 'roles', 'names', 'gmUid'])
+          && oldC().memberIds.hasAll(newC().memberIds) && oldC().ownerUid in newC().memberIds
+          && newC().roles[oldC().ownerUid] == 'owner'));
+      allow delete: if (realUser() && isOwner()) || isAdmin();
 
       // ----- The ledger inside a campaign -----
       // (The owner can delete anything here, so deleting a campaign can clean up after itself.)
@@ -188,6 +208,8 @@ service cloud.firestore {
       function cOwner() { return realUser() && C().ownerUid == request.auth.uid; }
       function cGM() { return realUser() && C().get('gmUid', null) == request.auth.uid; }
       function gmSees() { return cGM(); }
+      // Wiping a campaign: an admin, or the owner once the campaign is marked as being deleted.
+      function cleaner() { return isAdmin() || (cOwner() && C().get('deleting', false) == true); }
       function playerDoc() { return /databases/$(database)/documents/campaigns/$(cid)/players/$(request.auth.uid); }
       // A player (not the owner) gets exactly one investigator: players/{uid} records which one.
       function takesOnly(slot) { return !exists(playerDoc()) && getAfter(playerDoc()).data.slot == slot; }
@@ -200,76 +222,76 @@ service cloud.firestore {
         function oldOwner() { return resource.data.get('ownerUid', null); }
         function newOwner() { return request.resource.data.get('ownerUid', null); }
         function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
-        allow read: if member();
+        allow read: if (member()) || cleaner();
         allow create: if isSlot(slot) && (cOwner() || (member() && newOwner() == request.auth.uid && takesOnly(slot)));
         allow update: if member() && isSlot(slot) && (
           cOwner()
           || (oldOwner() == request.auth.uid && (newOwner() == request.auth.uid || newOwner() == null))
           || (cGM() && changed().hasOnly(['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log']))
           || ((oldOwner() == null || !(oldOwner() in C().memberIds)) && newOwner() == request.auth.uid && changed().hasOnly(['ownerUid', 'player']) && takesOnly(slot)));
-        allow delete: if cOwner();
+        allow delete: if (cOwner()) || cleaner();
       }
       // Which investigator each player has (see takesOnly). The owner can change it when assigning sheets.
       match /players/{uid} {
         function slotOwner(s) { return getAfter(/databases/$(database)/documents/campaigns/$(cid)/characters/$(s)).data.get('ownerUid', null); }
-        allow read: if member();
+        allow read: if (member()) || cleaner();
         allow create: if cOwner() || (member() && uid == request.auth.uid
           && request.resource.data.keys().hasOnly(['slot']) && isSlot(request.resource.data.slot)
           && slotOwner(request.resource.data.slot) == request.auth.uid);
         allow update: if cOwner();
-        allow delete: if cOwner() || (uid == request.auth.uid && (resource == null
+        allow delete: if (cOwner() || (uid == request.auth.uid && (resource == null
           || !existsAfter(/databases/$(database)/documents/campaigns/$(cid)/characters/$(resource.data.slot))
-            || slotOwner(resource.data.slot) != request.auth.uid));
+            || slotOwner(resource.data.slot) != request.auth.uid))) || cleaner();
       }
       // Turn tracker and campaign tracker: everyone reads, the GM writes.
       match /table/{doc} {
         allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
-        allow delete: if cOwner();
-        allow read: if member();
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (member()) || cleaner();
         allow write: if cGM() && doc == 'state';
       }
       match /campaign/{doc} {
         allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
-        allow delete: if cOwner();
-        allow read: if member();
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (member()) || cleaner();
         allow write: if cGM();
       }
       // Enemies and handouts: players only see what the GM reveals (a handout to one player only to that player).
       match /enemies/{id} {
         allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
-        allow delete: if cOwner();
-        allow read: if gmSees() || (member() && resource.data.shown == true);
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (gmSees() || (member() && resource.data.shown == true)) || cleaner();
         allow write: if cGM();
       }
       match /clues/{id} {
         allow create, update: if cOwner();  // lets the owner import the original ledger without becoming GM
-        allow delete: if cOwner();
-        allow read: if gmSees() || (member() && resource.data.shown == true
-          && (resource.data.to == 'all' || plays(resource.data.to)));
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (gmSees() || (member() && resource.data.shown == true
+          && (resource.data.to == 'all' || plays(resource.data.to)))) || cleaner();
         allow write: if cGM();
       }
       match /gm/{doc} {
-        allow delete: if cOwner();
-        allow read: if gmSees();
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (gmSees()) || cleaner();
         allow write: if cGM();
       }
       match /gmlog/{id} {
-        allow delete: if cOwner();
-        allow read: if gmSees();
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (gmSees()) || cleaner();
         allow create, delete: if cGM();
       }
       match /history/{id} {
         allow update: if cOwner();  // re-running the import
-        allow read: if member();
+        allow read: if (member()) || cleaner();
         allow create: if member() && request.resource.data.slot is string
           && ((request.resource.data.slot == 'gm' && cGM())
             || (isSlot(request.resource.data.slot) && (cOwner() || cGM() || plays(request.resource.data.slot))));
-        allow delete: if gmSees();
+        allow delete: if (gmSees()) || cleaner();
       }
       // House rules (on/off plus the campaign's own weapons, equipment and rule changes): the owner decides.
       match /settings/{doc} {
-        allow delete: if cOwner();
-        allow read: if member();
+        allow delete: if (cOwner()) || cleaner();
+        allow read: if (member()) || cleaner();
         allow write: if cOwner() && doc == 'house'
           && request.resource.data.keys().hasOnly(['on', 'weapons', 'gear', 'rules', 'hidden'])
           && request.resource.data.get('on', false) is bool
@@ -285,7 +307,7 @@ service cloud.firestore {
       function camp(c) { return get(/databases/$(database)/documents/campaigns/$(c)).data; }
       function myEmail() { return request.auth.token.email.lower(); }
       function isInvitee() { return request.auth.token.email_verified == true && resource.data.toEmail == myEmail(); }
-      allow read: if realUser() && (resource.data.fromUid == request.auth.uid || isInvitee());
+      allow read: if (realUser() && (resource.data.fromUid == request.auth.uid || isInvitee())) || isAdmin();
       allow create: if realUser()
         && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toEmail', 'created'])
         && request.resource.data.toEmail is string
@@ -297,7 +319,7 @@ service cloud.firestore {
         && camp(request.resource.data.cid).ownerUid == request.auth.uid
         && request.resource.data.campaignName == camp(request.resource.data.cid).name
         && request.resource.data.fromName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username;
-      allow delete: if realUser() && (resource.data.fromUid == request.auth.uid || isInvitee());
+      allow delete: if (realUser() && (resource.data.fromUid == request.auth.uid || isInvitee())) || isAdmin();
     }
     // Proof that someone opened a campaign's invite link (checked when they add themselves).
     match /joinreq/{rid} {

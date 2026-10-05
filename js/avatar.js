@@ -74,6 +74,8 @@ window.acctIcon=function(name,prof){
     if(hrs)return 'in '+hrs+' hr '+(mins===60?0:mins)+' min';
     return 'in '+mins+' min';
   };
+  // Countdown with only the amount bold: "in <b>18 days</b>".
+  window.sessionRelHtml=function(t){var s=window.sessionRel(t);return /^in /.test(s)?'in <b>'+s.slice(3)+'</b>':'<b>'+s+'</b>';};
   // Directions for a place that looks like an address (has a number or a comma), e.g. not "Discord".
   window.mapsHref=function(where){where=String(where||'').trim();if(!where||!/[0-9,]/.test(where)||/^https?:/i.test(where))return '';return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(where);};
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
@@ -84,5 +86,5 @@ window.acctIcon=function(name,prof){
     return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   };
   // Keep every countdown on the page current without redrawing anything else.
-  setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t))el.textContent=window.sessionRel(t);else el.remove();});},30000);
+  setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t)){if(el.hasAttribute('data-cdb'))el.innerHTML=window.sessionRelHtml(t);else el.textContent=window.sessionRel(t);}else el.remove();});},30000);
 })();

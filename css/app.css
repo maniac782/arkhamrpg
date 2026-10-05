@@ -224,3 +224,7 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .nextsess .grow .lbl{margin:0}
 a.btn{text-decoration:none;color:inherit}
 .cdchip{text-transform:none;letter-spacing:0;font-size:13px}
+/* hover on cards: a brighter neutral border and a slight lift instead of yellow */
+.camp,.pcard{transition:border-color .15s,box-shadow .15s,transform .15s}
+.camp:hover,.pcard:hover,.camp.newtile:hover,.camp.newtile:focus-visible{border-color:var(--muted)!important;box-shadow:0 6px 18px rgba(0,0,0,.18);transform:translateY(-1px)}
+@media (prefers-reduced-motion:reduce){.camp:hover,.pcard:hover{transform:none}}

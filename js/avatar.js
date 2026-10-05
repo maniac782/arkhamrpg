@@ -2,7 +2,7 @@
 window.AVATAR_COLORS={slate:'#56606f',crimson:'#a3322a',rust:'#b0582c',forest:'#2f6b4f',teal:'#1f6f78',navy:'#2d4a8a',violet:'#6a3d8f',rose:'#9b3b63',brass:'#8a6417'};
 window.acctIcon=function(name,prof){
   prof=prof||{};
-  if(typeof prof.photo==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(prof.photo))return '<img class="av" src="'+prof.photo+'" alt="">';
+  if(window.imgOk&&window.imgOk(prof.photo))return '<img class="av" src="'+prof.photo+'" alt="">';
   var c=window.AVATAR_COLORS[prof.color]||window.AVATAR_COLORS.slate;
   var ic=String(name||'?').charAt(0).toUpperCase();
   return '<span class="av" aria-hidden="true" style="background:'+c+'">'+String(ic).replace(/[&<>"']/g,'')+'</span>';
@@ -87,4 +87,50 @@ window.acctIcon=function(name,prof){
   };
   // Keep every countdown on the page current without redrawing anything else.
   setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t)){if(el.hasAttribute('data-cdb'))el.innerHTML=window.sessionRelHtml(t);else el.textContent=window.sessionRel(t);}else el.remove();});},30000);
+})();
+
+/* Address suggestions for "Where" boxes (inputs with data-place): as you type, up to five matching places from
+   Google Places (Autocomplete, Places API (New)). Only what's typed is sent. Off when window.PLACES_KEY is empty. */
+(function(){
+  var box=null,items=[],sel=-1,timer=0,seq=0,cur=null,picking=false,token='';
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function newToken(){token=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2);}
+  function close(){if(box){box.remove();box=null;}items=[];sel=-1;}
+  function place(){if(!box||!cur)return;var r=cur.getBoundingClientRect();box.style.left=(r.left+window.scrollX)+'px';box.style.top=(r.bottom+window.scrollY+4)+'px';box.style.width=Math.max(r.width,260)+'px';}
+  function show(list){
+    close();if(!list.length||!cur||document.activeElement!==cur)return;items=list;
+    box=document.createElement('div');box.className='placebox';box.setAttribute('role','listbox');
+    box.innerHTML=list.map(function(t,i){return '<div class="placeopt" role="option" data-i="'+i+'"><b>'+esc(t.main)+'</b>'+(t.sub?' <span class="placesub">'+esc(t.sub)+'</span>':'')+'</div>';}).join('')+'<div class="placeattr">powered by Google</div>';
+    document.body.appendChild(box);place();
+    box.addEventListener('mousedown',function(e){var o=e.target.closest('.placeopt');if(!o)return;e.preventDefault();pick(Number(o.dataset.i));});
+  }
+  function hi(){if(!box)return;box.querySelectorAll('.placeopt').forEach(function(o,i){o.classList.toggle('on',i===sel);});}
+  function pick(i){if(!cur||!items[i])return;cur.value=items[i].full.slice(0,Number(cur.maxLength)>0?cur.maxLength:200);close();token='';picking=true;cur.dispatchEvent(new Event('input',{bubbles:true}));picking=false;}
+  function search(q){
+    var my=++seq;if(!token)newToken();
+    fetch('https://places.googleapis.com/v1/places:autocomplete',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':window.PLACES_KEY,'X-Goog-FieldMask':'suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat'},
+      body:JSON.stringify({input:q,sessionToken:token,languageCode:'en'})})
+    .then(function(r){return r.ok?r.json():{};}).then(function(j){
+      if(my!==seq)return;var seen={},out=[];
+      (j.suggestions||[]).forEach(function(s){var p=s.placePrediction;if(!p||!p.text)return;var full=p.text.text,sf=p.structuredFormat||{};
+        if(seen[full])return;seen[full]=1;out.push({full:full,main:(sf.mainText&&sf.mainText.text)||full,sub:(sf.secondaryText&&sf.secondaryText.text)||''});});
+      show(out.slice(0,5));
+    }).catch(function(){});
+  }
+  document.addEventListener('input',function(e){
+    var el=e.target;if(!window.PLACES_KEY||!el.matches||!el.matches('input[data-place]'))return;
+    if(picking)return;
+    cur=el;clearTimeout(timer);var q=el.value.trim();
+    if(q.length<4||!/[a-z]/i.test(q)){close();return;}
+    timer=setTimeout(function(){search(q);},400);
+  });
+  document.addEventListener('keydown',function(e){
+    if(!box||!cur||e.target!==cur)return;
+    if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(items.length-1,sel+1);hi();}
+    else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(0,sel-1);hi();}
+    else if(e.key==='Enter'&&sel>=0){e.preventDefault();pick(sel);}
+    else if(e.key==='Escape'){close();}
+  },true);
+  document.addEventListener('focusout',function(e){if(e.target===cur)setTimeout(close,150);});
+  window.addEventListener('resize',place);window.addEventListener('scroll',place,true);
 })();

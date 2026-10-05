@@ -54,7 +54,7 @@ function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();
   g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);URL.revokeObjectURL(url);
   let q=0.82,d=cv.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej();};img.src=url;});}
-function openCrop(file,slot){openCropper(file,{title:'Position your portrait',shape:'circle',outW:320,outH:320,maxLen:120000,onError:toast,onSave:d=>save(slot,{portrait:d},'Changed portrait')});}
+function openCrop(file,slot){openCropper(file,{title:'Position your portrait',shape:'circle',outW:320,outH:320,maxLen:120000,onError:toast,onSave:d=>{toast('Saving portrait\u2026');storeImage(d,'campaigns/'+CAMP+'/'+authUid).then(u=>save(slot,{portrait:u},'Changed portrait'));}});}
 function ownerPanel(s){
  const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;

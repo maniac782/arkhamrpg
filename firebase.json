@@ -9,7 +9,10 @@
       "firestore.rules",
       ".github/**",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "storage.rules",
+      "BACKLOG.md",
+      "functions/**"
     ],
     "headers": [
       {
@@ -52,5 +55,19 @@
   },
   "firestore": {
     "rules": "firestore.rules"
-  }
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log"
+      ]
+    }
+  ]
 }

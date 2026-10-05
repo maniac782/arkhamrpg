@@ -14,7 +14,7 @@ const ui={tab:'users',q:'',ask:null,rename:null,busy:false};
 const ms=v=>v==null?0:typeof v==='number'?v:v.toMillis?v.toMillis():v.seconds?v.seconds*1000:0;
 const ago=t=>{if(!t)return '—';const d=Math.floor((Date.now()-t)/DAY);return d<=0?'Today':d===1?'Yesterday':d<30?d+' days ago':new Date(t).toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'});};
 const nameOf=uid=>{const u=users.find(x=>x.id===uid);return u?u.username:'(deleted account)';};
-const photoOk=p=>typeof p==='string'&&/^data:image\/jpeg;base64,/.test(p);
+const photoOk=p=>window.imgOk(p);
 const FV=()=>firebase.firestore.FieldValue;
 
 // ---------- data ----------
@@ -30,6 +30,7 @@ async function load(){
  render();
 }
 async function wipe(cid){
+ await dropFolder('campaigns/'+cid);
  for(const col of ['characters','players','table','campaign','enemies','clues','gm','gmlog','history','settings']){
   const qs=await db.collection('campaigns/'+cid+'/'+col).get();await Promise.all(qs.docs.map(d=>d.ref.delete()));}
 }

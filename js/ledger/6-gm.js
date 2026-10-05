@@ -142,9 +142,10 @@ function pickClueImage(f){if(!f||!/^image\//.test(f.type))return toast('Choose a
 const clueName=c=>'\u201c'+(c.title||(c.body||'').slice(0,40)||'picture')+'\u201d';
 const clueWho=c=>c.to==='all'?'everyone':((chars[c.to]&&chars[c.to].name)||c.to);
 function clueLog(c){if(c.shown){gmLog('Revealed clue '+clueName(c)+' to '+clueWho(c),false);if(c.to==='all')gmStory('Found '+clueName(c));}else gmLog('Hid clue '+clueName(c),false);}
-function addClue(show){const t=(document.getElementById('cl-title')||{}).value||'',b=(document.getElementById('cl-body')||{}).value||'';
+async function addClue(show){const t=(document.getElementById('cl-title')||{}).value||'',b=(document.getElementById('cl-body')||{}).value||'';
  if(!t.trim()&&!b.trim()&&!gm.clueImg)return toast('Write a clue or add a picture first.');
- const id=gmId();const c={id,title:t.trim(),body:b.trim(),img:gm.clueImg,to:gm.clueTo||'all',shown:!!show,t:Date.now()};clues[id]=c;gm.clueImg='';gmSet('clues/'+id,c);if(show)clueLog(c);else gmLog('Saved clue '+clueName(c)+' (hidden)',false);
+ let img=gm.clueImg;if(img){toast('Saving picture\u2026');img=await storeImage(img,'campaigns/'+CAMP+'/'+authUid);}
+ const id=gmId();const c={id,title:t.trim(),body:b.trim(),img,to:gm.clueTo||'all',shown:!!show,t:Date.now()};clues[id]=c;gm.clueImg='';gmSet('clues/'+id,c);if(show)clueLog(c);else gmLog('Saved clue '+clueName(c)+' (hidden)',false);
  const ti=document.getElementById('cl-title'),bo=document.getElementById('cl-body');if(ti)ti.value='';if(bo)bo.value='';render();toast(show?'Clue revealed to the players.':'Clue saved. Reveal it when they find it.');}
 
 // ---------- campaign ----------
@@ -200,7 +201,7 @@ function gmNextHtml(){
  const t=camp&&camp.nextSession,on=window.sessionShown&&sessionShown(t);
  return '<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'<span class="note">Not set</span>')+'</div>'+
   '<div class="row" style="align-items:flex-end"><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="gm-nsdate" value="'+(on?localInput(t):'')+'"></label>'+
-  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="gm-nswhere" maxlength="80" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?camp.nextWhere||'':'')+'"></label>'+
+  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="gm-nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?camp.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" data-gact="nsset">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" data-gact="nsclear">Clear</button>':'')+'</div>'+
   '<p class="note" style="margin:0">Everyone sees a countdown on the campaign\u2019s card and the Party tab, and can add it to their calendar.</p></section>';
 }

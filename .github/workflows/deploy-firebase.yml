@@ -34,3 +34,24 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           npx -y firebase-tools@latest deploy --only firestore:rules --project arkham-ledger --non-interactive
           rm -f "$RUNNER_TEMP/sa.json"
+
+  # Publishes storage.rules and the server functions (invite emails, session reminders).
+  # Needs these roles on the GitHub service account as well: Cloud Functions Admin,
+  # Service Account User, Cloud Scheduler Admin, Secret Manager Viewer, Firebase Admin.
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install function dependencies
+        run: cd functions && npm install --no-audit --no-fund
+      - name: Publish Storage rules and functions
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx -y firebase-tools@latest deploy --only storage,functions --project arkham-ledger --non-interactive --force
+          rm -f "$RUNNER_TEMP/sa.json"

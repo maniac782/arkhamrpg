@@ -39,6 +39,9 @@ function accountView(){
  h+='<section class="sec"><div class="sec-head"><h2>Your icon</h2><span class="row" style="gap:8px;align-items:center"><span class="avbig">'+acctIcon(profile.username,profile)+'</span><b>'+esc(profile.username)+'</b></span></div>'+
   '<div class="field"><span class="lbl">Photo</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="avphoto" style="cursor:pointer">'+(profile.photo?'Change photo':'Upload a photo')+'</label><input type="file" id="avphoto" accept="image/*" hidden>'+(profile.photo?'<button class="btn sm" data-a="avphotodel">Remove photo</button>':'')+'</div><span class="note">'+(profile.photo?'Your photo is showing. Remove it to use your first letter on a colour instead.':'Or show your first letter on the colour you pick below.')+'</span></div>'+
   '<div class="field"><span class="lbl">Colour</span><div class="swatches">'+Object.keys(AVATAR_COLORS).map(k=>'<button class="swatch'+(k===curC?' on':'')+'" data-a="avc" data-v="'+k+'" style="background:'+AVATAR_COLORS[k]+'" aria-label="'+k+'" aria-pressed="'+(k===curC)+'"></button>').join('')+'</div></div>'+'</section>';
+ if(ui.prefs===undefined){ui.prefs=null;db.doc('prefs/'+user.uid).get().then(s=>{ui.prefs=s.exists?s.data():{};render();},()=>{ui.prefs={};render();});}
+ h+='<section class="sec"><h2>Emails</h2>'+(ui.prefs?'<label class="row" style="gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-a="remindtog"'+(ui.prefs.noRemind?'':' checked')+'> Email me a reminder the day before a session</label>':'<p class="note" style="margin:0">Loading…</p>')+
+  '<p class="note" style="margin:0">Reminders go to '+esc((auth.currentUser&&auth.currentUser.email)||user.email||'your sign-in email')+' for any campaign with a next session set.</p></section>';
  h+='<section class="sec"><h2>Delete my account</h2>';
  if(ui.delBusy)return h+'<p class="note" style="margin:0">Deleting your account\u2026 keep this page open.</p></section>';
  h+='<p class="note" style="margin:0">This removes your username and sign-in for good.'+(own.length?' Campaigns you own are deleted for everyone: <b>'+own.map(c=>esc(c.name)).join(', ')+'</b>.':'')+(inn.length?' You\u2019ll leave '+inn.map(c=>'<b>'+esc(c.name)+'</b>').join(', ')+'; investigators you played there stay with those campaigns.':'')+' This can\u2019t be undone.</p>';
@@ -47,6 +50,9 @@ function accountView(){
  else h+='<div class="row"><button class="btn dng" data-a="acctdelyes">Yes, delete everything</button><button class="btn" data-a="acctdelno">Cancel</button></div>';
  return h+'</section>';
 }
+function myTz(){try{return (Intl.DateTimeFormat().resolvedOptions().timeZone||'').slice(0,50);}catch(e){return '';}}
+// Keeps the time zone used for reminder emails current (stored privately in prefs/{uid}).
+function saveTz(){const tz=myTz();if(!tz||!user)return;db.doc('prefs/'+user.uid).get().then(s=>{const p=s.exists?s.data():{};if(p.tz!==tz)return db.doc('prefs/'+user.uid).set({...p,tz});}).catch(()=>{});}
 async function deleteAccount(){
  const u=auth.currentUser;if(!u)return;const uid=u.uid;ui.delBusy=true;render();
  try{
@@ -56,7 +62,8 @@ async function deleteAccount(){
    await wipeCampaign(c.id);await db.doc('campaigns/'+c.id).delete();
   }
   for(const c of camps.filter(x=>x.ownerUid!==uid))await memberOut(c,uid).catch(()=>{});
-  const b=db.batch();if(profile&&profile.usernameLower)b.delete(db.doc('usernames/'+profile.usernameLower));b.delete(db.doc('users/'+uid));await b.commit();
+  const b=db.batch();if(profile&&profile.usernameLower)b.delete(db.doc('usernames/'+profile.usernameLower));b.delete(db.doc('users/'+uid));b.delete(db.doc('prefs/'+uid));await b.commit();
+  await dropFolder('users/'+uid);
   try{Object.keys(localStorage).filter(k=>/^apl-(beta-cache|memo-|cache-v1-|creator-v1)/.test(k)).forEach(k=>localStorage.removeItem(k));}catch(e){}
   try{await u.delete();}catch(e){await auth.signOut().catch(()=>{});}
   ui.delBusy=false;ui.delAsk=false;ui.view='home';toast('Your account was deleted.');
@@ -95,9 +102,9 @@ function usernameView(){
 }
 const MAX_MEMBERS=12;
 function chipsFor(c,u){const r=(c.roles||{})[u];let h='';if(r==='owner')h+='<span class="chip ok">Owner</span>';if(c.gmUid&&c.gmUid===u)h+='<span class="chip warn">GM</span>';if(r!=='owner'&&c.gmUid!==u)h+='<span class="chip">Player</span>';return h;}
-const photoOk=p=>typeof p==='string'&&/^data:image\/jpeg;base64,/.test(p);
+const photoOk=p=>window.imgOk(p);
 // Shrink a chosen picture to a small JPEG (wide 16:9 crop) and save it on the campaign.
-function campPhoto(f){const cid=ui.cid;openCropper(f,{title:'Position the campaign picture',shape:'wide',outW:800,outH:450,maxLen:140000,onError:toast,onSave:d=>db.doc('campaigns/'+cid).update({photo:d}).then(()=>toast('Picture saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the picture. Try again.');})});}
+function campPhoto(f){const cid=ui.cid;openCropper(f,{title:'Position the campaign picture',shape:'wide',outW:800,outH:450,maxLen:140000,onError:toast,onSave:d=>{toast('Saving picture\u2026');storeImage(d,'campaigns/'+cid+'/'+user.uid).then(u=>db.doc('campaigns/'+cid).update({photo:u})).then(()=>toast('Picture saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the picture. Try again.');});}});}
 // A campaign with no picture gets a tinted banner with its first letter, so every card lines up.
 function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
  let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
@@ -159,7 +166,7 @@ function nextSessionHtml(c,can){
  if(on)h+='<p style="margin:0"><b>'+esc(sessionWhen(t))+'</b>'+(c.nextWhere?' \u00b7 '+esc(c.nextWhere):'')+'</p><div class="row"><a class="btn sm" href="'+sessionIcs(c.name,t,c.nextWhere)+'" download="'+esc((c.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(mapsHref(c.nextWhere)?'<a class="btn sm" href="'+esc(mapsHref(c.nextWhere))+'" target="_blank" rel="noopener">Directions</a>':'')+'</div>';
  else if(!can)h+='<p class="note" style="margin:0">Nothing scheduled yet. The owner or GM can set it.</p>';
  if(can)h+='<form id="nsform" class="row" style="align-items:flex-end" novalidate><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="nsdate" value="'+(on?localInput(t):'')+'"></label>'+
-  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+
+  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" type="submit">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" type="button" data-a="nsclear">Clear</button>':'')+'</form>'+
   '<p class="note" style="margin:0">Shows a countdown on the campaign\u2019s card and in the ledger for everyone. Times are in each person\u2019s own time zone.</p>';
  return h+'</section>';
@@ -190,7 +197,7 @@ function campView(){
   h+='<div><span class="lbl">Invite link</span>'+(link?'<div class="row"><input class="f" id="ilink" readonly value="'+esc(link)+'" style="flex:1;min-width:220px" aria-label="Invite link"><button class="btn pri" data-a="lcopy">Copy link</button>'+(navigator.share?'<button class="btn" data-a="lshare">Share…</button>':'')+'</div><p class="note" style="margin:6px 0 0">Anyone with this link can join after signing in. Share it in your group chat.</p><div class="row" style="margin-top:8px;align-items:center"><button class="btn sm" data-a="lnew">Make a new link</button><span class="note">The current link will stop working.</span></div>'
    :'<div class="row"><button class="btn pri" data-a="lnew">Create invite link</button></div>')+'</div>';
   h+='<form id="invform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Or invite by email</span><input class="f" id="iemail" type="email" autocapitalize="off" spellcheck="false" placeholder="friend@example.com"></label><button class="btn" type="submit" '+(ui.busy?'disabled':'')+'>Add invite</button></form>'+errHtml()+
-   '<p class="note" style="margin:0">They\u2019ll see the invite on their My campaigns page when they sign in with this email address. The site doesn\u2019t send an email, so tell them you\u2019ve invited them.</p>';
+   '<p class="note" style="margin:0">They\u2019ll see the invite on their My campaigns page when they sign in with this email address. We\u2019ll also email them to let them know.</p>';
   if(outbox.length)h+='<div><span class="lbl">Waiting to join</span><div class="list">'+outbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.toEmail)+'</b><span class="effect">Invited</span></div><button class="btn sm" data-a="icancel" data-id="'+esc(i.id)+'">Cancel invite</button></div>').join('')+'</div></div>';
   h+='</section>';
   h+='<section class="sec"><div class="sec-head"><h2>Delete campaign</h2></div>'+(ui.confirmDel?'<p class="note" style="margin:0">Delete “'+esc(c.name)+'” for everyone? This can’t be undone.</p><div class="row"><button class="btn dng" data-a="delyes">Yes, delete it</button><button class="btn" data-a="delno">Cancel</button></div>':'<div class="row"><button class="btn dng" data-a="delask">Delete this campaign…</button></div>')+'</section>';
@@ -241,7 +248,7 @@ async function createCampaign(){
  // the rules take these one at a time after the campaign exists
  await ref.update({joinCode:newCode()}).catch(()=>{});
  if((ui.newGM||'me')==='me')await ref.update({gmUid:user.uid}).catch(()=>{});
- if(ui.newPhoto)await ref.update({photo:ui.newPhoto}).catch(()=>toast('The picture didn\u2019t save; add it again in Settings.'));
+ if(ui.newPhoto)await storeImage(ui.newPhoto,'campaigns/'+ref.id+'/'+user.uid).then(u=>ref.update({photo:u})).catch(()=>toast('The picture didn\u2019t save; add it again in Settings.'));
  ui.newPhoto=null;ui.newGM=null;ui.newId=null;ui.view='invite';ui.cid=ref.id;ui.waitCid=ref.id;window.scrollTo(0,0);
 }
 
@@ -356,6 +363,7 @@ async function joinInvite(id){
 }
 // Firestore doesn't delete a campaign's contents with it, so clear each part first.
 async function wipeCampaign(id){
+ await dropFolder('campaigns/'+id);
  for(const col of ['characters','players','table','campaign','enemies','clues','gm','gmlog','history','settings']){
   try{const qs=await db.collection('campaigns/'+id+'/'+col).get();await Promise.all(qs.docs.map(d=>d.ref.delete()));}catch(e){console.warn('wipe',col,e);}
  }
@@ -377,7 +385,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 // Rename is only clickable when the name has actually been changed.
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();if(e.target.id==='cname'){if(ui.err){ui.err='';const er=app.querySelector('.err');if(er)er.remove();}const p=document.getElementById('nprevname');if(p)p.textContent=e.target.value.trim()||'Your campaign';}});
-app.addEventListener('change',e=>{const t=e.target;if(t.id==='avphoto'){const f=t.files&&t.files[0];t.value='';openCropper(f,{title:'Position your photo',shape:'circle',outW:160,outH:160,maxLen:18000,onError:toast,onSave:d=>{profile={...profile,photo:d};render();db.doc('users/'+user.uid).update({photo:d}).then(()=>toast('Photo saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the photo. Try again.');});}});return;}if(t.id==='nphoto'){const f=t.files&&t.files[0];t.value='';openCropper(f,{title:'Position the campaign picture',shape:'wide',outW:800,outH:450,maxLen:140000,onError:toast,onSave:d=>{ui.newPhoto=d;render();}});return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
+app.addEventListener('change',e=>{const t=e.target;if(t.id==='avphoto'){const f=t.files&&t.files[0];t.value='';openCropper(f,{title:'Position your photo',shape:'circle',outW:160,outH:160,maxLen:18000,onError:toast,onSave:d=>{const old=profile.photo;profile={...profile,photo:d};render();storeImage(d,'users/'+user.uid).then(u=>db.doc('users/'+user.uid).update({photo:u})).then(()=>{toast('Photo saved.');dropImage(old);},er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the photo. Try again.');});}});return;}if(t.id==='nphoto'){const f=t.files&&t.files[0];t.value='';openCropper(f,{title:'Position the campaign picture',shape:'wide',outW:800,outH:450,maxLen:140000,onError:toast,onSave:d=>{ui.newPhoto=d;render();}});return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
 window.addEventListener('acct-signout',()=>auth&&auth.signOut());
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account')e.preventDefault();
  switch(a){
@@ -398,9 +406,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
   case 'nsclear':db.doc('campaigns/'+ui.cid).update({nextSession:FV().delete(),nextWhere:FV().delete()}).then(()=>toast('Next session cleared.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t clear it. Try again.');});break;
-  case 'avphotodel':profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
+  case 'avphotodel':dropImage(profile.photo);profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'avc':{const k='color',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;
+  case 'remindtog':{const on=b.checked;ui.prefs={...(ui.prefs||{}),noRemind:!on};db.doc('prefs/'+user.uid).set({...ui.prefs,tz:myTz()}).then(()=>toast(on?'Session reminders on.':'Session reminders off.'),()=>{ui.prefs.noRemind=on;render();toast('Couldn’t save that.');});break;}
   case 'acctdelask':ui.delAsk=true;render();break;
   case 'acctdelno':ui.delAsk=false;render();break;
   case 'acctreauth':try{sessionStorage.setItem('apl-del-after','1');}catch(e){}auth.signOut();break;
@@ -460,7 +469,7 @@ auth.onAuthStateChanged(u=>{
   db.doc('admins/'+uid).get().then(s=>{isAdm=s.exists;saveBC();render();}).catch(()=>{});
   try{if(sessionStorage.getItem('apl-del-after')){sessionStorage.removeItem('apl-del-after');ui.view='account';ui.delAsk=true;}}catch(e){}}
  if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;
-  if(profile&&!seenDone&&!(profile.lastSeen>Date.now()-12*3600*1000)){seenDone=true;db.doc('users/'+user.uid).update({lastSeen:Date.now()}).catch(()=>{});}if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));profile=null;render();});}
+  if(profile&&!seenDone&&!(profile.lastSeen>Date.now()-12*3600*1000)){seenDone=true;db.doc('users/'+user.uid).update({lastSeen:Date.now()}).catch(()=>{});saveTz();}if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));profile=null;render();});}
  render();
 });
 render();

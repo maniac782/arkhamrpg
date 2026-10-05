@@ -5,6 +5,11 @@ service cloud.firestore {
     // Investigator sheets are p1 to p12.
     function isSlot(s) { return s.matches('p([1-9]|1[0-2])'); }
     function signedIn() { return request.auth != null; }
+    // A picture field: an inline JPEG under maxLen characters, or a link to one of our files in Cloud Storage.
+    function picOk(p, maxLen) {
+      return (p.matches('data:image/jpeg;base64,.*') && p.size() < maxLen)
+        || (p.matches('https://firebasestorage[.]googleapis[.]com/v0/b/arkham-ledger[.]firebasestorage[.]app/o/[^"<> ]+') && p.size() < 600);
+    }
     function lockDoc(s) { return /databases/$(database)/documents/locks/$(s); }
     function grantDoc(s) { return /databases/$(database)/documents/grants/$(request.auth.uid)/keys/$(s); }
 
@@ -136,6 +141,14 @@ service cloud.firestore {
         && request.resource.data.t is int;
       allow read, delete: if isAdmin();
     }
+    // Private per-person settings read by the reminder emails: time zone and the reminder opt-out.
+    match /prefs/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if realUser() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['tz', 'noRemind'])
+        && request.resource.data.get('tz', '') is string && request.resource.data.get('tz', '').size() <= 50
+        && request.resource.data.get('noRemind', false) is bool;
+    }
     match /bans/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow create, update: if isAdmin() && request.auth.uid != uid
@@ -149,7 +162,7 @@ service cloud.firestore {
       allow create, update: if realUser() && (request.auth.uid == uid || isAdmin())
         && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'created', 'lastSeen', 'color', 'icon', 'photo'])
         && (!('photo' in request.resource.data) || (request.resource.data.photo is string
-          && request.resource.data.photo.matches('data:image/jpeg;base64,.*') && request.resource.data.photo.size() < 30000))
+          && picOk(request.resource.data.photo, 30000)))
         && request.resource.data.get('lastSeen', 0) is int
         && request.resource.data.get('color', '') is string && request.resource.data.get('color', '').size() <= 12
         && request.resource.data.get('icon', '') is string && request.resource.data.get('icon', '').size() <= 4
@@ -226,7 +239,7 @@ service cloud.firestore {
           && (!('nextSession' in newC()) || newC().nextSession is int)
           && (!('nextWhere' in newC()) || (newC().nextWhere is string && newC().nextWhere.size() <= 80)))
         || (isOwner() && changedOnly(['art']) && newC().art is int && newC().art >= 0 && newC().art < 100)
-        || (isOwner() && changedOnly(['photo']) && (!('photo' in newC()) || (newC().photo is string && newC().photo.matches('data:image/jpeg;base64,.*') && newC().photo.size() < 150000)))
+        || (isOwner() && changedOnly(['photo']) && (!('photo' in newC()) || (newC().photo is string && picOk(newC().photo, 150000))))
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
         || (isOwner() && changedOnly(['deleting']) && newC().deleting == true)
         || ownerManages() || joining() || leaving()
@@ -345,7 +358,7 @@ service cloud.firestore {
       allow create: if realUser()
         && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toEmail', 'created', 'photo'])
         && (!('photo' in request.resource.data) || (request.resource.data.photo is string
-          && request.resource.data.photo.matches('data:image/jpeg;base64,.*') && request.resource.data.photo.size() < 150000))
+          && picOk(request.resource.data.photo, 150000)))
         && request.resource.data.toEmail is string
         && request.resource.data.toEmail.size() <= 120
         && request.resource.data.toEmail.matches('[^@/ ]+@[^@/ ]+[.][^@/ ]+')

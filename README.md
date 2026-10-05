@@ -24,7 +24,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 - **Party:** everyone's investigators at a glance. Tap one to open their sheet.
 - **Investigator sheets:** dice pool, horror, injuries and traumas, insight, skills, knacks, weapons and gear, money, XP, and a **Recent** list of what changed. **Open printable sheet** gives a print-ready copy (Letter paper, background graphics on).
 - **New investigator:** builds a character step by step following the corebook's creation rules. An unfinished character is kept on your device for that campaign for two weeks; **Start over** clears it.
-- **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date, time and place. Everyone sees a countdown on the campaign card and the Party tab, with **Add to calendar** and **Directions**.
+- **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date, time and place, with Google address suggestions. Members get a reminder email the day before (they can turn it off in Your account). Everyone sees a countdown on the campaign card and the Party tab, with **Add to calendar** and **Directions**.
 - **Journal:** clues and handouts the GM has revealed, enemies the GM is showing, the campaign tracker (date, threads, people, places) and **Past sessions**: a recap of each finished session, with the GM's optional summary on top.
 - **GM tab (GM only):** scene and turn tracker with surprise rounds, encounter builder from the corebook's enemy profiles, clues and handouts (to everyone or one player), campaign tracker, end-of-session XP and momentous sessions, session recaps, GM notes and a hidden dice roller.
 
@@ -52,6 +52,13 @@ Knack names and tiers follow each archetype's table in the corebook. Each knack'
 - **Errors** tab: unexpected errors people hit while signed in (message, page, browser, version, who), recorded automatically by `js/config.js` (at most a few per visit). Clear them once dealt with.
 
 Admins are accounts with a document in the `admins` collection in Firestore whose ID is their user ID (Firebase → Authentication → Users → **User UID**); it needs no fields. Email addresses and disabling a sign-in entirely are handled in Firebase → Authentication.
+
+### Server functions, email and pictures
+- `functions/` holds two server functions, deployed by the GitHub Action: **inviteEmail** emails someone when an owner invites them by email (at most 30 a day per inviter), and **sessionReminders** runs hourly and emails members whose next session is within 24 hours (once per session; people can opt out in Your account, which sets `prefs/<uid>.noRemind`).
+- Mail goes out from **arkhamrpgledger@gmail.com** (`functions/.env`) using a Gmail app password stored in Google Cloud **Secret Manager** as `GMAIL_APP_PASSWORD`. To change the password, add a new version of that secret and re-run the deploy.
+- Pictures (portraits, profile and campaign photos, handouts) are uploaded to Cloud Storage by `js/upload.js`, and the database stores their links. `storage.rules` decides who may add or delete files. If an upload fails, the picture is saved inline in the database as before, so older inline pictures keep working too.
+- Address suggestions use the Places API (New) key in `window.PLACES_KEY` in `js/config.js`, limited in Google Cloud to arkhamrpg.web.app and to that one API.
+- The GitHub service account also needs: Cloud Functions Admin, Service Account User, Cloud Scheduler Admin, Secret Manager Admin, Service Usage Admin, Artifact Registry Administrator and Eventarc Admin. The Storage service agent needs Firebase Rules Firestore Service Agent so `storage.rules` can check campaign membership.
 
 ### Bot protection (App Check)
 The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`, and the web app is registered with it in Firebase → **Security → App Check**. Once **App Check → APIs** shows nearly all requests as verified, **Enforce** it for Cloud Firestore and Authentication. If pages stop loading data after enforcing, turn enforcement off there again. The key's allowed domains (Google Cloud → reCAPTCHA) must include every address the site is served from.
@@ -83,7 +90,8 @@ The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`
   7. `7-boot.js`: connecting to Firebase and starting up
 - `admin.html` with `js/admin.js` and `css/admin.css`: the admin page.
 - `privacy.html`: the privacy policy. `help.html`: the **How it works** page for players (linked in every footer and from the sign-in screen); keep it in step with new features.
-- `js/config.js`: Firebase settings, the App Check key and the daily-limit banner.
+- `js/config.js`: Firebase settings, the App Check and Places keys, and the daily-limit banner.
+- `js/upload.js`: picture uploads to Cloud Storage. `storage.rules`: who may add or delete pictures. `functions/`: the email functions.
 - `js/avatar.js`: the account icon and account menu. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.

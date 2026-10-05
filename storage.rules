@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// Pictures for Arkham Ledger. Files are only ever added (each upload gets a new random name) or deleted.
+//   users/<uid>/<file>            profile photos, written by that user
+//   campaigns/<cid>/<uid>/<file>  everything in a campaign (portraits, campaign picture, handouts),
+//                                 written by a member into their own folder
+// The database decides which picture a sheet or campaign actually shows; these rules only decide who
+// may add or remove files.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function banned() { return firestore.exists(/databases/(default)/documents/bans/$(me())); }
+    function isAdmin() { return signedIn() && firestore.exists(/databases/(default)/documents/admins/$(me())); }
+    function camp(cid) { return firestore.get(/databases/(default)/documents/campaigns/$(cid)).data; }
+    function isMember(cid) { return me() in camp(cid).memberIds; }
+    function isCampOwner(cid) { return camp(cid).ownerUid == me(); }
+    function jpeg(maxBytes) {
+      return request.resource.contentType == 'image/jpeg' && request.resource.size < maxBytes;
+    }
+
+    match /users/{uid}/{file} {
+      allow get: if signedIn();
+      allow list: if signedIn() && (me() == uid || isAdmin());
+      allow create: if signedIn() && me() == uid && !banned() && jpeg(200 * 1024);
+      allow delete: if signedIn() && (me() == uid || isAdmin());
+    }
+
+    // Listing a whole campaign's pictures, so the owner (or an admin) can remove them when it's deleted.
+    match /campaigns/{cid}/{rest=**} {
+      allow list: if signedIn() && (isAdmin() || isCampOwner(cid));
+    }
+
+    match /campaigns/{cid}/{uid}/{file} {
+      allow get: if signedIn();
+      allow create: if signedIn() && me() == uid && !banned() && isMember(cid) && jpeg(1024 * 1024);
+      allow delete: if signedIn() && (me() == uid || isAdmin() || isCampOwner(cid));
+    }
+  }
+}

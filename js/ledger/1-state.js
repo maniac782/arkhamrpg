@@ -65,7 +65,7 @@ const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','luck
 let gmClaimed=false;
 const gmCan=s=>canEdit(s)||isGM();
 // In a campaign the owner's extra powers (editing every sheet, deleting Recent entries) follow the Settings switch.
-const ownerEditsOn=()=>!(CAMP&&camp&&camp.ownerEdits===false);
+const ownerEditsOn=()=>!CAMP||!!(camp&&camp.ownerEdits===true); // off unless the owner turns it on in Settings
 function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return (!!keys.master&&ownerEditsOn())||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};

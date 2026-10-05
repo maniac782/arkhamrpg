@@ -4,15 +4,19 @@
 // The account icon (colour/symbol) as the home page last saw it on this device.
 function myBC(){try{const b=JSON.parse(localStorage.getItem('apl-beta-cache')||'null');return b&&b.uid===authUid?b:{};}catch(e){return {};}}
 function myProf(){return myBC().profile||{};}
+// Connection problems show as a small warning in the top-right corner; when all is well it stays empty.
+function setStatus(m,more){const lv=document.getElementById('live');if(lv)lv.innerHTML=m?'<span class="netwarn" title="'+esc(m+(more||''))+'">'+esc(m)+(more?'<span class="wide-only">'+esc(more)+'</span>':'')+'</span>':'';}
+window.addEventListener('offline',()=>setStatus('Offline',' \u2014 changes will sync when you\u2019re back online'));
+window.addEventListener('online',()=>setStatus(''));
+if(navigator.onLine===false)setTimeout(()=>setStatus('Offline',' \u2014 changes will sync when you\u2019re back online'),0);
 async function bootCampaign(syncEl){
  const cfg0=window.FIREBASE_CONFIG;
- if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();syncEl.textContent='Not connected';return;}
+ if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();setStatus('Not connected');return;}
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
  const fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
  const brand=document.querySelector('.brand h1');
  const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
  window.addEventListener('acct-signout',()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');});syncLine();window.__syncLine=syncLine;
- {const lv=document.getElementById('live');if(lv)lv.innerHTML='<span class="live" title="Changes sync live for everyone"><i></i>Live</span>';}
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
  if(camp){if(brand)brand.innerHTML=(camp.photo&&/^data:image\/jpeg;base64,/.test(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':window.artUrl?'<img class="brandimg" src="'+artUrl(artFor({...camp,id:CAMP}),250)+'" alt="" onerror="this.remove()">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
@@ -38,7 +42,7 @@ async function bootCampaign(syncEl){
   if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
- },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else syncEl.textContent='Sync paused \u2014 reload to reconnect';});
+ },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else setStatus('Sync paused \u2014 reload the page to reconnect');});
 }
 
 // ---------- boot ----------

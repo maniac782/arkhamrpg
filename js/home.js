@@ -112,7 +112,7 @@ function inviteCard(i){
   '<span class="invby">'+acctIcon(by.username,u||{})+'<span><b>'+esc(by.username||'Someone')+'</b> invited you to join</span></span>'+
   '<div class="row invbtns"><button class="btn pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join campaign</button><button class="btn" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div></div>';
 }
-function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
+function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+(sessionShown(c.nextSession)?'<span class="cdbadge" title="'+esc(sessionWhen(c.nextSession))+'">Next session <b data-cd="'+c.nextSession+'">'+esc(sessionRel(c.nextSession))+'</b></span>':'')+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
@@ -150,6 +150,20 @@ function inviteView(){
   '<p class="note" style="margin:0">Invites by email, the GM and house rules are in the campaign\u2019s Settings.</p>'+
   '<div class="row"><a class="btn pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a><button class="btn" data-a="open" data-id="'+esc(c.id)+'">Settings</button><button class="btn" data-a="home">My campaigns</button></div></section>';
 }
+// Next session: the owner or GM sets a date, time and place; everyone sees it with a countdown and can add it to their calendar.
+function pad2(n){return String(n).padStart(2,'0');}
+function localInput(t){const d=new Date(t);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'T'+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function nextSessionHtml(c,can){
+ const t=c.nextSession,on=sessionShown(t);
+ let h='<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'')+'</div>';
+ if(on)h+='<p style="margin:0"><b>'+esc(sessionWhen(t))+'</b>'+(c.nextWhere?' \u00b7 '+esc(c.nextWhere):'')+'</p><div class="row"><a class="btn sm" href="'+sessionIcs(c.name,t,c.nextWhere)+'" download="'+esc((c.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a></div>';
+ else if(!can)h+='<p class="note" style="margin:0">Nothing scheduled yet. The owner or GM can set it.</p>';
+ if(can)h+='<form id="nsform" class="row" style="align-items:flex-end" novalidate><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="nsdate" value="'+(on?localInput(t):'')+'"></label>'+
+  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+
+  '<button class="btn pri" type="submit">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" type="button" data-a="nsclear">Clear</button>':'')+'</form>'+
+  '<p class="note" style="margin:0">Shows a countdown on the campaign\u2019s card and in the ledger for everyone. Times are in each person\u2019s own time zone.</p>';
+ return h+'</section>';
+}
 function campView(){
  const c=camps.find(x=>x.id===ui.cid);if(!c){if(ui.waitCid===ui.cid)return '<p class="note" style="padding:24px 0">Opening the campaign\u2026</p>';ui.view='home';return homeView();}
  if(ui.waitCid===c.id)ui.waitCid=null;
@@ -160,6 +174,7 @@ function campView(){
   '<div class="field"><span class="lbl">Campaign picture</span><div class="row" style="align-items:center;gap:12px">'+(photoOk(c.photo)?'<img class="setimg" src="'+c.photo+'" alt="Campaign picture">':'<span class="setimg empty" aria-hidden="true"></span>')+'<label class="btn sm" for="cphoto" style="cursor:pointer">'+(photoOk(c.photo)?'Change picture':'Add a picture')+'</label><input type="file" id="cphoto" accept="image/*" hidden>'+(photoOk(c.photo)?'<button class="btn sm" data-a="cphotodel">Remove</button>':'')+'</div><span class="note">Shows on the campaign\u2019s card and next to its name in the ledger.</span></div>';
  else if(photoOk(c.photo))h+='<img class="setimg wide" src="'+c.photo+'" alt="">';
  h+='</section>';
+ h+=nextSessionHtml(c,own||c.gmUid===user.uid);
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
   const nm=names[u]||'Unknown';let act='';
@@ -353,6 +368,9 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
  if(id==='authform')busy(emailSubmit);
  else if(id==='unform')busy(saveUsername);
  else if(id==='newform')busy(createCampaign);
+ else if(id==='nsform')busy(async()=>{const v=(document.getElementById('nsdate')||{}).value,w=((document.getElementById('nswhere')||{}).value||'').trim().slice(0,80);const t=v?new Date(v).getTime():NaN;
+  if(!Number.isFinite(t))throw {msg:'Pick a date and time.'};if(t<Date.now()-3600000)throw {msg:'That time has already passed.'};
+  await db.doc('campaigns/'+ui.cid).update({nextSession:t,nextWhere:w});toast('Next session set for '+sessionWhen(t)+'.');});
  else if(id==='invform')busy(sendInvite);
  else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});const c0=camps.find(x=>x.id===ui.cid);if(c0)c0.name=n.slice(0,60);toast('Renamed.');});
 });
@@ -379,6 +397,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
+  case 'nsclear':db.doc('campaigns/'+ui.cid).update({nextSession:FV().delete(),nextWhere:FV().delete()}).then(()=>toast('Next session cleared.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t clear it. Try again.');});break;
   case 'avphotodel':profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'avc':{const k='color',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;

@@ -219,3 +219,8 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .fbkinds{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
 .fbkinds label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
 .fbform .err{color:var(--danger);font-size:13px;margin:0}
+.nextsess{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.nextsess .grow{display:flex;flex-direction:column;gap:2px;min-width:180px}
+.nextsess .grow .lbl{margin:0}
+a.btn{text-decoration:none;color:inherit}
+.cdchip{text-transform:none;letter-spacing:0;font-size:13px}

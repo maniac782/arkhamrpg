@@ -22,8 +22,16 @@ function renderTabs(){
  const t=document.getElementById('tabs');
  t.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
 }
+// The next meetup, set by the owner or GM in the campaign's Settings.
+function nextSessionBar(){
+ if(!CAMP||!camp||!window.sessionShown)return '';
+ const t=camp.nextSession,can=camp.ownerUid===authUid||camp.gmUid===authUid,set='./?settings='+encodeURIComponent(CAMP);
+ if(!sessionShown(t))return can?'<p class="note" style="margin:0"><a href="'+set+'">Set the next session</a> so everyone gets a countdown.</p>':'';
+ return '<div class="nextsess"><div class="grow"><span class="lbl">Next session</span><span><b>'+esc(sessionWhen(t))+'</b>'+(camp.nextWhere?'<span class="note"> \u00b7 '+esc(camp.nextWhere)+'</span>':'')+'</span></div>'+
+  '<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span><a class="btn sm" href="'+sessionIcs(camp.name,t,camp.nextWhere)+'" download="'+esc((camp.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(can?'<a class="btn sm" href="'+set+'">Change</a>':'')+'</div>';
+}
 function renderParty(){
- let h=turnBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
+ let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">You have your investigator. Only the campaign owner can add more.</p>':'')+
   (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?'+ Create my investigator':'+ Add an investigator')+'</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
   '<div class="party">';

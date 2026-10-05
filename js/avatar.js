@@ -59,3 +59,28 @@ window.acctIcon=function(name,prof){
     });
   };
 })();
+
+/* Next session: countdown text, a live-updating label, and an "Add to calendar" (.ics) link. */
+(function(){
+  var HOUR=3600000,DAY=24*HOUR,LIVE=5*HOUR;
+  // Is the session still worth showing? (upcoming, or started less than 5 hours ago)
+  window.sessionShown=function(t){return typeof t==='number'&&t+LIVE>Date.now();};
+  window.sessionRel=function(t){
+    var d=t-Date.now();
+    if(d<=0)return 'Happening now';
+    var days=Math.floor(d/DAY),hrs=Math.floor((d%DAY)/HOUR),mins=Math.max(1,Math.ceil((d%HOUR)/60000));
+    if(days>=2)return 'in '+days+' days';
+    if(days===1)return 'in 1 day'+(hrs?' '+hrs+' hr':'');
+    if(hrs)return 'in '+hrs+' hr '+(mins===60?0:mins)+' min';
+    return 'in '+mins+' min';
+  };
+  window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
+  window.sessionIcs=function(name,t,where){
+    var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};
+    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+4*HOUR),
+      'SUMMARY:'+e(name+' — Arkham Horror'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+    return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
+  };
+  // Keep every countdown on the page current without redrawing anything else.
+  setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t))el.textContent=window.sessionRel(t);else el.remove();});},30000);
+})();

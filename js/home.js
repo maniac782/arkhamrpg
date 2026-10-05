@@ -174,7 +174,7 @@ function campView(){
   '<div class="field"><span class="lbl">Campaign picture</span><div class="row" style="align-items:center;gap:12px">'+(photoOk(c.photo)?'<img class="setimg" src="'+c.photo+'" alt="Campaign picture">':'<span class="setimg empty" aria-hidden="true"></span>')+'<label class="btn sm" for="cphoto" style="cursor:pointer">'+(photoOk(c.photo)?'Change picture':'Add a picture')+'</label><input type="file" id="cphoto" accept="image/*" hidden>'+(photoOk(c.photo)?'<button class="btn sm" data-a="cphotodel">Remove</button>':'')+'</div><span class="note">Shows on the campaign\u2019s card and next to its name in the ledger.</span></div>';
  else if(photoOk(c.photo))h+='<img class="setimg wide" src="'+c.photo+'" alt="">';
  h+='</section>';
- h+=nextSessionHtml(c,own||c.gmUid===user.uid);
+ if(own)h+=nextSessionHtml(c,true);
  // members
  h+='<section class="sec"><div class="sec-head"><h2>Members</h2><span class="note">'+(c.memberIds||[]).length+' of '+MAX_MEMBERS+'</span></div><div class="list">'+(c.memberIds||[]).map(u=>{
   const nm=names[u]||'Unknown';let act='';

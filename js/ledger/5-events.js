@@ -42,6 +42,7 @@ app.addEventListener('click',e=>{
   case 'traitcancel':edit.trait=null;render();break;
   case 'picdel':save(s,{portrait:''},'Removed portrait');break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the '+(CAMP?'campaign owner':'master key')+' can change house rules.'));break;}
+  case 'gotogm':e.preventDefault();go('gm');break;
   case 'dellog':if(!keys.master||!ownerEditsOn())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!keys.master||!ownerEditsOn())return;save(s,{log:[]});toast('Recent history cleared.');break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;

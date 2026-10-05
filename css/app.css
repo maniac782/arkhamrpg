@@ -183,3 +183,4 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .brand .meta{position:absolute;top:12px;right:16px;display:flex;align-items:center;gap:10px;font-size:12px}
 .brand .meta .live{margin:0;font-size:12px}
 .brand .meta #ver{position:static}
+@media (max-width:600px){#sync .acct{margin-left:6px}#sync .nav{justify-content:flex-end}}

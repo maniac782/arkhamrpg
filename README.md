@@ -11,6 +11,7 @@ Live character sheets for our Arkham Horror RPG group, plus a character creator 
 ### Where the code lives
 - `css/app.css`: styles shared by every page. `css/home.css`: extras for the home and Settings pages.
 - `js/config.js`: the Firebase settings (`window.FIREBASE_CONFIG`).
+- `js/avatar.js`: the round account icon (photo, or colour plus letter/symbol). `js/scene.js`: the drawn night scene shown for campaigns without a picture. `js/admin.js` and `css/admin.css`: the admin page.
 - `js/home.js`: the home page: sign-in, usernames, My campaigns, invites and campaign Settings (including house rules).
 - `js/ledger/`: the ledger behind `play.html`, loaded in order:
   1. `1-state.js`: campaign, roles, saving and the local cache

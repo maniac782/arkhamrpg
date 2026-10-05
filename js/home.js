@@ -103,10 +103,9 @@ function squarePhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f
   cv.getContext('2d').drawImage(img,(W-s)/2,(Hh-s)/2,s,s,0,0,160,160);let q=0.85,d=cv.toDataURL('image/jpeg',q);while(d.length>18000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
 function campPhoto(f){shrinkPhoto(f).then(d=>db.doc('campaigns/'+ui.cid).update({photo:d})).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg?er.msg:'Couldn\u2019t save the picture. Try again.');});}
-// A campaign with no picture gets a tinted banner with its first letter, so every card lines up.
+// A campaign with no picture gets its own drawn night scene (js/scene.js), so every card lines up.
 function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
- let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
- return '<div class="campimg ph" style="--h:'+h+'" aria-hidden="true"><span>'+esc(String(c.name||'?').trim().charAt(0).toUpperCase()||'?')+'</span></div>';}
+ return '<div class="campimg ph" aria-hidden="true">'+(window.campaignScene?campaignScene(c.id||c.name):'')+'</div>';}
 function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
@@ -132,7 +131,7 @@ function newView(){
    '<label class="optrow"><input type="radio" name="ngm" value="me"'+(gm==='me'?' checked':'')+'><span><b>I\u2019ll be the GM</b><br><span class="note">You get the GM tab: scenes, enemies, clues and XP.</span></span></label>'+
    '<label class="optrow"><input type="radio" name="ngm" value="later"'+(gm==='later'?' checked':'')+'><span><b>Someone else</b><br><span class="note">Pick them in Settings once they\u2019ve joined.</span></span></label></fieldset>'+
   '<div class="field"><span class="lbl">Picture (optional)</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="nphoto" style="cursor:pointer">'+(ui.newPhoto?'Change picture':'Add a picture')+'</label><input type="file" id="nphoto" accept="image/*" hidden>'+(ui.newPhoto?'<button class="btn sm" type="button" data-a="nphotodel">Remove</button>':'')+'</div></div>'+
-  '</div><div class="newprev"><span class="lbl">Preview</span><div class="camp hasimg" aria-hidden="true">'+bannerHtml({id:'new',name:nm||'Your campaign'},ui.newPhoto)+'<h3 id="nprevname">'+esc(nm||'Your campaign')+'</h3><span class="row" style="gap:6px"><span class="chip ok">Owner</span><span class="note">1 member</span></span></div></div></div>'+
+  '</div><div class="newprev"><span class="lbl">Preview</span><div class="camp hasimg" aria-hidden="true">'+bannerHtml({id:ui.newId||'new',name:nm||'Your campaign'},ui.newPhoto)+'<h3 id="nprevname">'+esc(nm||'Your campaign')+'</h3><span class="row" style="gap:6px"><span class="chip ok">Owner</span><span class="note">1 member</span></span></div></div></div>'+
   errHtml()+'<div class="row"><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create campaign</button><button class="btn" type="button" data-a="home">Cancel</button></div></form>';
  return h;
 }
@@ -216,13 +215,13 @@ async function createCampaign(){
  const name=((document.getElementById('cname')||{}).value||'').trim();
  if(!name)throw {msg:'Give the campaign a name.'};
  if(camps.filter(c=>c.ownerUid===user.uid).length>=MAX_OWNED)throw {msg:'You can own up to '+MAX_OWNED+' campaigns.'};
- const ref=db.collection('campaigns').doc();
+ const ref=ui.newId?db.collection('campaigns').doc(ui.newId):db.collection('campaigns').doc();
  await ref.set({name:name.slice(0,60),ownerUid:user.uid,memberIds:[user.uid],roles:{[user.uid]:'owner'},names:{[user.uid]:profile.username},created:firebase.firestore.FieldValue.serverTimestamp()});
  // the rules take these one at a time after the campaign exists
  await ref.update({joinCode:newCode()}).catch(()=>{});
  if((ui.newGM||'me')==='me')await ref.update({gmUid:user.uid}).catch(()=>{});
  if(ui.newPhoto)await ref.update({photo:ui.newPhoto}).catch(()=>toast('The picture didn\u2019t save; add it again in Settings.'));
- ui.newPhoto=null;ui.newGM=null;ui.view='invite';ui.cid=ref.id;ui.waitCid=ref.id;window.scrollTo(0,0);
+ ui.newPhoto=null;ui.newGM=null;ui.newId=null;ui.view='invite';ui.cid=ref.id;ui.waitCid=ref.id;window.scrollTo(0,0);
 }
 
 // ---------- invites & members ----------
@@ -360,7 +359,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'google':busy(google);break;
   case 'mode':ui.mode=b.dataset.m;ui.err='';render();break;
   case 'signout':auth.signOut();break;
-  case 'newopen':ui.view='new';ui.err='';ui.newPhoto=null;ui.newGM=null;ui.clear.add('cname');render();window.scrollTo(0,0);{const i=document.getElementById('cname');if(i)i.focus();}break;
+  case 'newopen':ui.view='new';ui.newId=db.collection('campaigns').doc().id;ui.err='';ui.newPhoto=null;ui.newGM=null;ui.clear.add('cname');render();window.scrollTo(0,0);{const i=document.getElementById('cname');if(i)i.focus();}break;
   case 'nphotodel':ui.newPhoto=null;render();break;
   case 'newclose':ui.newOpen=false;ui.err='';render();break;
   case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;

@@ -1,28 +1,28 @@
-/* Arkham Ledger — public-domain paintings and engravings used as campaign banners when a campaign has no picture
+/* Arkham Ledger — public-domain weird and cosmic-horror art (sea monsters, Doré, Harry Clarke's Poe, 1928 Weird Tales covers, Böcklin, Redon, Goya, Fuseli) used as campaign banners when a campaign has no picture
    of its own. They're shown straight from Wikimedia Commons (no copies stored here). Every one is out of copyright:
    the artists died long ago and the works were published before 1929. */
 window.CAMPAIGN_ART=[
- {f:'Atkinson Grimshaw - A Moonlit Evening (1880).jpg',t:'A Moonlit Evening',a:'John Atkinson Grimshaw, 1880'},
- {f:'John Atkinson Grimshaw - Old English House by Moonlight - 2013.907 - Museum of Fine Arts.jpg',t:'Old English House by Moonlight',a:'John Atkinson Grimshaw'},
- {f:'Silver Moonlight by John Atkinson Grimshaw.jpg',t:'Silver Moonlight',a:'John Atkinson Grimshaw'},
- {f:'John Atkinson Grimshaw - A moonlit lane.jpg',t:'A Moonlit Lane',a:'John Atkinson Grimshaw'},
- {f:'John Atkinson Grimshaw - Liverpool Quay by Moonlight (1887).jpg',t:'Liverpool Quay by Moonlight',a:'John Atkinson Grimshaw, 1887'},
- {f:'John Atkinson Grimshaw (1836-1893) - The Thames by Moonlight with Southwark Bridge, London - 1781 - Guildhall Art Gallery.jpg',t:'The Thames by Moonlight',a:'John Atkinson Grimshaw'},
- {f:'John Atkinson Grimshaw - Whitby - B2012.28 - Yale Center for British Art.jpg',t:'Whitby',a:'John Atkinson Grimshaw'},
- {f:'Caspar David Friedrich - The Abbey in the Oakwood - WGA08240.jpg',t:'The Abbey in the Oakwood',a:'Caspar David Friedrich, 1810'},
- {f:'Friedrich - Two Men Contemplating the Moon.jpg',t:'Two Men Contemplating the Moon',a:'Caspar David Friedrich'},
- {f:'Caspar David Friedrich - Mondaufgang über dem Meer.jpg',t:'Moonrise over the Sea',a:'Caspar David Friedrich, 1822'},
- {f:'Caspar David Friedrich - Monk by the Sea.jpg',t:'The Monk by the Sea',a:'Caspar David Friedrich, 1810'},
- {f:'Arnold Böcklin - Die Toteninsel III (Alte Nationalgalerie, Berlin).jpg',t:'Isle of the Dead',a:'Arnold Böcklin, 1883'},
- {f:'Arnold Böcklin - Die Toteninsel I (Basel, Kunstmuseum).jpg',t:'Isle of the Dead (first version)',a:'Arnold Böcklin, 1880'},
- {f:'Albert Pinkham Ryder - Moonlit Cove - Google Art Project.jpg',t:'Moonlit Cove',a:'Albert Pinkham Ryder'},
- {f:'James Abbott McNeill Whistler - Nocturne- Blue and Silver - Chelsea - Google Art Project.jpg',t:'Nocturne: Blue and Silver, Chelsea',a:'James McNeill Whistler, 1871'},
- {f:'Whistler Nocturne Blue and Gold - Southampton Water 1872.jpg',t:'Nocturne: Blue and Gold, Southampton Water',a:'James McNeill Whistler, 1872'},
- {f:'Childe Hassam - Gloucester Harbour (c. 1899).jpg',t:'Gloucester Harbor',a:'Childe Hassam, c. 1899'},
- {f:'Stage Fort across Gloucester Harbor MET DT5586.jpg',t:'Stage Fort across Gloucester Harbor',a:'Fitz Henry Lane, 1862'},
- {f:'Paul Gustave Dore Raven1.jpg',t:'The Raven',a:'Gustave Doré, 1884'},
- {f:'Paul Gustave Dore Raven14.jpg',t:'The Raven',a:'Gustave Doré, 1884'},
- {f:'Paul Gustave Dore Raven24.jpg',t:'The Raven',a:'Gustave Doré, 1884'}
+ {f:'Denys de Montfort Poulpe Colossal.jpg',t:'The Colossal Octopus',a:'Pierre Denys de Montfort, 1801'},
+ {f:'Naturalistslibra25-p326a-kraken.jpg',t:'The Kraken',a:'The Naturalist\u2019s Library, 19th century'},
+ {f:'Destruction of Leviathan.png',t:'The Destruction of Leviathan',a:'Gustave Dor\u00e9, 1865'},
+ {f:'Dore-I Watched the Water-Snakes.jpg',t:'I Watched the Water-Snakes',a:'Gustave Dor\u00e9, The Rime of the Ancient Mariner, 1876'},
+ {f:'Rime of the Ancient Mariner-Albatross-Dore.jpg',t:'The Ice Was All Around',a:'Gustave Dor\u00e9, The Rime of the Ancient Mariner, 1876'},
+ {f:'Harry Clarke The Fall of the House of Usher.jpg',t:'The Fall of the House of Usher',a:'Harry Clarke, 1919'},
+ {f:'PrematureBurial-Clarke.jpg',t:'The Premature Burial',a:'Harry Clarke, 1919'},
+ {f:'Valdemar-Clarke.jpg',t:'The Facts in the Case of M. Valdemar',a:'Harry Clarke, 1919'},
+ {f:'Ligeia-Clarke.jpg',t:'Ligeia',a:'Harry Clarke, 1919'},
+ {f:'Weird Tales February 1928.jpg',t:'Weird Tales, February 1928',a:'Weird Tales magazine'},
+ {f:'Weird Tales July 1928.jpg',t:'Weird Tales, July 1928',a:'Weird Tales magazine'},
+ {f:'Weird Tales August 1928.jpg',t:'Weird Tales, August 1928',a:'Weird Tales magazine'},
+ {f:'Arnold Böcklin - Die Pest.jpg',t:'The Plague',a:'Arnold B\u00f6cklin, 1898'},
+ {f:'Arnold Böcklin - Die Toteninsel III (Alte Nationalgalerie, Berlin).jpg',t:'Isle of the Dead',a:'Arnold B\u00f6cklin, 1883'},
+ {f:'Odilon Redon - The Cyclops, c. 1914.jpg',t:'The Cyclops',a:'Odilon Redon, c. 1914'},
+ {f:'Redon.eye-balloon.jpg',t:'The Eye, Like a Strange Balloon',a:'Odilon Redon, 1878'},
+ {f:'Redon smiling-spider.jpg',t:'The Smiling Spider',a:'Odilon Redon, 1881'},
+ {f:'John Martin - Pandemonium - WGA14149.jpg',t:'Pandemonium',a:'John Martin, 1841'},
+ {f:'Francisco de Goya- The Sleep of Reason Produces Monsters.JPG',t:'The Sleep of Reason Produces Monsters',a:'Francisco de Goya, 1799'},
+ {f:'Henry Fuseli (1741–1825), The Nightmare, 1781.jpg',t:'The Nightmare',a:'Henry Fuseli, 1781'},
+ {f:'Haeckel Discomedusae 8.jpg',t:'Discomedusae',a:'Ernst Haeckel, Art Forms in Nature, 1904'}
 ];
 // Wikimedia serves a resized copy of any Commons file at this address.
 window.artUrl=function(i,w){var x=window.CAMPAIGN_ART[i];return x?'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(x.f.replace(/ /g,'_'))+'?width='+(w||500):'';};

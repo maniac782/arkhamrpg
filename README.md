@@ -58,7 +58,7 @@ The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`
 
 ### Limits to keep an eye on
 - The free plan allows about **50,000 database reads a day**. A busy game session with five people uses a few thousand, so it's roughly ten sessions on the same day. If the limit is hit, every page shows a banner saying saving and syncing pause until midnight Pacific; nothing is lost. Watch **Firestore → Usage**; if it gets close regularly, switching to pay-as-you-go costs pennies.
-- reCAPTCHA Enterprise is free for 10,000 checks a month (about one per device per week). The App Check token lifetime is set to 7 days, so each device uses about one check a week.
+- reCAPTCHA Enterprise is free for 10,000 checks a month. The App Check token lifetime is set to 7 days, so each device uses about one check a week.
 
 ### Privacy
 `privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. Things it currently covers: account and username, profile photo or colour, campaign data and pictures, invites by email, roughly when people last visited, Firebase/Google as the host, and reCAPTCHA.

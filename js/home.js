@@ -156,7 +156,7 @@ function localInput(t){const d=new Date(t);return d.getFullYear()+'-'+pad2(d.get
 function nextSessionHtml(c,can){
  const t=c.nextSession,on=sessionShown(t);
  let h='<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'')+'</div>';
- if(on)h+='<p style="margin:0"><b>'+esc(sessionWhen(t))+'</b>'+(c.nextWhere?' \u00b7 '+esc(c.nextWhere):'')+'</p><div class="row"><a class="btn sm" href="'+sessionIcs(c.name,t,c.nextWhere)+'" download="'+esc((c.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a></div>';
+ if(on)h+='<p style="margin:0"><b>'+esc(sessionWhen(t))+'</b>'+(c.nextWhere?' \u00b7 '+esc(c.nextWhere):'')+'</p><div class="row"><a class="btn sm" href="'+sessionIcs(c.name,t,c.nextWhere)+'" download="'+esc((c.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(mapsHref(c.nextWhere)?'<a class="btn sm" href="'+esc(mapsHref(c.nextWhere))+'" target="_blank" rel="noopener">Directions</a>':'')+'</div>';
  else if(!can)h+='<p class="note" style="margin:0">Nothing scheduled yet. The owner or GM can set it.</p>';
  if(can)h+='<form id="nsform" class="row" style="align-items:flex-end" novalidate><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="nsdate" value="'+(on?localInput(t):'')+'"></label>'+
   '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+

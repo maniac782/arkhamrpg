@@ -69,11 +69,13 @@ window.acctIcon=function(name,prof){
     var d=t-Date.now();
     if(d<=0)return 'Happening now';
     var days=Math.floor(d/DAY),hrs=Math.floor((d%DAY)/HOUR),mins=Math.max(1,Math.ceil((d%HOUR)/60000));
-    if(days>=2)return 'in '+days+' days';
+    if(d>=2*DAY-HOUR)return 'in '+Math.round(d/DAY)+' days';
     if(days===1)return 'in 1 day'+(hrs?' '+hrs+' hr':'');
     if(hrs)return 'in '+hrs+' hr '+(mins===60?0:mins)+' min';
     return 'in '+mins+' min';
   };
+  // Directions for a place that looks like an address (has a number or a comma), e.g. not "Discord".
+  window.mapsHref=function(where){where=String(where||'').trim();if(!where||!/[0-9,]/.test(where)||/^https?:/i.test(where))return '';return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(where);};
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
   window.sessionIcs=function(name,t,where){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};

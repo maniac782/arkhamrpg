@@ -35,3 +35,9 @@ a{color:var(--brass)}
 .newfields .optrow{margin-top:8px}
 .newprev{display:flex;flex-direction:column;gap:6px}
 @media (max-width:700px){.newgrid{grid-template-columns:1fr}}
+
+/* account icon picker */
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;color:#fff;font-weight:700;font-size:15px;display:inline-grid;place-items:center;padding:0;box-shadow:0 0 0 1px var(--line)}
+.swatch.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink)}
+.avbig .av{width:34px;height:34px;font-size:16px}

@@ -20,7 +20,7 @@ function render(){
  if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+(isAdm?'<a class="nav-l" href="admin.html">Admin</a>':'')+'<span class="acct"><button class="acct-me" data-a="account" title="Your account"><span class="av" aria-hidden="true">'+esc((profile.username||'?').charAt(0).toUpperCase())+'</span><b>'+esc(profile.username)+'</b></button>'+signOutHtml()+'</span></span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+(isAdm?'<a class="nav-l" href="admin.html">Admin</a>':'')+'<span class="acct"><button class="acct-me" data-a="account" title="Your account">'+acctIcon(profile.username,profile)+'<b>'+esc(profile.username)+'</b></button>'+signOutHtml()+'</span></span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  syncRename();
  // Keep the address in step with the page, so reloading a campaign's Settings stays there.
@@ -35,6 +35,10 @@ function accountView(){
  let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button></div>';
  h+='<section class="sec"><h2>Your account</h2><div class="list">'+
   [['Username',profile.username],['Email',(auth.currentUser&&auth.currentUser.email)||user.email||'—'],['Signed in with',provName()]].map(([k,v])=>'<div class="item"><div class="grow"><span class="lbl">'+k+'</span><b>'+esc(v)+'</b></div></div>').join('')+'</div></section>';
+ const curC=AVATAR_COLORS[profile.color]?profile.color:'slate',curI=AVATAR_ICONS.includes(profile.icon)?profile.icon:'';
+ h+='<section class="sec"><div class="sec-head"><h2>Your icon</h2><span class="row" style="gap:8px;align-items:center"><span class="avbig">'+acctIcon(profile.username,profile)+'</span><b>'+esc(profile.username)+'</b></span></div>'+
+  '<div class="field"><span class="lbl">Colour</span><div class="swatches">'+Object.keys(AVATAR_COLORS).map(k=>'<button class="swatch'+(k===curC?' on':'')+'" data-a="avc" data-v="'+k+'" style="background:'+AVATAR_COLORS[k]+'" aria-label="'+k+'" aria-pressed="'+(k===curC)+'"></button>').join('')+'</div></div>'+
+  '<div class="field"><span class="lbl">Show</span><div class="swatches">'+['',...AVATAR_ICONS].map(i=>'<button class="swatch sym'+(i===curI?' on':'')+'" data-a="avi" data-v="'+esc(i)+'" style="background:'+AVATAR_COLORS[curC]+'" aria-pressed="'+(i===curI)+'" aria-label="'+(i?'Symbol '+esc(i):'First letter')+'">'+esc(i||String(profile.username||'?').charAt(0).toUpperCase())+'</button>').join('')+'</div></div></section>';
  h+='<section class="sec"><h2>Delete my account</h2>';
  if(ui.delBusy)return h+'<p class="note" style="margin:0">Deleting your account\u2026 keep this page open.</p></section>';
  h+='<p class="note" style="margin:0">This removes your username and sign-in for good.'+(own.length?' Campaigns you own are deleted for everyone: <b>'+own.map(c=>esc(c.name)).join(', ')+'</b>.':'')+(inn.length?' You\u2019ll leave '+inn.map(c=>'<b>'+esc(c.name)+'</b>').join(', ')+'; investigators you played there stay with those campaigns.':'')+' This can\u2019t be undone.</p>';
@@ -359,6 +363,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
+  case 'avc':case 'avi':{const k=a==='avc'?'color':'icon',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;
   case 'acctdelask':ui.delAsk=true;render();break;
   case 'acctdelno':ui.delAsk=false;render();break;

@@ -121,8 +121,10 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if realUser();
       allow create, update: if realUser() && (request.auth.uid == uid || isAdmin())
-        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'created', 'lastSeen'])
+        && request.resource.data.keys().hasOnly(['username', 'usernameLower', 'created', 'lastSeen', 'color', 'icon'])
         && request.resource.data.get('lastSeen', 0) is int
+        && request.resource.data.get('color', '') is string && request.resource.data.get('color', '').size() <= 12
+        && request.resource.data.get('icon', '') is string && request.resource.data.get('icon', '').size() <= 4
         && request.resource.data.username is string
         && request.resource.data.username.matches('[A-Za-z0-9_]{3,20}')
         && request.resource.data.usernameLower == request.resource.data.username.lower()

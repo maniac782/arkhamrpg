@@ -1,13 +1,15 @@
 /* Arkham Ledger — Starting up: connect to Firebase (campaign mode or the original single-party mode) and start listening for changes.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- campaign boot (beta) ----------
+// The account icon (colour/symbol) as the home page last saw it on this device.
+function myProf(){try{const b=JSON.parse(localStorage.getItem('apl-beta-cache')||'null');return b&&b.uid===authUid&&b.profile||{};}catch(e){return {};}}
 async function bootCampaign(syncEl){
  const cfg0=window.FIREBASE_CONFIG;
  if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();syncEl.textContent='Not connected';return;}
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
  const fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
  const brand=document.querySelector('.brand h1');
- const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./">\u2039 <span class="wide-only">My campaigns</span><span class="narrow-only">Campaigns</span></a><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a><span class="acct">'+(me?'<span class="av" aria-hidden="true">'+esc(me.charAt(0).toUpperCase())+'</span><b>'+esc(me)+'</b>':'')+'<button class="nav-l" id="signout" type="button">Sign out</button></span><span class="live" title="Changes sync live"><i></i><span class="wide-only">Live</span></span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');};};syncLine();window.__syncLine=syncLine;
+ const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./">\u2039 <span class="wide-only">My campaigns</span><span class="narrow-only">Campaigns</span></a><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a><span class="acct">'+(me?acctIcon(me,myProf())+'<b>'+esc(me)+'</b>':'')+'<button class="nav-l" id="signout" type="button">Sign out</button></span><span class="live" title="Changes sync live"><i></i><span class="wide-only">Live</span></span></span>';const so=document.getElementById('signout');if(so)so.onclick=()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');};};syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
  if(camp){if(brand)brand.innerHTML=(camp.photo&&/^data:image\/jpeg;base64,/.test(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});

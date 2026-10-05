@@ -28,7 +28,7 @@ window.quotaHit = function(e){
     at=new Date(Date.now()+left).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
   }catch(_){}
   var d=document.createElement('div');d.id='quota';d.className='quota';d.setAttribute('role','alert');
-  d.innerHTML='<b>The ledger has hit its free daily limit.</b> Changes won’t save or sync until it resets'+(at?' at about '+at:' at midnight Pacific time')+'. What you see now may be out of date, so keep track on paper until then. Nothing already saved is lost.';
+  d.innerHTML='<b>The ledger has hit its daily limit.</b> Changes won’t save or sync until it resets'+(at?' at about '+at:' at midnight Pacific time')+'. What you see now may be out of date, so keep track on paper until then. Nothing already saved is lost.';
   var top=document.querySelector('.top');if(top)top.insertBefore(d,top.firstChild);else document.body.insertBefore(d,document.body.firstChild);
   return true;
 };

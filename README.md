@@ -38,7 +38,7 @@ Knack names and tiers follow each archetype's table in the corebook. Each knack'
 ## For the site owner
 
 ### How it's hosted
-- **Firebase Hosting** serves the site at arkhamrpg.web.app. **Firestore** holds the data, **Firebase Authentication** handles sign-in (Google and email/password), and **App Check** with reCAPTCHA Enterprise blocks bots. Everything runs on Firebase's free plan; there's no server code.
+- **Firebase Hosting** serves the site at arkhamrpg.web.app. **Firestore** holds the data, **Firebase Authentication** handles sign-in (Google and email/password), and **App Check** with reCAPTCHA Enterprise blocks bots. The project is on Firebase's Blaze (pay-as-you-go) plan, which keeps the free allowances below and charges only for use above them; there's no server code.
 - **Every push to `main` deploys automatically** through `.github/workflows/deploy-firebase.yml`: the site goes to Firebase Hosting and `firestore.rules` is published. The GitHub secret `FIREBASE_SERVICE_ACCOUNT` holds a service account with the roles **Firebase Hosting Admin**, **API Keys Viewer**, **Firebase Rules Admin**, **Service Usage Consumer** and **Cloud Datastore Viewer**. If the rules job fails, the old rules stay in place.
 - Pages and scripts are served with `Cache-Control: no-cache` (see `firebase.json`), so players get changes on their next reload.
 - The version number (bumped with every change) is in each page's footer and at the bottom of the account menu.
@@ -56,8 +56,10 @@ Admins are accounts with a document in the `admins` collection in Firestore whos
 ### Bot protection (App Check)
 The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`, and the web app is registered with it in Firebase → **Security → App Check**. Once **App Check → APIs** shows nearly all requests as verified, **Enforce** it for Cloud Firestore and Authentication. If pages stop loading data after enforcing, turn enforcement off there again. The key's allowed domains (Google Cloud → reCAPTCHA) must include every address the site is served from.
 
-### Limits to keep an eye on
-- The free plan allows about **50,000 database reads a day**. A busy game session with five people uses a few thousand, so it's roughly ten sessions on the same day. If the limit is hit, every page shows a banner saying saving and syncing pause until midnight Pacific; nothing is lost. Watch **Firestore → Usage**; if it gets close regularly, switching to pay-as-you-go costs pennies.
+### Costs and limits
+- The free allowance is about **50,000 database reads a day**. A busy game session with five people uses a few thousand. Above that, Blaze charges a few cents per 100,000 reads instead of pausing the site.
+- Spending and the budget alert are under Firebase → **Usage and billing → Account & budgets**. Budget alerts only email; they don't stop charges.
+- If billing ever lapses (for example when the free-trial credit ends without confirming a paid account), the free limits apply again and every page shows a banner when the daily limit is hit; nothing is lost.
 - reCAPTCHA Enterprise is free for 10,000 checks a month. The App Check token lifetime is set to 7 days, so each device uses about one check a week.
 
 ### Privacy

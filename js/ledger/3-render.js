@@ -26,7 +26,7 @@ function renderTabs(){
 function nextSessionBar(){
  if(!CAMP||!camp||!window.sessionShown)return '';
  const t=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
- if(!sessionShown(t))return can?'<p class="note" style="margin:0"><a href="'+set+'"'+go+'>Set the next session</a> so everyone gets a countdown.</p>':'';
+ if(!sessionShown(t))return '';
  return '<div class="nextsess"><div class="grow"><span class="lbl">Next session</span><span><b>'+esc(sessionWhen(t))+'</b>'+(camp.nextWhere?'<span class="note"> \u00b7 '+esc(camp.nextWhere)+'</span>':'')+'</span></div>'+
   '<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span><a class="btn sm" href="'+sessionIcs(camp.name,t,camp.nextWhere)+'" download="'+esc((camp.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
 }

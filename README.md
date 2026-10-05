@@ -24,7 +24,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 - **Party:** everyone's investigators at a glance. Tap one to open their sheet.
 - **Investigator sheets:** dice pool, horror, injuries and traumas, insight, skills, knacks, weapons and gear, money, XP, and a **Recent** list of what changed. **Open printable sheet** gives a print-ready copy (Letter paper, background graphics on).
 - **New investigator:** builds a character step by step following the corebook's creation rules. An unfinished character is kept on your device for that campaign for two weeks; **Start over** clears it.
-- **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date, time and place, with address suggestions as they type. Everyone sees a countdown on the campaign card and the Party tab, with **Add to calendar** and **Directions**.
+- **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date, time and place. Everyone sees a countdown on the campaign card and the Party tab, with **Add to calendar** and **Directions**.
 - **Journal:** clues and handouts the GM has revealed, enemies the GM is showing, the campaign tracker (date, threads, people, places) and **Past sessions**: a recap of each finished session, with the GM's optional summary on top.
 - **GM tab (GM only):** scene and turn tracker with surprise rounds, encounter builder from the corebook's enemy profiles, clues and handouts (to everyone or one player), campaign tracker, end-of-session XP and momentous sessions, session recaps, GM notes and a hidden dice roller.
 
@@ -59,7 +59,6 @@ The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`
 ### Limits to keep an eye on
 - The free plan allows about **50,000 database reads a day**. A busy game session with five people uses a few thousand, so it's roughly ten sessions on the same day. If the limit is hit, every page shows a banner saying saving and syncing pause until midnight Pacific; nothing is lost. Watch **Firestore → Usage**; if it gets close regularly, switching to pay-as-you-go costs pennies.
 - reCAPTCHA Enterprise is free for 10,000 checks a month (about one per visitor per hour of use). See `BACKLOG.md` for raising the token lifetime.
-- Address suggestions use Photon (photon.komoot.io), a free OpenStreetMap search with no key or billing. If it's slow or down, the box just shows no suggestions and typing still works.
 
 ### Privacy
 `privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. Things it currently covers: account and username, profile photo or colour, campaign data and pictures, invites by email, roughly when people last visited, Firebase/Google as the host, and reCAPTCHA.

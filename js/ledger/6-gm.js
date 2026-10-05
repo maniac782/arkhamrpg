@@ -200,7 +200,7 @@ function gmNextHtml(){
  const t=camp&&camp.nextSession,on=window.sessionShown&&sessionShown(t);
  return '<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'<span class="note">Not set</span>')+'</div>'+
   '<div class="row" style="align-items:flex-end"><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="gm-nsdate" value="'+(on?localInput(t):'')+'"></label>'+
-  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="gm-nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?camp.nextWhere||'':'')+'"></label>'+
+  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="gm-nswhere" maxlength="80" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?camp.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" data-gact="nsset">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" data-gact="nsclear">Clear</button>':'')+'</div>'+
   '<p class="note" style="margin:0">Everyone sees a countdown on the campaign\u2019s card and the Party tab, and can add it to their calendar.</p></section>';
 }

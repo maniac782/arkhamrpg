@@ -196,6 +196,7 @@ service cloud.firestore {
       allow update: if realUser() && oldC().get('deleting', false) != true && (
         (isOwner() && changedOnly(['name']) && goodName())
         || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
+        || (isOwner() && changedOnly(['art']) && newC().art is int && newC().art >= 0 && newC().art < 100)
         || (isOwner() && changedOnly(['photo']) && (!('photo' in newC()) || (newC().photo is string && newC().photo.matches('data:image/jpeg;base64,.*') && newC().photo.size() < 150000)))
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
         || (isOwner() && changedOnly(['deleting']) && newC().deleting == true)

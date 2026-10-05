@@ -46,3 +46,13 @@ a{color:var(--brass)}
 .campimg.ph{display:grid;place-items:center;background:radial-gradient(120% 90% at 30% 20%,hsl(var(--h) 32% 30%),hsl(calc(var(--h) + 40) 35% 12%));overflow:hidden}
 .campimg.ph span{font-family:var(--display);font-size:64px;font-weight:700;color:hsl(var(--h) 40% 85% / .55);line-height:1}
 .camp .campmain{flex:1}
+
+/* painting banners */
+.campimg.ph{position:relative}
+.campimg.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.artpick summary{cursor:pointer;margin-bottom:8px}
+.artgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:6px}
+.artbtn{padding:0;border:2px solid transparent;border-radius:6px;overflow:hidden;aspect-ratio:16/9;background:var(--surface2);cursor:pointer}
+.artbtn img{width:100%;height:100%;object-fit:cover;display:block}
+.artbtn.on{border-color:var(--brass);box-shadow:0 0 0 2px var(--surface)}
+.artbtn:disabled{opacity:.45;cursor:default}

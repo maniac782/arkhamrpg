@@ -103,9 +103,10 @@ function squarePhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f
   cv.getContext('2d').drawImage(img,(W-s)/2,(Hh-s)/2,s,s,0,0,160,160);let q=0.85,d=cv.toDataURL('image/jpeg',q);while(d.length>18000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
 function campPhoto(f){shrinkPhoto(f).then(d=>db.doc('campaigns/'+ui.cid).update({photo:d})).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg?er.msg:'Couldn\u2019t save the picture. Try again.');});}
-// A campaign with no picture gets its own drawn night scene (js/scene.js), so every card lines up.
+// A campaign with no picture gets a tinted banner with its first letter, so every card lines up.
 function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
- return '<div class="campimg ph" aria-hidden="true">'+(window.campaignScene?campaignScene(c.id||c.name):'')+'</div>';}
+ let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
+ return '<div class="campimg ph" style="--h:'+h+'" aria-hidden="true"><span>'+esc(String(c.name||'?').trim().charAt(0).toUpperCase()||'?')+'</span></div>';}
 function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){

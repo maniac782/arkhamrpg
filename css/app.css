@@ -178,3 +178,8 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .crumb{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;align-self:flex-start}
 .crumb:hover{color:var(--ink);text-decoration:underline}
 .brand{align-items:flex-end}
+/* Ledger: version and the live dot sit quietly in the top-right corner, level with the breadcrumb */
+.top-in{position:relative}
+.brand .meta{position:absolute;top:12px;right:16px;display:flex;align-items:center;gap:10px;font-size:12px}
+.brand .meta .live{margin:0;font-size:12px}
+.brand .meta #ver{position:static}

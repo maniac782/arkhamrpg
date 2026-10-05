@@ -7,7 +7,7 @@ const app=document.getElementById('app'),whoEl=document.getElementById('who'),to
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,3200);}
 const DAY=86400000;
-let auth=null,db=null,me=null,authKnown=false,state='loading',users=[],camps=[],bans={},loadedAt=0;
+let auth=null,db=null,me=null,authKnown=false,state='loading',users=[],camps=[],bans={},errs=[],loadedAt=0;
 const ui={tab:'users',q:'',ask:null,rename:null,busy:false};
 
 // ---------- helpers ----------
@@ -22,6 +22,7 @@ async function load(){
  state='loading';render();
  try{
   const [us,cs,bs]=await Promise.all([db.collection('users').get(),db.collection('campaigns').get(),db.collection('bans').get()]);
+  try{const es=await db.collection('errors').orderBy('t','desc').limit(200).get();errs=es.docs.map(d=>({id:d.id,...d.data()}));}catch(e){errs=[];}
   users=us.docs.map(d=>({id:d.id,...d.data()}));camps=cs.docs.map(d=>({id:d.id,...d.data()}));bans={};bs.docs.forEach(d=>bans[d.id]=d.data());
   loadedAt=Date.now();state='ready';
  }catch(e){console.warn(e);state=window.quotaHit&&quotaHit(e)?'ready':'error';}
@@ -72,10 +73,10 @@ function render(){
  const keep=document.activeElement&&document.activeElement.id;
  const active=users.filter(u=>ms(u.lastSeen)>Date.now()-7*DAY).length;
  let h='<div class="stats">'+[['Users',users.length],['Active this week',active],['Campaigns',camps.length],['Suspended',Object.keys(bans).length]].map(([k,v])=>'<div class="stat"><span class="lbl">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>';
- h+='<div class="row" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns']].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+
-  '<label class="field" style="min-width:200px"><span class="lbl">Search</span><input class="f" id="q" value="'+esc(ui.q)+'" placeholder="'+(ui.tab==='users'?'Username':'Campaign or owner')+'" autocomplete="off"></label>'+
+ h+='<div class="row" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns'],['errs','Errors'+(errs.length?' ('+errs.length+')':'')]].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+
+  '<label class="field" style="min-width:200px"><span class="lbl">Search</span><input class="f" id="q" value="'+esc(ui.q)+'" placeholder="'+(ui.tab==='users'?'Username':ui.tab==='errs'?'Message, page or user':'Campaign or owner')+'" autocomplete="off"></label>'+
   '<button class="btn sm" data-a="reload" title="Loaded '+esc(new Date(loadedAt).toLocaleTimeString())+'">Refresh</button></div>';
- h+=ui.tab==='users'?usersHtml():campsHtml();
+ h+=ui.tab==='users'?usersHtml():ui.tab==='errs'?errsHtml():campsHtml();
  app.innerHTML=h;
  if(keep){const el=document.getElementById(keep);if(el){el.focus();if(el.setSelectionRange){const n=el.value.length;el.setSelectionRange(n,n);}}}
 }
@@ -91,6 +92,16 @@ function usersHtml(){
   else act=(self?'<span class="chip ok">You</span>':(b?'<button class="btn sm" data-a="unban" data-u="'+esc(u.id)+'">Unsuspend</button>':'<button class="btn sm" data-a="ban" data-u="'+esc(u.id)+'">Suspend</button>'))+'<button class="btn sm" data-a="rename" data-u="'+esc(u.id)+'">Change username</button>';
   return '<div class="item"><div class="grow"><b>'+esc(u.username||'(no username)')+'</b>'+(b?' <span class="chip warn">Suspended</span>':'')+
    '<span class="effect">Joined '+esc(ago(ms(u.created)))+' · last seen '+esc(ago(ms(u.lastSeen)))+' · owns '+owns+' · in '+inn+'</span></div><span class="row" style="gap:6px">'+act+'</span></div>';}).join('')+'</div>';
+}
+// Short browser name from the user agent, enough to spot a pattern.
+function browserOf(ua){ua=String(ua||'');const os=/iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':/Linux/.test(ua)?'Linux':'';
+ const br=/Edg\//.test(ua)?'Edge':/Firefox\//.test(ua)?'Firefox':/CriOS|Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'Browser';return br+(os?' on '+os:'');}
+function errsHtml(){
+ const q=ui.q.trim().toLowerCase();
+ const list=errs.filter(e=>!q||[e.msg,e.page,nameOf(e.uid)].some(x=>String(x||'').toLowerCase().includes(q)));
+ let h='<p class="note" style="margin:0">Unexpected errors people hit on the site (newest first, up to 200). The same error from the same visit is only sent once. '+(errs.length?'<button class="btn sm" data-a="errclear">Clear all</button>':'')+'</p>';
+ if(!list.length)return h+'<p class="note">'+(errs.length?'No errors match.':'No errors reported. \u{1F389}')+'</p>';
+ return h+'<div class="list adm">'+list.map(e=>'<div class="item"><div class="grow"><b class="errmsg">'+esc(e.msg)+'</b><span class="effect">'+esc(ago(ms(e.t)))+' \u00b7 '+esc(nameOf(e.uid))+' \u00b7 '+esc(e.page||'')+' \u00b7 '+esc(browserOf(e.ua))+(e.v?' \u00b7 '+esc(e.v):'')+'</span>'+(e.stack?'<details><summary class="note">Details</summary><pre class="errstack">'+esc(e.stack)+'</pre></details>':'')+'</div><button class="btn sm" data-a="errdel" data-e="'+esc(e.id)+'">Clear</button></div>').join('')+'</div>';
 }
 function campsHtml(){
  const q=ui.q.trim().toLowerCase();
@@ -114,6 +125,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='banyes')run(()=>ban(u),'Account suspended.');
  else if(a==='unban')run(()=>unban(u),'Suspension lifted. They’ll need new invites to rejoin campaigns.');
  else if(a==='rename'){ui.rename=u;ui.ask=null;render();const el=document.getElementById('rn-'+u);if(el){el.focus();el.select();}}
+ else if(a==='errdel'){const id=b.dataset.e;run(async()=>{await db.doc('errors/'+id).delete();errs=errs.filter(x=>x.id!==id);});}
+ else if(a==='errclear')run(async()=>{await Promise.all(errs.map(x=>db.doc('errors/'+x.id).delete().catch(()=>{})));errs=[];},'Errors cleared.');
  else if(a==='cdel'){ui.ask={cid:c};render();}
  else if(a==='cdelyes')run(()=>deleteCampaign(c),'Campaign deleted.');
 });

@@ -33,3 +33,30 @@ window.quotaHit = function(e){
   return true;
 };
 window.addEventListener('unhandledrejection',function(ev){window.quotaHit(ev.reason);});
+
+/* Beta error reporting: unexpected errors on any page are written (quietly, a few per visit at most) to the
+   database's `errors` collection, which only admins can read on the admin page. Nothing is sent for people
+   who aren't signed in. */
+(function(){
+  var sent=0,seen={};
+  function report(msg,stack){
+    try{
+      msg=String(msg||'').slice(0,500);
+      if(!msg||msg==='Script error.'||/ResizeObserver loop|resource-exhausted|Failed to fetch|NetworkError|network-request-failed/i.test(msg))return;
+      if(seen[msg]||sent>=5)return;seen[msg]=1;
+      var fb=window.firebase;if(!fb||!fb.apps||!fb.apps.length)return;
+      var app=fb.apps.filter(function(a){return a.name==='beta';})[0]||fb.apps[0];
+      var u=app.auth&&app.auth().currentUser;if(!u)return;
+      sent++;
+      var ver=document.getElementById('ver');
+      app.firestore().collection('errors').add({
+        msg:msg,stack:String(stack||'').slice(0,2000),
+        page:(location.pathname+location.search.replace(/join=[^&]*/,'join=…')).slice(0,300),
+        ua:String(navigator.userAgent||'').slice(0,300),v:ver?ver.textContent.slice(0,20):'',t:Date.now(),uid:u.uid
+      }).catch(function(){});
+    }catch(e){}
+  }
+  window.reportError=report;
+  window.addEventListener('error',function(e){report(e.message||(e.error&&e.error.message),e.error&&e.error.stack);});
+  window.addEventListener('unhandledrejection',function(e){var r=e.reason||{};if(r&&r.code==='resource-exhausted')return;report(r.message||String(r),r.stack);});
+})();

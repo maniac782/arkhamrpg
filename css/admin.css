@@ -5,3 +5,5 @@
 .list.adm .item{flex-wrap:wrap;align-items:center;gap:10px}
 .admimg{width:56px;aspect-ratio:16/9;object-fit:cover;border-radius:4px;border:1px solid var(--line);background:var(--surface2);flex:none;display:block}
 .list.adm .grow .chip{align-self:flex-start}
+.errmsg{font-family:var(--mono);font-size:13px;word-break:break-word}
+.errstack{font-family:var(--mono);font-size:11px;white-space:pre-wrap;word-break:break-word;background:var(--surface2);padding:8px;border-radius:4px;margin:6px 0 0;max-height:220px;overflow:auto}

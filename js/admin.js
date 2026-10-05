@@ -7,7 +7,7 @@ const app=document.getElementById('app'),whoEl=document.getElementById('who'),to
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,3200);}
 const DAY=86400000;
-let auth=null,db=null,me=null,state='loading',users=[],camps=[],bans={},loadedAt=0;
+let auth=null,db=null,me=null,authKnown=false,state='loading',users=[],camps=[],bans={},loadedAt=0;
 const ui={tab:'users',q:'',ask:null,rename:null,busy:false};
 
 // ---------- helpers ----------
@@ -64,6 +64,7 @@ async function renameUser(uid,name){
 
 // ---------- rendering ----------
 function render(){
+ if(!authKnown){app.innerHTML='<p class="note" style="padding:24px 16px">Loading\u2026</p>';return;}
  if(!me){app.innerHTML='<section class="sec auth"><h2>Admin</h2><p class="note" style="margin:0">Sign in on the <a href="./">main page</a> first.</p></section>';return;}
  if(state==='denied'){app.innerHTML='<section class="sec auth"><h2>Admin</h2><p class="note" style="margin:0">This page is only for the site’s admins.</p><div class="row"><a class="btn" href="./">Back to the site</a></div></section>';return;}
  if(state==='loading'){app.innerHTML='<p class="note" style="padding:24px 16px">Loading users and campaigns…</p>';return;}
@@ -125,7 +126,7 @@ if(!cfg0||!window.firebase){app.innerHTML='<p class="note" style="padding:24px 1
 const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
 const fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);auth=fb.auth();db=fb.firestore();
 auth.onAuthStateChanged(async u=>{
- me=u&&!u.isAnonymous?u:null;
+ authKnown=true;me=u&&!u.isAnonymous?u:null;
  if(!me){render();return;}
  try{const a=await db.doc('admins/'+me.uid).get();if(!a.exists){state='denied';render();return;}}catch(e){state='denied';render();return;}
  whoEl.innerHTML='<span class="nav"><a class="nav-l" href="./">‹ Back to the site</a></span>';

@@ -66,6 +66,14 @@ const signOutHtml=()=>'<button class="nav-l" data-a="signout">Sign out</button>'
 const errHtml=()=>ui.err?'<p class="err" role="alert">'+esc(ui.err)+'</p>':'';
 function field(id,label,type,extra){return '<label class="field wide"><span class="lbl">'+label+'</span><input class="f" id="'+id+'" type="'+type+'" '+(extra||'')+'></label>';}
 
+function introHtml(){
+ const step=(n,t,d)=>'<li><span class="stepn">'+n+'</span><span><b>'+t+'</b><span class="note">'+d+'</span></span></li>';
+ const inv=(typeof pendingJoin!=='undefined'&&pendingJoin)?'<p class="invited">You\u2019ve been invited to join <b>'+esc(pendingJoin.name||'a campaign')+'</b>. Sign in or create an account and you\u2019ll be asked to join.</p>':'';
+ return '<section class="intro">'+inv+'<h2>Live character sheets for the Arkham Horror Roleplaying Game</h2>'+
+  '<p>Everyone\u2019s investigator stays in sync at the table: spend a die, take an injury or earn XP and the whole group sees it. The GM gets scenes, enemies, clues and session recaps.</p>'+
+  '<ol class="steps">'+step(1,'Sign in','With Google or an email and password.')+step(2,'Start a campaign or join one','Start your own and invite your group, or open an invite link a friend sent you.')+step(3,'Build your investigator','Step by step, following the corebook\u2019s character creation.')+'</ol>'+
+  '<p class="note">Free, no ads. A fan project, not affiliated with Fantasy Flight Games. <a href="help.html">How it works</a></p></section>';
+}
 function authView(){
  const up=ui.mode==='signup',reset=ui.mode==='reset';
  let h='<section class="sec auth"><h2>'+(reset?'Reset your password':up?'Create an account':'Sign in')+'</h2>';
@@ -78,7 +86,7 @@ function authView(){
   (up?'<span class="note">Already have an account?</span><button class="btn sm" data-a="mode" data-m="signin">Sign in</button>':'<button class="btn sm" data-a="mode" data-m="reset">Forgot password?</button><button class="btn sm" data-a="mode" data-m="signup">Create an account</button>'))+'</div>';
  h+='<p class="note" style="margin:0;font-size:11px;text-align:center">Protected by reCAPTCHA. Google\u2019s <a href="https://policies.google.com/privacy" rel="noopener">Privacy Policy</a> and <a href="https://policies.google.com/terms" rel="noopener">Terms</a> apply. See our <a href="privacy.html">privacy policy</a>.</p>';
  h+='</section>';
- return h;
+ return '<div class="welcome">'+introHtml()+h+'</div>';
 }
 function usernameView(){
  return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">It\u2019s the name other players see in your campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+

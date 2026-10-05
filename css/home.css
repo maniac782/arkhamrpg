@@ -56,3 +56,16 @@ a{color:var(--brass)}
 .artbtn img{width:100%;height:100%;object-fit:cover;display:block}
 .artbtn.on{border-color:var(--brass);box-shadow:0 0 0 2px var(--surface)}
 .artbtn:disabled{opacity:.45;cursor:default}
+
+/* signed-out welcome: intro beside the sign-in card */
+.welcome{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:32px;align-items:start;max-width:940px;margin:24px auto 0}
+.welcome .auth{margin:0;max-width:none}
+.intro{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.intro h2{font-family:var(--display);font-size:32px;line-height:1.15;margin:0}
+.intro p{margin:0;line-height:1.6}
+.steps{list-style:none;margin:4px 0;padding:0;display:flex;flex-direction:column;gap:14px}
+.steps li{display:flex;gap:12px;align-items:flex-start}
+.steps li>span:last-child{display:flex;flex-direction:column;gap:2px}
+.stepn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--surface);background:var(--brass)}
+@media (max-width:780px){.welcome{grid-template-columns:1fr;gap:20px;margin-top:8px}.intro h2{font-size:24px}}
+.invited{margin:0;padding:12px 14px;border-left:3px solid var(--brass);background:var(--brass-soft);border-radius:0 6px 6px 0}

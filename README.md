@@ -79,7 +79,7 @@ Campaigns without their own picture show public-domain horror art (sea monsters,
   6. `6-gm.js`: GM tools, activity log and session recaps
   7. `7-boot.js`: connecting to Firebase and starting up
 - `admin.html` with `js/admin.js` and `css/admin.css`: the admin page.
-- `privacy.html`: the privacy policy.
+- `privacy.html`: the privacy policy. `help.html`: the **How it works** page for players (linked in every footer and from the sign-in screen); keep it in step with new features.
 - `js/config.js`: Firebase settings, the App Check key and the daily-limit banner.
 - `js/avatar.js`: the account icon and account menu. `js/art.js`: the campaign art gallery.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.

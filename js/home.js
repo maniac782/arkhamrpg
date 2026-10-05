@@ -20,7 +20,7 @@ function render(){
  if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+(isAdm?'<a class="nav-l" href="admin.html">Admin</a>':'')+'<span class="acct"><button class="acct-me" data-a="account" title="Your account"><span class="av" aria-hidden="true">'+esc((profile.username||'?').charAt(0).toUpperCase())+'</span><b>'+esc(profile.username)+'</b></button>'+signOutHtml()+'</span></span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():homeView();}
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+(isAdm?'<a class="nav-l" href="admin.html">Admin</a>':'')+'<span class="acct"><button class="acct-me" data-a="account" title="Your account"><span class="av" aria-hidden="true">'+esc((profile.username||'?').charAt(0).toUpperCase())+'</span><b>'+esc(profile.username)+'</b></button>'+signOutHtml()+'</span></span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  syncRename();
  // Keep the address in step with the page, so reloading a campaign's Settings stays there.
@@ -85,12 +85,14 @@ const MAX_MEMBERS=12;
 function chipsFor(c,u){const r=(c.roles||{})[u];let h='';if(r==='owner')h+='<span class="chip ok">Owner</span>';if(c.gmUid&&c.gmUid===u)h+='<span class="chip warn">GM</span>';if(r!=='owner'&&c.gmUid!==u)h+='<span class="chip">Player</span>';return h;}
 const photoOk=p=>typeof p==='string'&&/^data:image\/jpeg;base64,/.test(p);
 // Shrink a chosen picture to a small JPEG (wide 16:9 crop) and save it on the campaign.
-function campPhoto(f){if(!f||!/^image\//.test(f.type))return toast('Choose an image file.');const url=URL.createObjectURL(f),img=new Image();
+// Crop a chosen picture to 16:9 around its centre and shrink it to a small JPEG (kept on the campaign itself).
+function shrinkPhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f.type))return rej({msg:'Choose an image file.'});const url=URL.createObjectURL(f),img=new Image();
  img.onload=()=>{URL.revokeObjectURL(url);let W=img.naturalWidth,Hh=img.naturalHeight,cw=W,ch=Math.round(W*9/16);if(ch>Hh){ch=Hh;cw=Math.round(Hh*16/9);}const sx=(W-cw)/2,sy=(Hh-ch)/2;
   const cv=document.createElement('canvas');let w=Math.min(800,cw),q=0.8,d='';
   for(let k=0;k<8;k++){cv.width=w;cv.height=Math.round(w*9/16);cv.getContext('2d').drawImage(img,sx,sy,cw,ch,0,0,cv.width,cv.height);d=cv.toDataURL('image/jpeg',q);if(d.length<140000)break;w=Math.round(w*0.85);q=Math.max(0.5,q-0.05);}
-  db.doc('campaigns/'+ui.cid).update({photo:d}).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the picture. Try again.');});};
- img.onerror=()=>{URL.revokeObjectURL(url);toast('Couldn\u2019t read that image.');};img.src=url;}
+  res(d);};
+ img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
+function campPhoto(f){shrinkPhoto(f).then(d=>db.doc('campaigns/'+ui.cid).update({photo:d})).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg?er.msg:'Couldn\u2019t save the picture. Try again.');});}
 function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp'+(photoOk(c.photo)?' hasimg':'')+'"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+(photoOk(c.photo)?'<img class="campimg" src="'+c.photo+'" alt="">':'')+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
@@ -99,12 +101,35 @@ function homeView(){
  if(pendingJoin&&!camps.some(c=>c.id===pendingJoin.cid))h+='<section class="sec"><div class="sec-head"><h2>Join “'+esc(pendingJoin.name||'this campaign')+'”?</h2></div><p class="note" style="margin:0">You opened an invite link. Join to see the party and play.</p><div class="row"><button class="btn pri" data-a="ljoin" '+(ui.busy?'disabled':'')+'>Join</button><button class="btn" data-a="lskip">Not now</button></div>'+errHtml()+'</section>';
  if(user.email&&!user.emailVerified&&!user.providerData.some(x=>x.providerId==='google.com'))h+='<section class="sec"><p class="note" style="margin:0">Verify your email to see invites sent to <b>'+esc(user.email)+'</b>. Check your inbox for the link, then reload. <button class="btn sm" data-a="reverify">Send it again</button></p></section>';
  if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>Invitations</h2></div><div class="list">'+inbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.campaignName)+'</b><span class="effect">'+esc(i.fromName)+' invited you to join</span></div><button class="btn sm pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join</button><button class="btn sm" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div>').join('')+'</div></section>';
- h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length<MAX_OWNED?'<button class="btn sm pri" data-a="newopen">New campaign</button>':'')+'</div>';
- if(ui.newOpen)h+='<form id="newform" class="row" style="align-items:flex-end" novalidate>'+'<label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="cname" maxlength="60" placeholder="e.g. The Dunwich Legacy" required></label><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create</button><button class="btn" type="button" data-a="newclose">Cancel</button></form>'+errHtml();
- h+=owned.length?'<div class="camps">'+owned.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">You don’t own any campaigns yet. Start one and you’ll be its owner.</p>';
+ h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length?'<span class="note">'+owned.length+' of '+MAX_OWNED+'</span>':'')+'</div>';
+ const tile=owned.length<MAX_OWNED?'<button class="camp newtile" data-a="newopen"><span class="plus" aria-hidden="true">+</span><b>New campaign</b><span class="note">'+(owned.length?'Start another and invite your group.':'Start a campaign and invite your group.')+'</span></button>':'';
+ h+='<div class="camps">'+tile+owned.map(campCard).join('')+'</div>'+(owned.length>=MAX_OWNED?'<p class="note" style="margin:0">You own '+MAX_OWNED+' campaigns, the most allowed. Delete one to start another.</p>':'');
  h+='</section><section class="sec"><div class="sec-head"><h2>Campaigns you’re in</h2></div>'+
   (member.length?'<div class="camps">'+member.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">None yet. When a friend invites you, it’ll show up here.</p>')+'</section>';
  return h;
+}
+function newView(){
+ const nm=((document.getElementById('cname')||{}).value||'').trim(),gm=ui.newGM||'me';
+ let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button></div>';
+ h+='<form id="newform" class="sec newcamp" novalidate><h2>New campaign</h2>'+
+  '<div class="newgrid"><div class="newfields">'+
+  '<label class="field"><span class="lbl">Campaign name</span><input class="f" id="cname" maxlength="60" placeholder="e.g. The Dunwich Legacy" required autocomplete="off"></label>'+
+  '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="lbl" style="padding:0">Who will run the game?</legend>'+
+   '<label class="optrow"><input type="radio" name="ngm" value="me"'+(gm==='me'?' checked':'')+'><span><b>I\u2019ll be the GM</b><br><span class="note">You get the GM tab: scenes, enemies, clues and XP.</span></span></label>'+
+   '<label class="optrow"><input type="radio" name="ngm" value="later"'+(gm==='later'?' checked':'')+'><span><b>Someone else</b><br><span class="note">Pick them in Settings once they\u2019ve joined.</span></span></label></fieldset>'+
+  '<div class="field"><span class="lbl">Picture (optional)</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="nphoto" style="cursor:pointer">'+(ui.newPhoto?'Change picture':'Add a picture')+'</label><input type="file" id="nphoto" accept="image/*" hidden>'+(ui.newPhoto?'<button class="btn sm" type="button" data-a="nphotodel">Remove</button>':'')+'</div></div>'+
+  '</div><div class="newprev"><span class="lbl">Preview</span><div class="camp'+(ui.newPhoto?' hasimg':'')+'" aria-hidden="true">'+(ui.newPhoto?'<img class="campimg" src="'+ui.newPhoto+'" alt="">':'')+'<h3 id="nprevname">'+esc(nm||'Your campaign')+'</h3><span class="row" style="gap:6px"><span class="chip ok">Owner</span><span class="note">1 member</span></span></div></div></div>'+
+  errHtml()+'<div class="row"><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create campaign</button><button class="btn" type="button" data-a="home">Cancel</button></div></form>';
+ return h;
+}
+function inviteView(){
+ const c=camps.find(x=>x.id===ui.cid);if(!c)return '<p class="note" style="padding:24px 0">Setting up your campaign\u2026</p>';
+ if(ui.waitCid===c.id)ui.waitCid=null;
+ const link=c.joinCode?joinLink(c):'';
+ return '<section class="sec newcamp"><h2>\u201c'+esc(c.name)+'\u201d is ready</h2><p class="note" style="margin:0">Now invite your players. Send them this link; they sign in and they\u2019re in.</p>'+
+  (link?'<div class="row"><input class="f" id="ilink" readonly value="'+esc(link)+'" style="flex:1;min-width:220px" aria-label="Invite link"><button class="btn pri" data-a="lcopy">Copy link</button>'+(navigator.share?'<button class="btn" data-a="lshare">Share\u2026</button>':'')+'</div>':'<p class="note" style="margin:0">Making your invite link\u2026</p>')+
+  '<p class="note" style="margin:0">Invites by email, the GM and house rules are in the campaign\u2019s Settings.</p>'+
+  '<div class="row"><a class="btn pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a><button class="btn" data-a="open" data-id="'+esc(c.id)+'">Settings</button><button class="btn" data-a="home">My campaigns</button></div></section>';
 }
 function campView(){
  const c=camps.find(x=>x.id===ui.cid);if(!c){if(ui.waitCid===ui.cid)return '<p class="note" style="padding:24px 0">Opening the campaign\u2026</p>';ui.view='home';return homeView();}
@@ -179,7 +204,11 @@ async function createCampaign(){
  if(camps.filter(c=>c.ownerUid===user.uid).length>=MAX_OWNED)throw {msg:'You can own up to '+MAX_OWNED+' campaigns.'};
  const ref=db.collection('campaigns').doc();
  await ref.set({name:name.slice(0,60),ownerUid:user.uid,memberIds:[user.uid],roles:{[user.uid]:'owner'},names:{[user.uid]:profile.username},created:firebase.firestore.FieldValue.serverTimestamp()});
- ui.newOpen=false;ui.view='camp';ui.cid=ref.id;ui.waitCid=ref.id;toast('Campaign created. You’re its owner.');
+ // the rules take these one at a time after the campaign exists
+ await ref.update({joinCode:newCode()}).catch(()=>{});
+ if((ui.newGM||'me')==='me')await ref.update({gmUid:user.uid}).catch(()=>{});
+ if(ui.newPhoto)await ref.update({photo:ui.newPhoto}).catch(()=>toast('The picture didn\u2019t save; add it again in Settings.'));
+ ui.newPhoto=null;ui.newGM=null;ui.view='invite';ui.cid=ref.id;ui.waitCid=ref.id;window.scrollTo(0,0);
 }
 
 // ---------- invites & members ----------
@@ -310,14 +339,15 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 });
 // Rename is only clickable when the name has actually been changed.
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
-app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();});
-app.addEventListener('change',e=>{const t=e.target;if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
+app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();if(e.target.id==='cname'){if(ui.err){ui.err='';const er=app.querySelector('.err');if(er)er.remove();}const p=document.getElementById('nprevname');if(p)p.textContent=e.target.value.trim()||'Your campaign';}});
+app.addEventListener('change',e=>{const t=e.target;if(t.id==='nphoto'){shrinkPhoto(t.files&&t.files[0]).then(d=>{ui.newPhoto=d;render();},er=>toast(er&&er.msg||'Couldn\u2019t read that image.'));t.value='';return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
  switch(a){
   case 'google':busy(google);break;
   case 'mode':ui.mode=b.dataset.m;ui.err='';render();break;
   case 'signout':auth.signOut();break;
-  case 'newopen':ui.newOpen=true;ui.err='';render();const i=document.getElementById('cname');if(i)i.focus();break;
+  case 'newopen':ui.view='new';ui.err='';ui.newPhoto=null;ui.newGM=null;ui.clear.add('cname');render();window.scrollTo(0,0);{const i=document.getElementById('cname');if(i)i.focus();}break;
+  case 'nphotodel':ui.newPhoto=null;render();break;
   case 'newclose':ui.newOpen=false;ui.err='';render();break;
   case 'open':ui.view='camp';ui.cid=b.dataset.id;ui.confirmDel=false;ui.confirmLeave=false;ui.kick=null;ui.err='';render();window.scrollTo(0,0);break;
   case 'home':ui.view='home';ui.err='';render();break;

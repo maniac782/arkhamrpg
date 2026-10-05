@@ -23,3 +23,15 @@ a{color:var(--brass)}
 .optrow input{flex:none;margin-top:3px}
 .acct-me{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
 .acct-me:hover b{text-decoration:underline}
+
+/* New campaign tile and setup page */
+.camp.newtile{border:2px dashed var(--line);background:transparent;align-items:center;justify-content:center;text-align:center;min-height:150px;cursor:pointer;font:inherit;color:inherit;gap:4px}
+.camp.newtile:hover,.camp.newtile:focus-visible{border-color:var(--brass);background:var(--surface)}
+.newtile .plus{font-size:30px;line-height:1;color:var(--brass);font-family:var(--display)}
+.newtile b{font-family:var(--display);font-size:19px}
+.newcamp{gap:16px}
+.newgrid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start}
+.newfields{display:flex;flex-direction:column;gap:16px}
+.newfields .optrow{margin-top:8px}
+.newprev{display:flex;flex-direction:column;gap:6px}
+@media (max-width:700px){.newgrid{grid-template-columns:1fr}}

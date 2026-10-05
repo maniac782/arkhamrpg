@@ -99,7 +99,7 @@ function campsHtml(){
   const n=(c.memberIds||[]).length;
   const act=ui.ask&&ui.ask.cid===c.id?'<span class="note">Delete “'+esc(c.name)+'” for all '+n+' member'+(n===1?'':'s')+'? This can’t be undone.</span><button class="btn sm dng" data-a="cdelyes" data-c="'+esc(c.id)+'">Delete</button><button class="btn sm" data-a="no">Cancel</button>'
    :'<button class="btn sm" data-a="cdel" data-c="'+esc(c.id)+'">Delete…</button>';
-  return '<div class="item">'+(photoOk(c.photo)?'<img class="admimg" src="'+c.photo+'" alt="">':(window.artUrl?'<img class="admimg" src="'+artUrl(artFor(c),250)+'" alt="" loading="lazy">':'<span class="admimg" aria-hidden="true"></span>'))+'<div class="grow"><b>'+esc(c.name)+'</b>'+(bans[c.ownerUid]?' <span class="chip warn">Owner suspended</span>':'')+
+  return '<div class="item">'+(photoOk(c.photo)?'<img class="admimg" src="'+c.photo+'" alt="">':'<span class="admimg" aria-hidden="true"></span>')+'<div class="grow"><b>'+esc(c.name)+'</b>'+(bans[c.ownerUid]?' <span class="chip warn">Owner suspended</span>':'')+
    '<span class="effect">Owner '+esc(nameOf(c.ownerUid))+' · '+n+' member'+(n===1?'':'s')+(c.gmUid?' · GM '+esc(nameOf(c.gmUid)):'')+' · made '+esc(ago(ms(c.created)))+'</span></div><span class="row" style="gap:6px">'+act+'</span></div>';}).join('')+'</div>';
 }
 

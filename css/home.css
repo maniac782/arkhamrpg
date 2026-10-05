@@ -74,3 +74,4 @@ a{color:var(--brass)}
 .welcome a{color:var(--ink);text-decoration-color:var(--muted)}
 .welcome a:hover{text-decoration-color:var(--ink)}
 .invited{background:var(--surface2);border-left-color:var(--muted)}
+.newtile .plus{color:var(--muted)}

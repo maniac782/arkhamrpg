@@ -58,10 +58,8 @@ The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`
 - reCAPTCHA Enterprise is free for 10,000 checks a month (about one per visitor per hour of use).
 
 ### Privacy
-`privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. Things it currently covers: account and username, profile photo or colour, campaign data and pictures, invites by email, roughly when people last visited, Firebase/Google as the host, reCAPTCHA, and campaign art loaded from Wikimedia Commons.
+`privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. Things it currently covers: account and username, profile photo or colour, campaign data and pictures, invites by email, roughly when people last visited, Firebase/Google as the host, and reCAPTCHA.
 
-### Campaign art
-Campaigns without their own picture show public-domain horror art (sea monsters, Doré, Harry Clarke's Poe illustrations, 1928 *Weird Tales* covers, Böcklin, Redon and others) loaded from Wikimedia Commons; owners can pick one in Settings. The list is in `js/art.js`. Only add works that are out of copyright.
 
 ### The original ledger
 `old/` (arkhamrpg.web.app/old) is the first single-party version with passcodes, a master key and a GM PIN, kept unchanged for reference. Its data is separate from the campaigns. `beta/` only forwards old links (including old invite links) to the main site.
@@ -81,7 +79,7 @@ Campaigns without their own picture show public-domain horror art (sea monsters,
 - `admin.html` with `js/admin.js` and `css/admin.css`: the admin page.
 - `privacy.html`: the privacy policy. `help.html`: the **How it works** page for players (linked in every footer and from the sign-in screen); keep it in step with new features.
 - `js/config.js`: Firebase settings, the App Check key and the daily-limit banner.
-- `js/avatar.js`: the account icon and account menu. `js/art.js`: the campaign art gallery.
+- `js/avatar.js`: the account icon and account menu.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.
 - `firestore.rules`: who can read and write what. The page hides things people can't do, but these rules are what actually enforce it.

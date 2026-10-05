@@ -110,12 +110,10 @@ function squarePhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f
   cv.getContext('2d').drawImage(img,(W-s)/2,(Hh-s)/2,s,s,0,0,160,160);let q=0.85,d=cv.toDataURL('image/jpeg',q);while(d.length>18000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
 function campPhoto(f){shrinkPhoto(f).then(d=>db.doc('campaigns/'+ui.cid).update({photo:d})).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg?er.msg:'Couldn\u2019t save the picture. Try again.');});}
-// A campaign with no picture of its own shows a public-domain painting (js/art.js); the tinted letter
-// underneath only shows if the painting can't load.
+// A campaign with no picture gets a tinted banner with its first letter, so every card lines up.
 function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
  let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
- const ai=window.artFor?artFor(c):-1,art=ai>=0?CAMPAIGN_ART[ai]:null;
- return '<div class="campimg ph" style="--h:'+h+'" aria-hidden="true"><span>'+esc(String(c.name||'?').trim().charAt(0).toUpperCase()||'?')+'</span>'+(art?'<img src="'+artUrl(ai)+'" alt="" loading="lazy" title="'+esc(art.t+' \u2014 '+art.a)+'" onerror="this.remove()">':'')+'</div>';}
+ return '<div class="campimg ph" style="--h:'+h+'" aria-hidden="true"><span>'+esc(String(c.name||'?').trim().charAt(0).toUpperCase()||'?')+'</span></div>';}
 function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
@@ -161,8 +159,7 @@ function campView(){
  let h='<div class="row"><button class="btn sm" data-a="home">\u2190 My campaigns</button><a class="btn sm pri" href="'+ledgerUrl(c.id)+'">Open the ledger \u2192</a></div>';
  h+='<section class="sec"><div class="sec-head"><h2>'+(own?'Campaign settings':esc(c.name))+'</h2><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'</span></div>';
  if(own)h+='<form id="renform" class="row" style="align-items:flex-end" novalidate><label class="field" style="flex:1;min-width:220px"><span class="lbl">Campaign name</span><input class="f" id="rname" maxlength="60" value="'+esc(c.name)+'" data-orig="'+esc(c.name)+'"></label><button class="btn" type="submit" id="renbtn" disabled>Rename</button></form><label class="optrow"><input type="checkbox" data-ownedit'+(c.ownerEdits===true?' checked':'')+'><span><b>Let me edit every investigator</b><br><span class="note">Change any investigator and delete Recent entries. Untick to play by the same rules as everyone else. You can still choose who plays each investigator.</span></span></label>'+
-  '<div class="field"><span class="lbl">Campaign picture</span><div class="row" style="align-items:center;gap:12px">'+(photoOk(c.photo)?'<img class="setimg" src="'+c.photo+'" alt="Campaign picture">':'<span class="setimg empty" aria-hidden="true"></span>')+'<label class="btn sm" for="cphoto" style="cursor:pointer">'+(photoOk(c.photo)?'Change picture':'Add a picture')+'</label><input type="file" id="cphoto" accept="image/*" hidden>'+(photoOk(c.photo)?'<button class="btn sm" data-a="cphotodel">Remove</button>':'')+'</div><span class="note">Shows on the campaign\u2019s card and next to its name in the ledger.</span></div>'+
-  '<details class="artpick"'+(photoOk(c.photo)?'':' open')+'><summary class="lbl">'+(photoOk(c.photo)?'Or use art from the gallery (remove your picture first)':'No picture? Pick from the gallery')+'</summary><div class="artgrid">'+CAMPAIGN_ART.map((x,i)=>'<button class="artbtn'+(i===artFor(c)&&!photoOk(c.photo)?' on':'')+'" data-a="artpick" data-i="'+i+'" title="'+esc(x.t+' \u2014 '+x.a)+'" aria-label="'+esc(x.t+', '+x.a)+'"'+(photoOk(c.photo)?' disabled':'')+'><img src="'+artUrl(i,250)+'" alt="" loading="lazy" onerror="this.remove()"></button>').join('')+'</div><span class="note">Public-domain horror art, shown from Wikimedia Commons. '+(Number.isInteger(c.art)?'':'This one was picked automatically.')+'</span></details>';
+  '<div class="field"><span class="lbl">Campaign picture</span><div class="row" style="align-items:center;gap:12px">'+(photoOk(c.photo)?'<img class="setimg" src="'+c.photo+'" alt="Campaign picture">':'<span class="setimg empty" aria-hidden="true"></span>')+'<label class="btn sm" for="cphoto" style="cursor:pointer">'+(photoOk(c.photo)?'Change picture':'Add a picture')+'</label><input type="file" id="cphoto" accept="image/*" hidden>'+(photoOk(c.photo)?'<button class="btn sm" data-a="cphotodel">Remove</button>':'')+'</div><span class="note">Shows on the campaign\u2019s card and next to its name in the ledger.</span></div>';
  else if(photoOk(c.photo))h+='<img class="setimg wide" src="'+c.photo+'" alt="">';
  h+='</section>';
  // members
@@ -384,7 +381,6 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
-  case 'artpick':{const i=Number(b.dataset.i),c=camps.find(x=>x.id===ui.cid);if(!c)break;c.art=i;render();db.doc('campaigns/'+c.id).update({art:i}).then(()=>toast('Chosen: '+CAMPAIGN_ART[i].t+'.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'avphotodel':profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'avc':{const k='color',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;

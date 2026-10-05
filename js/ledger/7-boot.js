@@ -18,7 +18,7 @@ async function bootCampaign(syncEl){
  const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
  window.addEventListener('acct-signout',()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');});syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
- if(camp){if(brand)brand.innerHTML=(camp.photo&&/^data:image\/jpeg;base64,/.test(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':window.artUrl?'<img class="brandimg" src="'+artUrl(artFor({...camp,id:CAMP}),250)+'" alt="" onerror="this.remove()">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Ledger';applyRoles();render();}
+ if(camp){if(brand)brand.innerHTML=(camp.photo&&/^data:image\/jpeg;base64,/.test(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
  if(!u||u.isAnonymous){location.replace('./');return;}
  authUid=u.uid;
@@ -28,7 +28,7 @@ async function bootCampaign(syncEl){
   if(!snap.exists){halted='This campaign was deleted.';render();return;}
   camp=snap.data();
   if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
-  if(brand)brand.innerHTML=(camp.photo&&/^data:image\/jpeg;base64,/.test(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':window.artUrl?'<img class="brandimg" src="'+artUrl(artFor({...camp,id:CAMP}),250)+'" alt="" onerror="this.remove()">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Ledger';
+  if(brand)brand.innerHTML=(camp.photo&&/^data:image\/jpeg;base64,/.test(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Ledger';
   applyRoles();if(window.__syncLine)window.__syncLine();render();saveCache();
  },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
  gmBoot();

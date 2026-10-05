@@ -47,9 +47,11 @@ input.f,select.f,textarea.f{width:100%;border:0;border-bottom:1px solid var(--li
 .crop-bg{position:fixed;inset:0;z-index:20;background:rgba(10,12,16,.72);display:flex;align-items:center;justify-content:center;padding:16px}
 .crop{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:14px;align-items:center;width:min(340px,100%)}
 .crop h2{margin:0;font-family:var(--display);font-size:20px}
-.crop canvas{width:260px;height:260px;max-width:100%;border-radius:50%;touch-action:none;cursor:grab;background:var(--surface2);box-shadow:0 0 0 3px var(--brass)}
+.crop canvas{width:260px;height:260px;max-width:100%;border-radius:50%;touch-action:none;cursor:grab;background:var(--surface2);box-shadow:0 0 0 2px var(--ink)}
+.crop.wide{width:min(380px,100%)}
+.crop canvas.rect{width:320px;height:180px;border-radius:8px}
 .crop canvas:active{cursor:grabbing}
-.crop input[type=range]{width:100%;accent-color:var(--brass)}
+.crop input[type=range]{width:100%;accent-color:var(--ink)}
 .pic-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 select{background-color:var(--surface);color:var(--ink)}
 select option,select optgroup{background-color:var(--surface);color:var(--ink)}

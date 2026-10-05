@@ -46,40 +46,7 @@ function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();
   g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);URL.revokeObjectURL(url);
   let q=0.82,d=cv.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej();};img.src=url;});}
-function openCrop(file,slot){
- const url=URL.createObjectURL(file);const img=new Image();
- img.onerror=()=>{URL.revokeObjectURL(url);toast('Couldn\u2019t read that image. Try a JPG or PNG.');};
- img.onload=()=>{
-  const V=260,OUT=320;const base=Math.max(V/img.width,V/img.height);let zoom=1,ox=0,oy=0;
-  const bg=document.createElement('div');bg.className='crop-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Position portrait');
-  bg.innerHTML='<div class="crop"><h2>Position your portrait</h2><canvas width="520" height="520" tabindex="0" aria-label="Drag to move the picture. Arrow keys also move it."></canvas><label class="field" style="width:100%" for="crop-zoom"><span class="lbl">Zoom</span><input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1"></label><p class="note" style="margin:0;text-align:center">Drag the picture to center it in the circle.</p><div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel">Cancel</button><button class="btn pri" data-c="save">Save picture</button></div></div>';
-  document.body.appendChild(bg);
-  const cv=bg.querySelector('canvas'),g=cv.getContext('2d'),zr=bg.querySelector('#crop-zoom');
-  const clamp=()=>{const sc=base*zoom,mx=Math.max(0,(img.width*sc-V)/2),my=Math.max(0,(img.height*sc-V)/2);ox=Math.min(mx,Math.max(-mx,ox));oy=Math.min(my,Math.max(-my,oy));};
-  const draw=(ctx,size)=>{const k=size/V,sc=base*zoom*k,w=img.width*sc,h=img.height*sc;ctx.clearRect(0,0,size,size);ctx.drawImage(img,size/2-w/2+ox*k,size/2-h/2+oy*k,w,h);};
-  const paint=()=>{clamp();draw(g,520);};paint();
-  let drag=null;const pts=new Map();
-  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});drag={x:e.clientX,y:e.clientY,ox,oy,zoom,dist:null};
-   if(pts.size===2){const [a,b]=[...pts.values()];drag.dist=Math.hypot(a.x-b.x,a.y-b.y);}});
-  cv.addEventListener('pointermove',e=>{if(!drag||!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});const scale=V/cv.getBoundingClientRect().width;
-   if(pts.size>=2&&drag.dist){const [a,b]=[...pts.values()];zoom=Math.min(4,Math.max(1,drag.zoom*Math.hypot(a.x-b.x,a.y-b.y)/drag.dist));zr.value=zoom;}
-   else{ox=drag.ox+(e.clientX-drag.x)*scale;oy=drag.oy+(e.clientY-drag.y)*scale;}paint();});
-  const up=e=>{pts.delete(e.pointerId);if(!pts.size)drag=null;else{const [a]=[...pts.values()];drag={x:a.x,y:a.y,ox,oy,zoom,dist:null};}};
-  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
-  cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(4,Math.max(1,zoom*(e.deltaY<0?1.08:1/1.08)));zr.value=zoom;paint();},{passive:false});
-  cv.addEventListener('keydown',e=>{const m={ArrowLeft:[8,0],ArrowRight:[-8,0],ArrowUp:[0,8],ArrowDown:[0,-8]}[e.key];if(m){e.preventDefault();ox+=m[0];oy+=m[1];paint();}});
-  zr.addEventListener('input',()=>{zoom=Number(zr.value);paint();});
-  const close=()=>{bg.remove();URL.revokeObjectURL(url);document.removeEventListener('keydown',esc2);};
-  const esc2=e=>{if(e.key==='Escape')close();};document.addEventListener('keydown',esc2);
-  bg.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(e.target===bg)return close();if(!b)return;
-   if(b.dataset.c==='cancel')return close();
-   const out=document.createElement('canvas');out.width=OUT;out.height=OUT;const og=out.getContext('2d');og.fillStyle='#ffffff';og.fillRect(0,0,OUT,OUT);draw(og,OUT);
-   let q=0.82,d=out.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=out.toDataURL('image/jpeg',q);}
-   close();save(slot,{portrait:d},'Changed portrait');});
-  cv.focus();
- };
- img.src=url;
-}
+function openCrop(file,slot){openCropper(file,{title:'Position your portrait',shape:'circle',outW:320,outH:320,maxLen:120000,onError:toast,onSave:d=>save(slot,{portrait:d},'Changed portrait')});}
 function ownerPanel(s){
  const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;

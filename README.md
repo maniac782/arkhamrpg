@@ -79,7 +79,7 @@ The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`
 - `admin.html` with `js/admin.js` and `css/admin.css`: the admin page.
 - `privacy.html`: the privacy policy. `help.html`: the **How it works** page for players (linked in every footer and from the sign-in screen); keep it in step with new features.
 - `js/config.js`: Firebase settings, the App Check key and the daily-limit banner.
-- `js/avatar.js`: the account icon and account menu.
+- `js/avatar.js`: the account icon and account menu. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.
 - `firestore.rules`: who can read and write what. The page hides things people can't do, but these rules are what actually enforce it.

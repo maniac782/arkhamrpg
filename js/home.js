@@ -97,19 +97,7 @@ const MAX_MEMBERS=12;
 function chipsFor(c,u){const r=(c.roles||{})[u];let h='';if(r==='owner')h+='<span class="chip ok">Owner</span>';if(c.gmUid&&c.gmUid===u)h+='<span class="chip warn">GM</span>';if(r!=='owner'&&c.gmUid!==u)h+='<span class="chip">Player</span>';return h;}
 const photoOk=p=>typeof p==='string'&&/^data:image\/jpeg;base64,/.test(p);
 // Shrink a chosen picture to a small JPEG (wide 16:9 crop) and save it on the campaign.
-// Crop a chosen picture to 16:9 around its centre and shrink it to a small JPEG (kept on the campaign itself).
-function shrinkPhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f.type))return rej({msg:'Choose an image file.'});const url=URL.createObjectURL(f),img=new Image();
- img.onload=()=>{URL.revokeObjectURL(url);let W=img.naturalWidth,Hh=img.naturalHeight,cw=W,ch=Math.round(W*9/16);if(ch>Hh){ch=Hh;cw=Math.round(Hh*16/9);}const sx=(W-cw)/2,sy=(Hh-ch)/2;
-  const cv=document.createElement('canvas');let w=Math.min(800,cw),q=0.8,d='';
-  for(let k=0;k<8;k++){cv.width=w;cv.height=Math.round(w*9/16);cv.getContext('2d').drawImage(img,sx,sy,cw,ch,0,0,cv.width,cv.height);d=cv.toDataURL('image/jpeg',q);if(d.length<140000)break;w=Math.round(w*0.85);q=Math.max(0.5,q-0.05);}
-  res(d);};
- img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
-// A square, small profile photo (about 10 KB), centred.
-function squarePhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f.type))return rej({msg:'Choose an image file.'});const url=URL.createObjectURL(f),img=new Image();
- img.onload=()=>{URL.revokeObjectURL(url);const W=img.naturalWidth,Hh=img.naturalHeight,s=Math.min(W,Hh),cv=document.createElement('canvas');cv.width=cv.height=160;
-  cv.getContext('2d').drawImage(img,(W-s)/2,(Hh-s)/2,s,s,0,0,160,160);let q=0.85,d=cv.toDataURL('image/jpeg',q);while(d.length>18000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
- img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
-function campPhoto(f){shrinkPhoto(f).then(d=>db.doc('campaigns/'+ui.cid).update({photo:d})).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg?er.msg:'Couldn\u2019t save the picture. Try again.');});}
+function campPhoto(f){const cid=ui.cid;openCropper(f,{title:'Position the campaign picture',shape:'wide',outW:800,outH:450,maxLen:140000,onError:toast,onSave:d=>db.doc('campaigns/'+cid).update({photo:d}).then(()=>toast('Picture saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the picture. Try again.');})});}
 // A campaign with no picture gets a tinted banner with its first letter, so every card lines up.
 function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
  let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
@@ -361,7 +349,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 // Rename is only clickable when the name has actually been changed.
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();if(e.target.id==='cname'){if(ui.err){ui.err='';const er=app.querySelector('.err');if(er)er.remove();}const p=document.getElementById('nprevname');if(p)p.textContent=e.target.value.trim()||'Your campaign';}});
-app.addEventListener('change',e=>{const t=e.target;if(t.id==='avphoto'){squarePhoto(t.files&&t.files[0]).then(d=>{profile={...profile,photo:d};render();return db.doc('users/'+user.uid).update({photo:d});}).then(()=>toast('Photo saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg||'Couldn\u2019t save the photo. Try again.');});t.value='';return;}if(t.id==='nphoto'){shrinkPhoto(t.files&&t.files[0]).then(d=>{ui.newPhoto=d;render();},er=>toast(er&&er.msg||'Couldn\u2019t read that image.'));t.value='';return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
+app.addEventListener('change',e=>{const t=e.target;if(t.id==='avphoto'){const f=t.files&&t.files[0];t.value='';openCropper(f,{title:'Position your photo',shape:'circle',outW:160,outH:160,maxLen:18000,onError:toast,onSave:d=>{profile={...profile,photo:d};render();db.doc('users/'+user.uid).update({photo:d}).then(()=>toast('Photo saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save the photo. Try again.');});}});return;}if(t.id==='nphoto'){const f=t.files&&t.files[0];t.value='';openCropper(f,{title:'Position the campaign picture',shape:'wide',outW:800,outH:450,maxLen:140000,onError:toast,onSave:d=>{ui.newPhoto=d;render();}});return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
 window.addEventListener('acct-signout',()=>auth&&auth.signOut());
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account')e.preventDefault();
  switch(a){

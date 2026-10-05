@@ -314,7 +314,9 @@ service cloud.firestore {
       function isInvitee() { return request.auth.token.email_verified == true && resource.data.toEmail == myEmail(); }
       allow read: if (realUser() && (resource.data.fromUid == request.auth.uid || isInvitee())) || isAdmin();
       allow create: if realUser()
-        && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toEmail', 'created'])
+        && request.resource.data.keys().hasOnly(['cid', 'campaignName', 'fromUid', 'fromName', 'toEmail', 'created', 'photo'])
+        && (!('photo' in request.resource.data) || (request.resource.data.photo is string
+          && request.resource.data.photo.matches('data:image/jpeg;base64,.*') && request.resource.data.photo.size() < 150000))
         && request.resource.data.toEmail is string
         && request.resource.data.toEmail.size() <= 120
         && request.resource.data.toEmail.matches('[^@/ ]+@[^@/ ]+[.][^@/ ]+')

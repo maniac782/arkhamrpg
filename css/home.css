@@ -75,3 +75,11 @@ a.btn{text-decoration:none}
 .welcome a:hover{text-decoration-color:var(--ink)}
 .invited{background:var(--surface2);border-left-color:var(--muted)}
 .newtile .plus{color:var(--muted)}
+
+/* invitation cards */
+.invcard{gap:8px}
+.invcard h3{margin:0}
+.invby{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.invby b{color:var(--ink);font-weight:600}
+.invby .av{width:24px;height:24px;font-size:12px;flex:none}
+.invbtns{margin-top:auto;padding-top:4px}

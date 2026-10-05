@@ -102,14 +102,24 @@ function campPhoto(f){const cid=ui.cid;openCropper(f,{title:'Position the campai
 function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
  let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
  return '<div class="campimg ph" style="--h:'+h+'" aria-hidden="true"><span>'+esc(String(c.name||'?').trim().charAt(0).toUpperCase()||'?')+'</span></div>';}
+// An email invite as a card: the campaign's picture (saved on the invite) or its tinted letter, and who sent it.
+const inviters={};
+function inviteCard(i){
+ const u=inviters[i.fromUid];
+ if(u===undefined){inviters[i.fromUid]=null;db.doc('users/'+i.fromUid).get().then(d=>{inviters[i.fromUid]=d.exists?d.data():{};render();}).catch(()=>{});}
+ const by=u&&u.username?u:{username:i.fromName};
+ return '<div class="camp hasimg invcard">'+bannerHtml({id:i.cid,name:i.campaignName},i.photo)+'<h3>'+esc(i.campaignName)+'</h3>'+
+  '<span class="invby">'+acctIcon(by.username,u||{})+'<span><b>'+esc(by.username||'Someone')+'</b> invited you to join</span></span>'+
+  '<div class="row invbtns"><button class="btn pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join campaign</button><button class="btn" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div></div>';
+}
 function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
  let h='';
- if(pendingJoin&&!camps.some(c=>c.id===pendingJoin.cid))h+='<section class="sec"><div class="sec-head"><h2>Join “'+esc(pendingJoin.name||'this campaign')+'”?</h2></div><p class="note" style="margin:0">You opened an invite link. Join to see the party and play.</p><div class="row"><button class="btn pri" data-a="ljoin" '+(ui.busy?'disabled':'')+'>Join</button><button class="btn" data-a="lskip">Not now</button></div>'+errHtml()+'</section>';
+ if(pendingJoin&&!camps.some(c=>c.id===pendingJoin.cid))h+='<section class="sec"><div class="sec-head"><h2>You\u2019re invited</h2></div><div class="camps"><div class="camp hasimg invcard">'+bannerHtml({id:pendingJoin.cid,name:pendingJoin.name||'?'},null)+'<h3>'+esc(pendingJoin.name||'A campaign')+'</h3><span class="note">You opened an invite link. Join to see the party and make your investigator.</span>'+errHtml()+'<div class="row invbtns"><button class="btn pri" data-a="ljoin" '+(ui.busy?'disabled':'')+'>Join campaign</button><button class="btn" data-a="lskip">Not now</button></div></div></div></section>';
  if(user.email&&!user.emailVerified&&!user.providerData.some(x=>x.providerId==='google.com'))h+='<section class="sec"><p class="note" style="margin:0">Verify your email to see invites sent to <b>'+esc(user.email)+'</b>. Check your inbox for the link, then reload. <button class="btn sm" data-a="reverify">Send it again</button></p></section>';
- if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>Invitations</h2></div><div class="list">'+inbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.campaignName)+'</b><span class="effect">'+esc(i.fromName)+' invited you to join</span></div><button class="btn sm pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join</button><button class="btn sm" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div>').join('')+'</div></section>';
+ if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>You\u2019re invited</h2></div><div class="camps">'+inbox.map(inviteCard).join('')+'</div></section>';
  h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length?'<span class="note">'+owned.length+' of '+MAX_OWNED+'</span>':'')+'</div>';
  const tile=owned.length<MAX_OWNED?'<button class="camp newtile" data-a="newopen"><span class="plus" aria-hidden="true">+</span><b>New campaign</b><span class="note">'+(owned.length?'Start another and invite your group.':'Start a campaign and invite your group.')+'</span></button>':'';
  h+='<div class="camps">'+owned.map(campCard).join('')+tile+'</div>'+(owned.length>=MAX_OWNED?'<p class="note" style="margin:0">You own '+MAX_OWNED+' campaigns, the most allowed. Delete one to start another.</p>':'');
@@ -308,7 +318,7 @@ async function sendInvite(){
  if(em===myEmail())throw {msg:'That’s your own email.'};
  if(outbox.some(i=>i.toEmail===em))throw {msg:'There’s already an invite waiting for '+em+'.'};
  if((c.memberIds||[]).length+outbox.length>=MAX_MEMBERS)throw {msg:'A campaign can have up to '+MAX_MEMBERS+' members, counting invites.'};
- await db.doc('invites/'+c.id+'_'+em).set({cid:c.id,campaignName:c.name,fromUid:user.uid,fromName:profile.username,toEmail:em,created:FV().serverTimestamp()});
+ await db.doc('invites/'+c.id+'_'+em).set({cid:c.id,campaignName:c.name,fromUid:user.uid,fromName:profile.username,toEmail:em,created:FV().serverTimestamp(),...(photoOk(c.photo)?{photo:c.photo}:{})});
  ui.clear.add('iemail');toast('Invite saved for '+em+'. Let them know to sign in with that email.');
 }
 async function joinByLink(){

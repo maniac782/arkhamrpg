@@ -174,3 +174,7 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 @media (max-width:600px){.top-in{position:relative}#ver{position:absolute;top:16px;right:16px}.acct b{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#sync .nav{flex-wrap:nowrap}}
 .acct-me{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:none}
 .acct-me:hover b{text-decoration:underline}
+.titlewrap{display:flex;flex-direction:column;gap:2px;min-width:0}
+.crumb{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;align-self:flex-start}
+.crumb:hover{color:var(--ink);text-decoration:underline}
+.brand{align-items:flex-end}

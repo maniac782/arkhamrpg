@@ -20,7 +20,7 @@ function render(){
  if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+(isAdm?'<a class="nav-l" href="admin.html">Admin</a>':'')+'<span class="acct"><button class="acct-me" data-a="account" title="Your account">'+acctIcon(profile.username,profile)+'<b>'+esc(profile.username)+'</b></button>'+signOutHtml()+'</span></span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+acctMenuHtml(profile.username,profile,{email:(auth&&auth.currentUser&&auth.currentUser.email)||user.email||'',admin:isAdm})+'</span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  syncRename();
  // Keep the address in step with the page, so reloading a campaign's Settings stays there.
@@ -357,7 +357,8 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();if(e.target.id==='cname'){if(ui.err){ui.err='';const er=app.querySelector('.err');if(er)er.remove();}const p=document.getElementById('nprevname');if(p)p.textContent=e.target.value.trim()||'Your campaign';}});
 app.addEventListener('change',e=>{const t=e.target;if(t.id==='avphoto'){squarePhoto(t.files&&t.files[0]).then(d=>{profile={...profile,photo:d};render();return db.doc('users/'+user.uid).update({photo:d});}).then(()=>toast('Photo saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg||'Couldn\u2019t save the photo. Try again.');});t.value='';return;}if(t.id==='nphoto'){shrinkPhoto(t.files&&t.files[0]).then(d=>{ui.newPhoto=d;render();},er=>toast(er&&er.msg||'Couldn\u2019t read that image.'));t.value='';return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
+window.addEventListener('acct-signout',()=>auth&&auth.signOut());
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account')e.preventDefault();
  switch(a){
   case 'google':busy(google);break;
   case 'mode':ui.mode=b.dataset.m;ui.err='';render();break;
@@ -423,7 +424,7 @@ auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
 // Remember who was signed in and their campaigns, so a reload shows the page straight away.
 const BC='apl-beta-cache';let bc=null,watching=false;
 try{bc=JSON.parse(localStorage.getItem(BC)||'null');}catch(e){}
-function saveBC(){try{if(user&&profile)localStorage.setItem(BC,JSON.stringify({uid:user.uid,email:user.email||'',profile,camps}));}catch(e){}}
+function saveBC(){try{if(user&&profile)localStorage.setItem(BC,JSON.stringify({uid:user.uid,email:user.email||'',profile,camps,adm:isAdm}));}catch(e){}}
 if(bc&&bc.uid&&bc.profile){user={uid:bc.uid,email:bc.email,emailVerified:true,isAnonymous:false,providerData:[{providerId:'google.com'}],sendEmailVerification:async()=>{}};profile=bc.profile;camps=bc.camps||[];}
 auth.onAuthStateChanged(u=>{
  if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}if(inboxUnsub){inboxUnsub();inboxUnsub=null;}if(outUnsub){outUnsub();outUnsub=null;}outCid=null;inbox=[];outbox=[];
@@ -435,7 +436,7 @@ auth.onAuthStateChanged(u=>{
  banned=false;isAdm=false;seenDone=false;
  if(user){const uid=user.uid;
   db.doc('bans/'+uid).get().then(s=>{banned=s.exists;render();}).catch(()=>{});
-  db.doc('admins/'+uid).get().then(s=>{isAdm=s.exists;render();}).catch(()=>{});
+  db.doc('admins/'+uid).get().then(s=>{isAdm=s.exists;saveBC();render();}).catch(()=>{});
   try{if(sessionStorage.getItem('apl-del-after')){sessionStorage.removeItem('apl-del-after');ui.view='account';ui.delAsk=true;}}catch(e){}}
  if(user){profUnsub=db.doc('users/'+user.uid).onSnapshot(s=>{profile=s.exists?s.data():null;
   if(profile&&!seenDone&&!(profile.lastSeen>Date.now()-12*3600*1000)){seenDone=true;db.doc('users/'+user.uid).update({lastSeen:Date.now()}).catch(()=>{});}if(profile&&!watching){watching=true;watchCampaigns();watchInbox();}saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));profile=null;render();});}

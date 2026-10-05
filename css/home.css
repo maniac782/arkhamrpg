@@ -12,7 +12,7 @@
 .err{color:var(--danger);font-size:13px;margin:0}
 .wide{width:100%}
 a.btn{text-decoration:none}
-a{color:var(--brass)}
+
 
 /* Campaign pictures */
 .camp.hasimg{padding-top:0;overflow:hidden}

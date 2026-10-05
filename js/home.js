@@ -413,6 +413,7 @@ if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">Firebase i
 const cfg=Object.assign({},window.FIREBASE_CONFIG);
 if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
 fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);auth=fb.auth();db=fb.firestore();
+try{if(new URLSearchParams(location.search).has('account'))ui.view='account';}catch(e){}
 try{const st=new URLSearchParams(location.search).get('settings');if(st&&/^[A-Za-z0-9]{10,40}$/.test(st)){ui.view='camp';ui.cid=st;ui.waitCid=st;}}catch(e){}
 try{const q=new URLSearchParams(location.search).get('join');const n=new URLSearchParams(location.search).get('n');
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
@@ -428,7 +429,7 @@ auth.onAuthStateChanged(u=>{
  if(profUnsub){profUnsub();profUnsub=null;}if(campUnsub){campUnsub();campUnsub=null;}if(inboxUnsub){inboxUnsub();inboxUnsub=null;}if(outUnsub){outUnsub();outUnsub=null;}outCid=null;inbox=[];outbox=[];
  const same=!!(u&&bc&&bc.uid===u.uid);
  user=u&&!u.isAnonymous?u:null;watching=false;
- if(!same){profile=undefined;camps=[];if(!ui.waitCid)ui.view='home';}
+ if(!same){profile=undefined;camps=[];if(!ui.waitCid&&!(u&&ui.view==='account'))ui.view='home';}
  if(!user){try{localStorage.removeItem(BC);Object.keys(localStorage).filter(k=>k.startsWith('apl-memo-')).forEach(k=>localStorage.removeItem(k));}catch(e){}bc=null;}
  ui.err='';ui.busy=false;
  banned=false;isAdm=false;seenDone=false;

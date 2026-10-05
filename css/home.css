@@ -21,7 +21,7 @@ a{color:var(--brass)}
 .setimg.wide{width:100%;max-width:480px}
 .optrow{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
 .optrow input{flex:none;margin-top:3px}
-.acct-me{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+.acct-me{text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
 .acct-me:hover b{text-decoration:underline}
 
 /* New campaign tile and setup page */

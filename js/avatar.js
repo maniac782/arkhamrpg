@@ -86,3 +86,48 @@ window.acctIcon=function(name,prof){
   // Keep every countdown on the page current without redrawing anything else.
   setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t))el.textContent=window.sessionRel(t);else el.remove();});},30000);
 })();
+
+/* Address suggestions for "Where" boxes (inputs with data-place): as you type, up to five matching places from
+   Photon (photon.komoot.io), a free OpenStreetMap search with no key or billing. Only what's typed is sent. */
+(function(){
+  var box=null,items=[],sel=-1,timer=0,seq=0,cur=null,picking=false;
+  function fmt(p){
+    var street=[p.housenumber,p.street].filter(Boolean).join(' ');
+    var first=p.name&&p.name!==street?p.name:'';
+    return [first,street,p.city||p.town||p.village||p.district,[p.state,p.postcode].filter(Boolean).join(' '),p.countrycode&&p.countrycode.toUpperCase()==='US'?'':p.country].filter(Boolean).join(', ');
+  }
+  function close(){if(box){box.remove();box=null;}items=[];sel=-1;}
+  function place(){if(!box||!cur)return;var r=cur.getBoundingClientRect();box.style.left=(r.left+window.scrollX)+'px';box.style.top=(r.bottom+window.scrollY+4)+'px';box.style.width=Math.max(r.width,260)+'px';}
+  function show(list){
+    close();if(!list.length||!cur||document.activeElement!==cur)return;items=list;
+    box=document.createElement('div');box.className='placebox';box.setAttribute('role','listbox');
+    box.innerHTML=list.map(function(t,i){return '<div class="placeopt" role="option" data-i="'+i+'">'+t.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];})+'</div>';}).join('')+'<div class="placeattr">Suggestions © OpenStreetMap contributors</div>';
+    document.body.appendChild(box);place();
+    box.addEventListener('mousedown',function(e){var o=e.target.closest('.placeopt');if(!o)return;e.preventDefault();pick(Number(o.dataset.i));});
+  }
+  function hi(){if(!box)return;box.querySelectorAll('.placeopt').forEach(function(o,i){o.classList.toggle('on',i===sel);});}
+  function pick(i){if(!cur||!items[i])return;cur.value=items[i].slice(0,Number(cur.maxLength)>0?cur.maxLength:200);close();picking=true;cur.dispatchEvent(new Event('input',{bubbles:true}));picking=false;}
+  function search(q){
+    var my=++seq;
+    fetch('https://photon.komoot.io/api/?limit=5&lang=en&q='+encodeURIComponent(q)).then(function(r){return r.ok?r.json():{features:[]};}).then(function(j){
+      if(my!==seq)return;var seen={},out=[];
+      (j.features||[]).forEach(function(f){var t=fmt(f.properties||{});if(t&&!seen[t]){seen[t]=1;out.push(t);}});show(out);
+    }).catch(function(){});
+  }
+  document.addEventListener('input',function(e){
+    var el=e.target;if(!el.matches||!el.matches('input[data-place]'))return;
+    if(picking)return;
+    cur=el;clearTimeout(timer);var q=el.value.trim();
+    if(q.length<4||!/[a-z]/i.test(q)){close();return;}
+    timer=setTimeout(function(){search(q);},350);
+  });
+  document.addEventListener('keydown',function(e){
+    if(!box||!cur||e.target!==cur)return;
+    if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(items.length-1,sel+1);hi();}
+    else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(0,sel-1);hi();}
+    else if(e.key==='Enter'&&sel>=0){e.preventDefault();pick(sel);}
+    else if(e.key==='Escape'){close();}
+  },true);
+  document.addEventListener('focusout',function(e){if(e.target===cur)setTimeout(close,150);});
+  window.addEventListener('resize',place);window.addEventListener('scroll',place,true);
+})();

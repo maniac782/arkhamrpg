@@ -159,7 +159,7 @@ function nextSessionHtml(c,can){
  if(on)h+='<p style="margin:0"><b>'+esc(sessionWhen(t))+'</b>'+(c.nextWhere?' \u00b7 '+esc(c.nextWhere):'')+'</p><div class="row"><a class="btn sm" href="'+sessionIcs(c.name,t,c.nextWhere)+'" download="'+esc((c.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(mapsHref(c.nextWhere)?'<a class="btn sm" href="'+esc(mapsHref(c.nextWhere))+'" target="_blank" rel="noopener">Directions</a>':'')+'</div>';
  else if(!can)h+='<p class="note" style="margin:0">Nothing scheduled yet. The owner or GM can set it.</p>';
  if(can)h+='<form id="nsform" class="row" style="align-items:flex-end" novalidate><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="nsdate" value="'+(on?localInput(t):'')+'"></label>'+
-  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+
+  '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" type="submit">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" type="button" data-a="nsclear">Clear</button>':'')+'</form>'+
   '<p class="note" style="margin:0">Shows a countdown on the campaign\u2019s card and in the ledger for everyone. Times are in each person\u2019s own time zone.</p>';
  return h+'</section>';

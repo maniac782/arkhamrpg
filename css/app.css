@@ -228,3 +228,7 @@ a.btn{text-decoration:none;color:inherit}
 .camp,.pcard{transition:border-color .15s,box-shadow .15s,transform .15s}
 .camp:hover,.pcard:hover,.camp.newtile:hover,.camp.newtile:focus-visible{border-color:var(--muted)!important;box-shadow:0 6px 18px rgba(0,0,0,.18);transform:translateY(-1px)}
 @media (prefers-reduced-motion:reduce){.camp:hover,.pcard:hover{transform:none}}
+.placebox{position:absolute;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:4px;font-size:14px}
+.placeopt{padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--ink)}
+.placeopt:hover,.placeopt.on{background:var(--surface2)}
+.placeattr{font-size:11px;color:var(--muted);padding:4px 10px 2px;border-top:1px solid var(--line);margin-top:4px}

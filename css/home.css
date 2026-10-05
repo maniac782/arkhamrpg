@@ -41,3 +41,8 @@ a{color:var(--brass)}
 .swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;color:#fff;font-weight:700;font-size:15px;display:inline-grid;place-items:center;padding:0;box-shadow:0 0 0 1px var(--line)}
 .swatch.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink)}
 .avbig .av{width:34px;height:34px;font-size:16px}
+
+/* banner for campaigns without a picture */
+.campimg.ph{display:grid;place-items:center;background:radial-gradient(120% 90% at 30% 20%,hsl(var(--h) 32% 30%),hsl(calc(var(--h) + 40) 35% 12%));overflow:hidden}
+.campimg.ph span{font-family:var(--display);font-size:64px;font-weight:700;color:hsl(var(--h) 40% 85% / .55);line-height:1}
+.camp .campmain{flex:1}

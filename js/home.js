@@ -37,6 +37,7 @@ function accountView(){
   [['Username',profile.username],['Email',(auth.currentUser&&auth.currentUser.email)||user.email||'—'],['Signed in with',provName()]].map(([k,v])=>'<div class="item"><div class="grow"><span class="lbl">'+k+'</span><b>'+esc(v)+'</b></div></div>').join('')+'</div></section>';
  const curC=AVATAR_COLORS[profile.color]?profile.color:'slate',curI=AVATAR_ICONS.includes(profile.icon)?profile.icon:'';
  h+='<section class="sec"><div class="sec-head"><h2>Your icon</h2><span class="row" style="gap:8px;align-items:center"><span class="avbig">'+acctIcon(profile.username,profile)+'</span><b>'+esc(profile.username)+'</b></span></div>'+
+  '<div class="field"><span class="lbl">Photo</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="avphoto" style="cursor:pointer">'+(profile.photo?'Change photo':'Upload a photo')+'</label><input type="file" id="avphoto" accept="image/*" hidden>'+(profile.photo?'<button class="btn sm" data-a="avphotodel">Remove photo</button>':'')+'</div><span class="note">'+(profile.photo?'Your photo is showing. Remove it to use a colour and letter or symbol instead.':'Or pick a colour and letter or symbol below.')+'</span></div>'+
   '<div class="field"><span class="lbl">Colour</span><div class="swatches">'+Object.keys(AVATAR_COLORS).map(k=>'<button class="swatch'+(k===curC?' on':'')+'" data-a="avc" data-v="'+k+'" style="background:'+AVATAR_COLORS[k]+'" aria-label="'+k+'" aria-pressed="'+(k===curC)+'"></button>').join('')+'</div></div>'+
   '<div class="field"><span class="lbl">Show</span><div class="swatches">'+['',...AVATAR_ICONS].map(i=>'<button class="swatch sym'+(i===curI?' on':'')+'" data-a="avi" data-v="'+esc(i)+'" style="background:'+AVATAR_COLORS[curC]+'" aria-pressed="'+(i===curI)+'" aria-label="'+(i?'Symbol '+esc(i):'First letter')+'">'+esc(i||String(profile.username||'?').charAt(0).toUpperCase())+'</button>').join('')+'</div></div></section>';
  h+='<section class="sec"><h2>Delete my account</h2>';
@@ -96,8 +97,17 @@ function shrinkPhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f
   for(let k=0;k<8;k++){cv.width=w;cv.height=Math.round(w*9/16);cv.getContext('2d').drawImage(img,sx,sy,cw,ch,0,0,cv.width,cv.height);d=cv.toDataURL('image/jpeg',q);if(d.length<140000)break;w=Math.round(w*0.85);q=Math.max(0.5,q-0.05);}
   res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
+// A square, small profile photo (about 10 KB), centred.
+function squarePhoto(f){return new Promise((res,rej)=>{if(!f||!/^image\//.test(f.type))return rej({msg:'Choose an image file.'});const url=URL.createObjectURL(f),img=new Image();
+ img.onload=()=>{URL.revokeObjectURL(url);const W=img.naturalWidth,Hh=img.naturalHeight,s=Math.min(W,Hh),cv=document.createElement('canvas');cv.width=cv.height=160;
+  cv.getContext('2d').drawImage(img,(W-s)/2,(Hh-s)/2,s,s,0,0,160,160);let q=0.85,d=cv.toDataURL('image/jpeg',q);while(d.length>18000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
+ img.onerror=()=>{URL.revokeObjectURL(url);rej({msg:'Couldn\u2019t read that image.'});};img.src=url;});}
 function campPhoto(f){shrinkPhoto(f).then(d=>db.doc('campaigns/'+ui.cid).update({photo:d})).then(()=>toast('Picture saved.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg?er.msg:'Couldn\u2019t save the picture. Try again.');});}
-function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp'+(photoOk(c.photo)?' hasimg':'')+'"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+(photoOk(c.photo)?'<img class="campimg" src="'+c.photo+'" alt="">':'')+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
+// A campaign with no picture gets a tinted banner with its first letter, so every card lines up.
+function bannerHtml(c,photo){if(photoOk(photo))return '<img class="campimg" src="'+photo+'" alt="">';
+ let h=0;for(const ch of String(c.id||c.name||'x'))h=(h*31+ch.charCodeAt(0))%360;
+ return '<div class="campimg ph" style="--h:'+h+'" aria-hidden="true"><span>'+esc(String(c.name||'?').trim().charAt(0).toUpperCase()||'?')+'</span></div>';}
+function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row" style="justify-content:flex-end"><button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
  const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
@@ -122,7 +132,7 @@ function newView(){
    '<label class="optrow"><input type="radio" name="ngm" value="me"'+(gm==='me'?' checked':'')+'><span><b>I\u2019ll be the GM</b><br><span class="note">You get the GM tab: scenes, enemies, clues and XP.</span></span></label>'+
    '<label class="optrow"><input type="radio" name="ngm" value="later"'+(gm==='later'?' checked':'')+'><span><b>Someone else</b><br><span class="note">Pick them in Settings once they\u2019ve joined.</span></span></label></fieldset>'+
   '<div class="field"><span class="lbl">Picture (optional)</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="nphoto" style="cursor:pointer">'+(ui.newPhoto?'Change picture':'Add a picture')+'</label><input type="file" id="nphoto" accept="image/*" hidden>'+(ui.newPhoto?'<button class="btn sm" type="button" data-a="nphotodel">Remove</button>':'')+'</div></div>'+
-  '</div><div class="newprev"><span class="lbl">Preview</span><div class="camp'+(ui.newPhoto?' hasimg':'')+'" aria-hidden="true">'+(ui.newPhoto?'<img class="campimg" src="'+ui.newPhoto+'" alt="">':'')+'<h3 id="nprevname">'+esc(nm||'Your campaign')+'</h3><span class="row" style="gap:6px"><span class="chip ok">Owner</span><span class="note">1 member</span></span></div></div></div>'+
+  '</div><div class="newprev"><span class="lbl">Preview</span><div class="camp hasimg" aria-hidden="true">'+bannerHtml({id:'new',name:nm||'Your campaign'},ui.newPhoto)+'<h3 id="nprevname">'+esc(nm||'Your campaign')+'</h3><span class="row" style="gap:6px"><span class="chip ok">Owner</span><span class="note">1 member</span></span></div></div></div>'+
   errHtml()+'<div class="row"><button class="btn pri" type="submit" '+(ui.busy?'disabled':'')+'>Create campaign</button><button class="btn" type="button" data-a="home">Cancel</button></div></form>';
  return h;
 }
@@ -344,7 +354,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 // Rename is only clickable when the name has actually been changed.
 function syncRename(){const i=document.getElementById('rname'),b=document.getElementById('renbtn');if(i&&b){const v=i.value.trim();b.disabled=ui.busy||!v||v===i.dataset.orig;}}
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();if(e.target.id==='cname'){if(ui.err){ui.err='';const er=app.querySelector('.err');if(er)er.remove();}const p=document.getElementById('nprevname');if(p)p.textContent=e.target.value.trim()||'Your campaign';}});
-app.addEventListener('change',e=>{const t=e.target;if(t.id==='nphoto'){shrinkPhoto(t.files&&t.files[0]).then(d=>{ui.newPhoto=d;render();},er=>toast(er&&er.msg||'Couldn\u2019t read that image.'));t.value='';return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
+app.addEventListener('change',e=>{const t=e.target;if(t.id==='avphoto'){squarePhoto(t.files&&t.files[0]).then(d=>{profile={...profile,photo:d};render();return db.doc('users/'+user.uid).update({photo:d});}).then(()=>toast('Photo saved.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast(er&&er.msg||'Couldn\u2019t save the photo. Try again.');});t.value='';return;}if(t.id==='nphoto'){shrinkPhoto(t.files&&t.files[0]).then(d=>{ui.newPhoto=d;render();},er=>toast(er&&er.msg||'Couldn\u2019t read that image.'));t.value='';return;}if(t.name==='ngm'){ui.newGM=t.value;return;}if(t.id==='cphoto'){campPhoto(t.files&&t.files[0]);t.value='';return;}if(t.hasAttribute('data-ownedit')){const on=t.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?'You can edit every investigator again.':'Other players\u2019 investigators are locked to them now.')).catch(er=>{if(window.quotaHit&&quotaHit(er))return;t.checked=!on;toast('Couldn\u2019t save that. Try again.');});return;}houseChange(t);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;
  switch(a){
   case 'google':busy(google);break;
@@ -363,6 +373,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
+  case 'avphotodel':profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'avc':case 'avi':{const k=a==='avc'?'color':'icon',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;
   case 'acctdelask':ui.delAsk=true;render();break;

@@ -13,7 +13,7 @@ window.FIREBASE_CONFIG = {
 window.APP_CHECK_KEY = "6Ld_M9otAAAAAPKV4kSfUhxdn4oH6Z1NclhUdc-Y";
 /* Google Places key for address suggestions in "Where" boxes. Limit it in Google Cloud to this site's
    addresses and to Places API (New) only, with a daily request cap. Left empty, suggestions stay off. */
-window.PLACES_KEY = "";
+window.PLACES_KEY = "AIzaSyAFmIarmHdwN6nMf0TNFexVr9Ab4BvdOnQ";
 window.armAppCheck = function(app){
   if(!window.APP_CHECK_KEY||!app||!app.appCheck||!window.firebase||!firebase.appCheck)return;
   try{app.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(window.APP_CHECK_KEY),true);}catch(e){console.warn('App Check',e);}

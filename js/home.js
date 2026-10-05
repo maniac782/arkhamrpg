@@ -103,7 +103,7 @@ function homeView(){
  if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>Invitations</h2></div><div class="list">'+inbox.map(i=>'<div class="item"><div class="grow"><b>'+esc(i.campaignName)+'</b><span class="effect">'+esc(i.fromName)+' invited you to join</span></div><button class="btn sm pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join</button><button class="btn sm" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div>').join('')+'</div></section>';
  h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length?'<span class="note">'+owned.length+' of '+MAX_OWNED+'</span>':'')+'</div>';
  const tile=owned.length<MAX_OWNED?'<button class="camp newtile" data-a="newopen"><span class="plus" aria-hidden="true">+</span><b>New campaign</b><span class="note">'+(owned.length?'Start another and invite your group.':'Start a campaign and invite your group.')+'</span></button>':'';
- h+='<div class="camps">'+tile+owned.map(campCard).join('')+'</div>'+(owned.length>=MAX_OWNED?'<p class="note" style="margin:0">You own '+MAX_OWNED+' campaigns, the most allowed. Delete one to start another.</p>':'');
+ h+='<div class="camps">'+owned.map(campCard).join('')+tile+'</div>'+(owned.length>=MAX_OWNED?'<p class="note" style="margin:0">You own '+MAX_OWNED+' campaigns, the most allowed. Delete one to start another.</p>':'');
  h+='</section><section class="sec"><div class="sec-head"><h2>Campaigns you’re in</h2></div>'+
   (member.length?'<div class="camps">'+member.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">None yet. When a friend invites you, it’ll show up here.</p>')+'</section>';
  return h;

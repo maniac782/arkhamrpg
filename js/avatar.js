@@ -12,22 +12,50 @@ window.acctIcon=function(name,prof){
    your account, the admin page for admins, and Sign out. Pages listen for the 'acct-signout' event. */
 (function(){
   var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
-  // A pre-filled email to the site owner with the page and version, so beta testers can report things in one click.
-  function feedbackHref(){var v=document.getElementById('ver');return 'mailto:maniac78@gmail.com?subject='+encodeURIComponent('Arkham Ledger feedback'+(v?' ('+v.textContent+')':''))+'&body='+encodeURIComponent('\n\n\u2014\nPage: '+location.pathname+location.search.replace(/join=[^&]*/,'join=\u2026')+'\nBrowser: '+navigator.userAgent);}
   window.acctMenuHtml=function(name,prof,opt){
     opt=opt||{};var open=!!window.__acctOpen;
     return '<span class="acctwrap"><button class="acctbtn" type="button" data-acct="toggle" aria-haspopup="menu" aria-expanded="'+open+'" title="Your account">'+window.acctIcon(name,prof)+'<b class="acctname">'+esc(name)+'</b><span class="caret" aria-hidden="true">▾</span></button>'+
       '<div class="acctmenu" role="menu"'+(open?'':' hidden')+'><div class="acctmenu-head">'+window.acctIcon(name,prof)+'<span><b>'+esc(name)+'</b>'+(opt.email?'<span class="note">'+esc(opt.email)+'</span>':'')+'</span></div>'+
       '<a role="menuitem" href="./?account=1" data-a="account">Your account</a>'+(opt.admin?'<a role="menuitem" href="admin.html">Admin</a>':'')+
-      '<a role="menuitem" href="'+feedbackHref()+'" data-acct="feedback">Send feedback</a>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
+      '<button role="menuitem" type="button" data-acct="feedback">Send feedback</button>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
   };
   function setOpen(v){window.__acctOpen=v;document.querySelectorAll('.acctwrap').forEach(function(w){var m=w.querySelector('.acctmenu'),b=w.querySelector('.acctbtn');if(m)m.hidden=!v;if(b)b.setAttribute('aria-expanded',String(v));});}
   document.addEventListener('click',function(e){
     var t=e.target.closest&&e.target.closest('[data-acct]');
     if(t&&t.dataset.acct==='toggle'){e.stopPropagation();setOpen(!window.__acctOpen);return;}
     if(t&&t.dataset.acct==='signout'){setOpen(false);window.dispatchEvent(new CustomEvent('acct-signout'));return;}
+    if(t&&t.dataset.acct==='feedback'){setOpen(false);openFeedback();return;}
     if(window.__acctOpen&&!(e.target.closest&&e.target.closest('.acctmenu')))setOpen(false);
     else if(window.__acctOpen&&e.target.closest('.acctmenu a'))setOpen(false);
   },true);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&window.__acctOpen){setOpen(false);var b=document.querySelector('.acctbtn');if(b)b.focus();}});
+})();
+
+/* Send feedback: a small form that saves to the database (feedback collection); the site owner reads it on the admin page. */
+(function(){
+  function app(){var fb=window.firebase;if(!fb||!fb.apps||!fb.apps.length)return null;return fb.apps.filter(function(a){return a.name==='beta';})[0]||fb.apps[0];}
+  function note(m){var t=document.getElementById('toast');if(!t)return alert(m);t.textContent=m;t.hidden=false;clearTimeout(note.t);note.t=setTimeout(function(){t.hidden=true;},3200);}
+  window.openFeedback=function(){
+    if(document.querySelector('.fb-bg'))return;
+    var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Send feedback');
+    bg.innerHTML='<form class="crop fbform" novalidate><h2>Send feedback</h2>'+
+      '<div class="fbkinds" role="radiogroup" aria-label="What kind of feedback">'+[['bug','Something\u2019s broken'],['idea','Idea'],['other','Other']].map(function(k,i){return '<label><input type="radio" name="fbk" value="'+k[0]+'"'+(i===0?' checked':'')+'> '+k[1]+'</label>';}).join('')+'</div>'+
+      '<label class="field" style="width:100%"><span class="lbl">Message</span><textarea class="f" id="fbmsg" rows="5" maxlength="2000" placeholder="What happened, or what would make the site better?"></textarea></label>'+
+      '<p class="note" style="margin:0;width:100%">The page you\u2019re on, your browser and the site version are included so it\u2019s easier to look into.</p>'+
+      '<p class="err" id="fberr" hidden></p>'+
+      '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" type="button" data-f="cancel">Cancel</button><button class="btn pri" type="submit">Send</button></div></form>';
+    document.body.appendChild(bg);
+    var form=bg.querySelector('form'),ta=bg.querySelector('#fbmsg'),er=bg.querySelector('#fberr');ta.focus();ta.addEventListener('input',function(){er.hidden=true;});
+    var close=function(){bg.remove();document.removeEventListener('keydown',esc);};
+    var esc=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',esc);
+    bg.addEventListener('click',function(e){if(e.target===bg||e.target.closest('[data-f=cancel]'))close();});
+    form.addEventListener('submit',function(e){e.preventDefault();
+      var msg=ta.value.trim();if(!msg){er.textContent='Write a message first.';er.hidden=false;return;}
+      var a=app(),u=a&&a.auth&&a.auth().currentUser;if(!u){er.textContent='Sign in first, then try again.';er.hidden=false;return;}
+      var v=document.getElementById('ver'),kind=(form.querySelector('input[name=fbk]:checked')||{}).value||'other',btn=form.querySelector('[type=submit]');btn.disabled=true;
+      a.firestore().collection('feedback').add({kind:kind,msg:msg.slice(0,2000),page:(location.pathname+location.search.replace(/join=[^&]*/,'join=\u2026')).slice(0,300),
+        ua:String(navigator.userAgent||'').slice(0,300),v:v?v.textContent.slice(0,20):'',t:Date.now(),uid:u.uid})
+       .then(function(){close();note('Thanks! Your feedback was sent.');},function(e2){btn.disabled=false;er.textContent=(e2&&e2.code==='resource-exhausted')?'The site has hit its daily limit. Try again tomorrow.':'Couldn\u2019t send that. Try again in a moment.';er.hidden=false;});
+    });
+  };
 })();

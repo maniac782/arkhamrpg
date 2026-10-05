@@ -47,6 +47,7 @@ Knack names and tiers follow each archetype's table in the corebook. Each knack'
 - **Suspend** an account: it can still sign in and look, but the database refuses every change it makes, and it's taken out of campaigns it joined. Campaigns it owns stay so their players keep their sheets. **Unsuspend** lifts it (they'll need new invites).
 - **Change username**, for example to replace an offensive one.
 - **Delete** any campaign, including its hidden GM material.
+- **Feedback** tab: messages people send with **Send feedback** in the account menu (bug, idea or other, with the page, browser and version). Mark each one **Done** to clear it.
 - **Errors** tab: unexpected errors people hit while signed in (message, page, browser, version, who), recorded automatically by `js/config.js` (at most a few per visit). Clear them once dealt with.
 
 Admins are accounts with a document in the `admins` collection in Firestore whose ID is their user ID (Firebase → Authentication → Users → **User UID**); it needs no fields. Email addresses and disabling a sign-in entirely are handled in Firebase → Authentication.

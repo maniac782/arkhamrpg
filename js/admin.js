@@ -7,7 +7,7 @@ const app=document.getElementById('app'),whoEl=document.getElementById('who'),to
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,3200);}
 const DAY=86400000;
-let auth=null,db=null,me=null,authKnown=false,state='loading',users=[],camps=[],bans={},errs=[],loadedAt=0;
+let auth=null,db=null,me=null,authKnown=false,state='loading',users=[],camps=[],bans={},errs=[],fbs=[],loadedAt=0;
 const ui={tab:'users',q:'',ask:null,rename:null,busy:false};
 
 // ---------- helpers ----------
@@ -22,6 +22,7 @@ async function load(){
  state='loading';render();
  try{
   const [us,cs,bs]=await Promise.all([db.collection('users').get(),db.collection('campaigns').get(),db.collection('bans').get()]);
+  try{const fs2=await db.collection('feedback').orderBy('t','desc').limit(200).get();fbs=fs2.docs.map(d=>({id:d.id,...d.data()}));}catch(e){fbs=[];}
   try{const es=await db.collection('errors').orderBy('t','desc').limit(200).get();errs=es.docs.map(d=>({id:d.id,...d.data()}));}catch(e){errs=[];}
   users=us.docs.map(d=>({id:d.id,...d.data()}));camps=cs.docs.map(d=>({id:d.id,...d.data()}));bans={};bs.docs.forEach(d=>bans[d.id]=d.data());
   loadedAt=Date.now();state='ready';
@@ -73,10 +74,10 @@ function render(){
  const keep=document.activeElement&&document.activeElement.id;
  const active=users.filter(u=>ms(u.lastSeen)>Date.now()-7*DAY).length;
  let h='<div class="stats">'+[['Users',users.length],['Active this week',active],['Campaigns',camps.length],['Suspended',Object.keys(bans).length]].map(([k,v])=>'<div class="stat"><span class="lbl">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>';
- h+='<div class="row" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns'],['errs','Errors'+(errs.length?' ('+errs.length+')':'')]].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+
-  '<label class="field" style="min-width:200px"><span class="lbl">Search</span><input class="f" id="q" value="'+esc(ui.q)+'" placeholder="'+(ui.tab==='users'?'Username':ui.tab==='errs'?'Message, page or user':'Campaign or owner')+'" autocomplete="off"></label>'+
+ h+='<div class="row" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns'],['fb','Feedback'+(fbs.length?' ('+fbs.length+')':'')],['errs','Errors'+(errs.length?' ('+errs.length+')':'')]].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+
+  '<label class="field" style="min-width:200px"><span class="lbl">Search</span><input class="f" id="q" value="'+esc(ui.q)+'" placeholder="'+(ui.tab==='users'?'Username':ui.tab==='errs'||ui.tab==='fb'?'Message, page or user':'Campaign or owner')+'" autocomplete="off"></label>'+
   '<button class="btn sm" data-a="reload" title="Loaded '+esc(new Date(loadedAt).toLocaleTimeString())+'">Refresh</button></div>';
- h+=ui.tab==='users'?usersHtml():ui.tab==='errs'?errsHtml():campsHtml();
+ h+=ui.tab==='users'?usersHtml():ui.tab==='errs'?errsHtml():ui.tab==='fb'?fbHtml():campsHtml();
  app.innerHTML=h;
  if(keep){const el=document.getElementById(keep);if(el){el.focus();if(el.setSelectionRange){const n=el.value.length;el.setSelectionRange(n,n);}}}
 }
@@ -96,6 +97,12 @@ function usersHtml(){
 // Short browser name from the user agent, enough to spot a pattern.
 function browserOf(ua){ua=String(ua||'');const os=/iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':/Linux/.test(ua)?'Linux':'';
  const br=/Edg\//.test(ua)?'Edge':/Firefox\//.test(ua)?'Firefox':/CriOS|Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'Browser';return br+(os?' on '+os:'');}
+function fbHtml(){
+ const q=ui.q.trim().toLowerCase(),K={bug:'Something\u2019s broken',idea:'Idea',other:'Other'};
+ const list=fbs.filter(f=>!q||[f.msg,f.page,nameOf(f.uid)].some(x=>String(x||'').toLowerCase().includes(q)));
+ if(!list.length)return '<p class="note">'+(fbs.length?'No feedback matches.':'No feedback yet.')+'</p>';
+ return '<div class="list adm">'+list.map(f=>'<div class="item"><div class="grow"><span class="row" style="gap:6px;align-items:center"><span class="chip'+(f.kind==='bug'?' warn':'')+'">'+esc(K[f.kind]||'Other')+'</span><b>'+esc(nameOf(f.uid))+'</b><span class="note">'+esc(ago(ms(f.t)))+'</span></span><p class="fbtext">'+esc(f.msg)+'</p><span class="effect">'+esc(f.page||'')+' \u00b7 '+esc(browserOf(f.ua))+(f.v?' \u00b7 '+esc(f.v):'')+'</span></div><button class="btn sm" data-a="fbdel" data-f="'+esc(f.id)+'">Done</button></div>').join('')+'</div>';
+}
 function errsHtml(){
  const q=ui.q.trim().toLowerCase();
  const list=errs.filter(e=>!q||[e.msg,e.page,nameOf(e.uid)].some(x=>String(x||'').toLowerCase().includes(q)));
@@ -125,6 +132,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='banyes')run(()=>ban(u),'Account suspended.');
  else if(a==='unban')run(()=>unban(u),'Suspension lifted. They’ll need new invites to rejoin campaigns.');
  else if(a==='rename'){ui.rename=u;ui.ask=null;render();const el=document.getElementById('rn-'+u);if(el){el.focus();el.select();}}
+ else if(a==='fbdel'){const id=b.dataset.f;run(async()=>{await db.doc('feedback/'+id).delete();fbs=fbs.filter(x=>x.id!==id);},'Marked as done.');}
  else if(a==='errdel'){const id=b.dataset.e;run(async()=>{await db.doc('errors/'+id).delete();errs=errs.filter(x=>x.id!==id);});}
  else if(a==='errclear')run(async()=>{await Promise.all(errs.map(x=>db.doc('errors/'+x.id).delete().catch(()=>{})));errs=[];},'Errors cleared.');
  else if(a==='cdel'){ui.ask={cid:c};render();}

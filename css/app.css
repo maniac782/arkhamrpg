@@ -237,3 +237,13 @@ a.btn{text-decoration:none;color:inherit}
 .placesub{color:var(--muted)}
 .placeopt:hover,.placeopt.on{background:var(--surface2)}
 .placeattr{font-size:11px;color:var(--muted);padding:4px 10px 2px;border-top:1px solid var(--line);margin-top:4px;text-align:right}
+/* Tappable session address with a small Directions / Food nearby menu. */
+.placewrap{position:relative;display:inline-block}
+.placelink{all:unset;cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;border-radius:3px}
+.placelink:hover{color:var(--ink);text-decoration-color:var(--muted)}
+.placelink:focus-visible{outline:2px solid var(--muted);outline-offset:2px}
+.placecaret{font-size:11px;margin-left:4px;text-decoration:none;display:inline-block}
+.placemenu{position:absolute;left:0;top:calc(100% + 6px);z-index:40;display:flex;flex-direction:column;min-width:160px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.placemenu[hidden]{display:none}
+.placemenu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px;white-space:nowrap}
+.placemenu a:hover,.placemenu a:focus-visible{background:var(--surface2)}

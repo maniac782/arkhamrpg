@@ -80,6 +80,19 @@ window.acctIcon=function(name,prof){
   window.mapsHref=function(where){where=String(where||'').trim();if(!where||!/[0-9,]/.test(where)||/^https?:/i.test(where))return '';return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(where);};
   // Food near the session's place, as a Google Maps search (same rule as Directions: only for real addresses).
   window.foodHref=function(where){if(!window.mapsHref(where))return '';return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent('restaurants near '+String(where).trim());};
+  // The session's place as text, or for a real address a tappable link with a small menu: Directions and Food nearby.
+  window.placeHtml=function(where){
+    var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+    var d=window.mapsHref(where);if(!d)return e(where);
+    return '<span class="placewrap"><button type="button" class="placelink" data-placemenu aria-haspopup="true" aria-expanded="false">'+e(where)+'<span class="placecaret" aria-hidden="true">\u25be</span></button>'+
+      '<span class="placemenu" role="menu" hidden><a role="menuitem" href="'+e(d)+'" target="_blank" rel="noopener">Directions</a><a role="menuitem" href="'+e(window.foodHref(where))+'" target="_blank" rel="noopener">Food nearby</a></span></span>';
+  };
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest&&ev.target.closest('[data-placemenu]');
+    document.querySelectorAll('.placemenu').forEach(function(m){if(!b||m!==b.nextElementSibling){m.hidden=true;if(m.previousElementSibling)m.previousElementSibling.setAttribute('aria-expanded','false');}});
+    if(b){ev.preventDefault();var m=b.nextElementSibling;m.hidden=!m.hidden;b.setAttribute('aria-expanded',String(!m.hidden));}
+  });
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape')document.querySelectorAll('.placemenu').forEach(function(m){m.hidden=true;});});
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
   window.sessionIcs=function(name,t,where){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};

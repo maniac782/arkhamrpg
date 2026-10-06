@@ -75,8 +75,8 @@ function render(){
  const keep=document.activeElement&&document.activeElement.id;
  const active=users.filter(u=>ms(u.lastSeen)>Date.now()-7*DAY).length;
  let h='<div class="stats">'+[['Users',users.length],['Active this week',active],['Campaigns',camps.length],['Suspended',Object.keys(bans).length]].map(([k,v])=>'<div class="stat"><span class="lbl">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>';
- h+='<div class="row" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns'],['fb','Feedback'+(fbs.length?' ('+fbs.length+')':'')],['errs','Errors'+(errs.length?' ('+errs.length+')':'')]].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+
-  '<label class="field" style="min-width:200px"><span class="lbl">Search</span><input class="f" id="q" value="'+esc(ui.q)+'" placeholder="'+(ui.tab==='users'?'Username':ui.tab==='errs'||ui.tab==='fb'?'Message, page or user':'Campaign or owner')+'" autocomplete="off"></label>'+
+ h+='<div class="row admbar" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns'],['fb','Feedback'+(fbs.length?' ('+fbs.length+')':'')],['errs','Errors'+(errs.length?' ('+errs.length+')':'')]].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+
+  '<label class="field admq" style="min-width:200px"><span class="lbl">Search</span><input class="f" id="q" value="'+esc(ui.q)+'" placeholder="'+(ui.tab==='users'?'Username':ui.tab==='errs'||ui.tab==='fb'?'Message, page or user':'Campaign or owner')+'" autocomplete="off"></label>'+
   '<button class="btn sm" data-a="reload" title="Loaded '+esc(new Date(loadedAt).toLocaleTimeString())+'">Refresh</button></div>';
  h+=ui.tab==='users'?usersHtml():ui.tab==='errs'?errsHtml():ui.tab==='fb'?fbHtml():campsHtml();
  app.innerHTML=h;

@@ -8,3 +8,14 @@
 .errmsg{font-family:var(--mono);font-size:13px;word-break:break-word}
 .errstack{font-family:var(--mono);font-size:11px;white-space:pre-wrap;word-break:break-word;background:var(--surface2);padding:8px;border-radius:4px;margin:6px 0 0;max-height:220px;overflow:auto}
 .fbtext{margin:6px 0 4px;white-space:pre-wrap;line-height:1.5}
+
+/* Phones: tabs get their own full-width row, search and Refresh share the next; each row's buttons sit under its details. */
+@media (max-width:700px){
+ .admbar{flex-wrap:wrap}
+ .admbar .tabs{flex:1 1 100%!important}
+ .admbar .admq{flex:1;min-width:0!important}
+ .list.adm .item>.grow:first-child{flex:1 1 100%;min-width:0}
+ .list.adm .item>.admimg+.grow{flex:1 1 calc(100% - 70px);min-width:0}
+ .stats{grid-template-columns:1fr 1fr;gap:8px}
+ .stat{padding:8px 12px}.stat b{font-size:22px}
+}

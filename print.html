@@ -10,7 +10,15 @@
 <p id="msg" style="padding:24px">Loading the sheet…</p>
 <script>
 (function(){
-  var id=(location.hash||'').slice(1),html=null;
+  var hash=(location.hash||'').slice(1),id=hash.split('&')[0],html=null;
+  // #d=<sheet data>: opened in Safari from the iPhone app to print, so rebuild the sheet from the data in the address.
+  if(id.indexOf('d=')===0){
+    var s=document.createElement('script');s.src='js/catalog.js';
+    s.onload=function(){try{var b=id.slice(2).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
+      var c=JSON.parse(decodeURIComponent(escape(atob(b))));var h=window.APL.sheetHtml(c);document.open();document.write(h);document.close();}
+      catch(e){document.getElementById('msg').textContent='This sheet link is damaged. Go back to the ledger and tap \u201cOpen printable sheet\u201d again.';}};
+    document.head.appendChild(s);return;
+  }
   try{ if(id) html=localStorage.getItem('apl-print:'+id); }catch(e){}
   if(!html){
     document.getElementById('msg').textContent='This sheet is no longer available here. Go back to the ledger and tap “Open printable sheet” again.';

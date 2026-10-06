@@ -46,6 +46,8 @@ window.addEventListener('unhandledrejection',function(ev){window.quotaHit(ev.rea
     try{
       msg=String(msg||'').slice(0,500);
       if(!msg||msg==='Script error.'||/ResizeObserver loop|resource-exhausted|Failed to fetch|NetworkError|network-request-failed/i.test(msg))return;
+      // Noise from code the browser or an app injects into every page (crypto wallets, in-app browsers), not from the ledger.
+      if(/ethereum|web3|solana|__gCrWeb|webkit\.messageHandlers|__firefox__|instantSearchSDKJSBridge/i.test(msg+' '+String(stack||'')))return;
       if(seen[msg]||sent>=5)return;seen[msg]=1;
       var fb=window.firebase;if(!fb||!fb.apps||!fb.apps.length)return;
       var app=fb.apps.filter(function(a){return a.name==='beta';})[0]||fb.apps[0];
@@ -60,6 +62,6 @@ window.addEventListener('unhandledrejection',function(ev){window.quotaHit(ev.rea
     }catch(e){}
   }
   window.reportError=report;
-  window.addEventListener('error',function(e){report(e.message||(e.error&&e.error.message),e.error&&e.error.stack);});
+  window.addEventListener('error',function(e){if(e.filename&&e.filename.indexOf(location.origin)!==0&&!/gstatic\.com|googleapis\.com/.test(e.filename))return;report(e.message||(e.error&&e.error.message),e.error&&e.error.stack);});
   window.addEventListener('unhandledrejection',function(e){var r=e.reason||{};if(r&&r.code==='resource-exhausted')return;report(r.message||String(r),r.stack);});
 })();

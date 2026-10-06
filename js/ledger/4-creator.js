@@ -156,10 +156,12 @@ function downloadSheet(c){
   for(let k=localStorage.length-1;k>=0;k--){const key=localStorage.key(k);if(key&&key.indexOf('apl-print:')===0&&now-Number(key.split(':')[1]||0)>86400000)localStorage.removeItem(key);}
   id=String(now);localStorage.setItem('apl-print:'+id,html);
  }catch(e){id=null;}
- const back='&back='+encodeURIComponent(location.href);
+ // Inside the sample on the welcome page, open the sheet in the whole window (or a new tab), never inside the small frame.
+ let win=window;try{if(EMBED&&window.top&&window.top.location.href)win=window.top;}catch(e){}
+ const back='&back='+encodeURIComponent(win===window?location.href:win.location.pathname+'#demoframe');
  // In the iPhone/iPad home-screen app a new tab would trap you on the sheet, so open it in place (its Back button returns here).
- if(id&&(navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches&&/iP(hone|ad|od)/.test(navigator.userAgent)))){location.href='print.html#'+id+back;return;}
- if(id){const w=window.open('print.html#'+id+back,'_blank');if(w){toast('Sheet opened in a new tab. Use its Print button.');return;}}
+ if(id&&(navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches&&/iP(hone|ad|od)/.test(navigator.userAgent)))){win.location.href='print.html#'+id+back;return;}
+ if(id){const w=win.open('print.html#'+id+back,'_blank');if(w){toast('Sheet opened in a new tab. Use its Print button.');return;}}
  // Fallback: blob tab, then download.
  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);
  const w2=window.open(url,'_blank');

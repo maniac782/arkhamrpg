@@ -160,6 +160,8 @@ function welcomeView(){
  const fr=document.getElementById('demoframe');
  if(fr&&app.contains(fr)){document.getElementById('introbox').innerHTML=introHtml();document.getElementById('authbox').innerHTML=authView();return;}
  app.innerHTML='<div class="welcome"><div id="introbox">'+introHtml()+'</div><div id="authbox">'+authView()+'</div>'+demoHtml()+'</div>';
+ // Back from a sample investigator's printable sheet: return to the sample.
+ if(location.hash==='#demoframe'){const f=document.getElementById('demoframe');if(f)setTimeout(()=>f.scrollIntoView({block:'start'}),50);}
 }
 function authView(){
  const up=ui.mode==='signup',reset=ui.mode==='reset';

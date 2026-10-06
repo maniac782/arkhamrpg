@@ -199,7 +199,7 @@ const pad2=n=>String(n).padStart(2,'0');
 const localInput=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'T'+pad2(d.getHours())+':'+pad2(d.getMinutes());};
 function gmNextHtml(){
  const t=camp&&camp.nextSession,on=window.sessionShown&&sessionShown(t);
- return '<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="chip ok cdchip" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'<span class="note">Not set</span>')+'</div>'+
+ return '<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="cdtext" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'<span class="note">Not set</span>')+'</div>'+
   '<div class="row" style="align-items:flex-end"><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="gm-nsdate" value="'+(on?localInput(t):'')+'"></label>'+
   '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="gm-nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?camp.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" data-gact="nsset">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" data-gact="nsclear">Clear</button>':'')+'</div>'+

@@ -145,7 +145,8 @@ service cloud.firestore {
     match /prefs/{uid} {
       allow read, delete: if signedIn() && request.auth.uid == uid;
       allow create, update: if realUser() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['tz', 'noRemind', 'noCluePush', 'pushTurns'])
+        && request.resource.data.keys().hasOnly(['tz', 'noRemind', 'noCluePush', 'pushTurns', 'campOrder'])
+        && (!('campOrder' in request.resource.data) || (request.resource.data.campOrder is list && request.resource.data.campOrder.size() <= 60))
         && request.resource.data.get('noCluePush', false) is bool && request.resource.data.get('pushTurns', false) is bool
         && request.resource.data.get('tz', '') is string && request.resource.data.get('tz', '').size() <= 50
         && request.resource.data.get('noRemind', false) is bool;

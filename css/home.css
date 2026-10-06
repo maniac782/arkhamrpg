@@ -90,3 +90,8 @@ a.btn{text-decoration:none}
 .campfoot{justify-content:space-between;align-items:center;gap:8px}
 .cdline{font-size:13px;color:var(--muted);font-weight:700}
 .cdline b{color:inherit;font-weight:inherit}
+/* Dragging campaign cards to reorder them */
+.camps > .camp[data-cid]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.camp.dragging{position:fixed;z-index:80;margin:0;pointer-events:none;transform:scale(1.03) rotate(-.6deg);box-shadow:0 18px 40px rgba(0,0,0,.45);border-color:var(--muted)}
+.camp.dragph{border:2px dashed var(--line);background:transparent;box-shadow:none}
+body.dragging-camp{cursor:grabbing;-webkit-user-select:none;user-select:none}

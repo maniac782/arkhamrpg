@@ -14,6 +14,7 @@ function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c
 
 // ---------- rendering ----------
 function render(){
+ if(ui.dragging){ui.renderAfterDrag=true;return;}
  const a=document.activeElement,keep=a&&a.id&&app.contains(a)?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;
  // keep whatever people have typed when the page redraws
  const vals={};app.querySelectorAll('input[id],textarea[id]').forEach(el=>{if(el.type!=='file')vals[el.id]=el.value;});
@@ -39,7 +40,7 @@ function accountView(){
  h+='<section class="sec"><div class="sec-head"><h2>Your icon</h2><span class="row" style="gap:8px;align-items:center"><span class="avbig">'+acctIcon(profile.username,profile)+'</span><b>'+esc(profile.username)+'</b></span></div>'+
   '<div class="field"><span class="lbl">Photo</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="avphoto" style="cursor:pointer">'+(profile.photo?'Change photo':'Upload a photo')+'</label><input type="file" id="avphoto" accept="image/*" hidden>'+(profile.photo?'<button class="btn sm" data-a="avphotodel">Remove photo</button>':'')+'</div><span class="note">'+(profile.photo?'Your photo is showing. Remove it to use your first letter on a colour instead.':'Or show your first letter on the colour you pick below.')+'</span></div>'+
   '<div class="field"><span class="lbl">Colour</span><div class="swatches">'+Object.keys(AVATAR_COLORS).map(k=>'<button class="swatch'+(k===curC?' on':'')+'" data-a="avc" data-v="'+k+'" style="background:'+AVATAR_COLORS[k]+'" aria-label="'+k+'" aria-pressed="'+(k===curC)+'"></button>').join('')+'</div></div>'+'</section>';
- if(ui.prefs===undefined){ui.prefs=null;db.doc('prefs/'+user.uid).get().then(s=>{ui.prefs=s.exists?s.data():{};render();},()=>{ui.prefs={};render();});}
+ loadPrefs();
  h+=notifySection();
  h+='<section class="sec"><h2>Delete my account</h2>';
  if(ui.delBusy)return h+'<p class="note" style="margin:0">Deleting your account\u2026 keep this page open.</p></section>';
@@ -52,6 +53,16 @@ function accountView(){
 function myTz(){try{return (Intl.DateTimeFormat().resolvedOptions().timeZone||'').slice(0,50);}catch(e){return '';}}
 // Keeps the time zone used for reminder emails current (stored privately in prefs/{uid}).
 function saveTz(){const tz=myTz();if(!tz||!user)return;db.doc('prefs/'+user.uid).get().then(s=>{const p=s.exists?s.data():{};if(p.tz!==tz)return db.doc('prefs/'+user.uid).set({...p,tz});}).catch(()=>{});}
+// Private settings (prefs/<uid>): reminders, notifications and the order of campaign cards. Loaded once.
+function loadPrefs(){if(ui.prefs!==undefined||!user)return;ui.prefs=null;db.doc('prefs/'+user.uid).get().then(s=>{ui.prefs=s.exists?s.data():{};render();},()=>{ui.prefs={};render();});}
+// Campaign cards in the order you dragged them into (new ones go at the end). Remembered on this device too,
+// so the page doesn't jump while your settings load.
+const ORDER_KEY='apl-camp-order';
+function myOrder(){if(ui.prefs&&Array.isArray(ui.prefs.campOrder))return ui.prefs.campOrder;try{return JSON.parse(localStorage.getItem(ORDER_KEY)||'[]');}catch(e){return [];}}
+function sortByMyOrder(list){const o=myOrder(),at=id=>{const i=o.indexOf(id);return i<0?1e6:i;};return list.map((c,i)=>({c,i})).sort((a,b)=>(at(a.c.id)-at(b.c.id))||(a.i-b.i)).map(x=>x.c);}
+function saveMyOrder(ids){ids=ids.slice(0,60);ui.prefs={...(ui.prefs||{}),campOrder:ids};try{localStorage.setItem(ORDER_KEY,JSON.stringify(ids));}catch(e){}
+ db.doc('prefs/'+user.uid).set({campOrder:ids},{merge:true}).catch(e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn’t save the new order.');});}
+
 // ---------- Reminders and notifications (Your account) ----------
 const PUSH_TOK='apl-push-token';
 function pushLocal(){try{return localStorage.getItem(PUSH_TOK)||'';}catch(e){return '';}}
@@ -168,10 +179,11 @@ function inviteCard(i){
   '<span class="invby">'+acctIcon(by.username,u||{})+'<span><b>'+esc(by.username||'Someone')+'</b> invited you to join</span></span>'+
   '<div class="row invbtns"><button class="btn pri" data-a="ijoin" data-id="'+esc(i.id)+'">Join campaign</button><button class="btn" data-a="idecline" data-id="'+esc(i.id)+'">Decline</button></div></div>';
 }
-function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row campfoot">'+(sessionShown(c.nextSession)?'<span class="cdline" title="'+esc(sessionWhen(c.nextSession))+'">Next session <span data-cd="'+c.nextSession+'" data-cdb>'+sessionRelHtml(c.nextSession)+'</span></span>':'<span></span>')+'<button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
+function campCard(c){const n=(c.memberIds||[]).length;return '<div class="camp hasimg" data-cid="'+esc(c.id)+'"><a class="campmain" href="'+ledgerUrl(c.id)+'">'+bannerHtml(c,c.photo)+'<h3>'+esc(c.name)+'</h3><span class="row" style="gap:6px">'+chipsFor(c,user.uid)+'<span class="note">'+n+' member'+(n===1?'':'s')+'</span></span></a><div class="row campfoot">'+(sessionShown(c.nextSession)?'<span class="cdline" title="'+esc(sessionWhen(c.nextSession))+'">Next session <span data-cd="'+c.nextSession+'" data-cdb>'+sessionRelHtml(c.nextSession)+'</span></span>':'<span></span>')+'<button class="btn sm" data-a="open" data-id="'+esc(c.id)+'">'+(c.ownerUid===user.uid?'Settings':'Members')+'</button></div></div>';}
 const ledgerUrl=id=>'play.html?c='+encodeURIComponent(id);
 function homeView(){
- const owned=camps.filter(c=>c.ownerUid===user.uid),member=camps.filter(c=>c.ownerUid!==user.uid);
+ loadPrefs();
+ const owned=sortByMyOrder(camps.filter(c=>c.ownerUid===user.uid)),member=sortByMyOrder(camps.filter(c=>c.ownerUid!==user.uid));
  let h='';
  if(pendingJoin&&!camps.some(c=>c.id===pendingJoin.cid))h+='<section class="sec"><div class="sec-head"><h2>You\u2019re invited</h2></div><div class="camps"><div class="camp hasimg invcard">'+bannerHtml({id:pendingJoin.cid,name:pendingJoin.name||'?'},null)+'<h3>'+esc(pendingJoin.name||'A campaign')+'</h3><span class="note">You opened an invite link. Join to see the party and make your investigator.</span>'+errHtml()+'<div class="row invbtns"><button class="btn pri" data-a="ljoin" '+(ui.busy?'disabled':'')+'>Join campaign</button><button class="btn" data-a="lskip">Not now</button></div></div></div></section>';
  if(user.email&&!user.emailVerified&&!user.providerData.some(x=>x.providerId==='google.com'))h+='<section class="sec"><p class="note" style="margin:0">Verify your email to see invites sent to <b>'+esc(user.email)+'</b>. Check your inbox for the link, then reload. <button class="btn sm" data-a="reverify">Send it again</button></p></section>';
@@ -527,4 +539,66 @@ auth.onAuthStateChanged(u=>{
  render();
 });
 render();
+
+/* Reorder campaign cards: press and hold a card (phones) or click and drag it (computers), then drop it where it
+   should go. Cards only move within their own section. */
+(function(){
+ let st=null;
+ const cards=g=>[...g.querySelectorAll(':scope > .camp[data-cid]')];
+ const allIds=()=>[...document.querySelectorAll('.camps > .camp[data-cid]')].map(c=>c.dataset.cid);
+ function begin(){
+  if(!st||st.dragging)return;
+  const r=st.card.getBoundingClientRect();
+  st.dragging=true;ui.dragging=true;st.offX=st.x-r.left;st.offY=st.y-r.top;st.was=allIds().join();
+  st.ph=document.createElement('div');st.ph.className='camp dragph';st.ph.style.height=r.height+'px';
+  st.grid.insertBefore(st.ph,st.card);
+  Object.assign(st.card.style,{width:r.width+'px',height:r.height+'px',left:r.left+'px',top:r.top+'px'});
+  st.card.classList.add('dragging');document.body.classList.add('dragging-camp');
+  try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
+ }
+ function move(x,y){
+  st.card.style.left=(x-st.offX)+'px';st.card.style.top=(y-st.offY)+'px';
+  if(y<70)window.scrollBy(0,-14);else if(y>window.innerHeight-70)window.scrollBy(0,14);
+  let best=null,bd=1e9;
+  for(const c of cards(st.grid)){if(c===st.card)continue;const r=c.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,d=Math.hypot(x-cx,y-cy);if(d<bd){bd=d;best={c,r,cx,cy};}}
+  if(!best)return;
+  const pr=st.ph.getBoundingClientRect();if(Math.hypot(x-(pr.left+pr.width/2),y-(pr.top+pr.height/2))<bd)return;
+  const sameRow=Math.abs(y-best.cy)<best.r.height/2,before=sameRow?x<best.cx:y<best.cy;
+  st.grid.insertBefore(st.ph,before?best.c:best.c.nextSibling);
+ }
+ function finish(){
+  if(!st)return;clearTimeout(st.timer);const s=st;st=null;
+  if(!s.dragging)return;
+  s.grid.insertBefore(s.card,s.ph);s.ph.remove();
+  s.card.classList.remove('dragging');document.body.classList.remove('dragging-camp');
+  ['width','height','left','top'].forEach(k=>s.card.style[k]='');
+  // a drag isn't a tap: swallow the click that follows it
+  const stop=e=>{e.preventDefault();e.stopPropagation();};window.addEventListener('click',stop,true);setTimeout(()=>window.removeEventListener('click',stop,true),400);
+  ui.dragging=false;
+  const ids=allIds();if(ids.join()!==s.was)saveMyOrder(ids);
+  if(ui.renderAfterDrag){ui.renderAfterDrag=false;render();}
+ }
+ app.addEventListener('pointerdown',e=>{
+  const card=e.target.closest('.camps > .camp[data-cid]');
+  if(!card||e.button>0||e.target.closest('button,input,select,textarea'))return;
+  if(cards(card.parentElement).length<2)return;
+  st={card,grid:card.parentElement,id:e.pointerId,x:e.clientX,y:e.clientY,type:e.pointerType,dragging:false};
+  if(e.pointerType!=='mouse')st.timer=setTimeout(begin,380);
+ });
+ window.addEventListener('pointermove',e=>{
+  if(!st||e.pointerId!==st.id)return;
+  if(!st.dragging){
+   const d=Math.hypot(e.clientX-st.x,e.clientY-st.y);
+   if(st.type==='mouse'){if(d<6)return;begin();}
+   else{if(d>10){clearTimeout(st.timer);st=null;}return;}
+  }
+  e.preventDefault();move(e.clientX,e.clientY);
+ });
+ window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',finish);
+ // while a card is held, the finger moves the card instead of scrolling the page
+ document.addEventListener('touchmove',e=>{if(st&&st.dragging)e.preventDefault();},{passive:false});
+ app.addEventListener('contextmenu',e=>{if(st&&e.target.closest('.camps > .camp[data-cid]'))e.preventDefault();});
+ app.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.camps > .camp[data-cid]'))e.preventDefault();});
+})();
+
 })();

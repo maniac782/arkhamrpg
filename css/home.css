@@ -89,4 +89,4 @@ a.btn{text-decoration:none}
 /* Countdown at the bottom of a campaign card, beside Settings, so the picture stays uncovered. */
 .campfoot{justify-content:space-between;align-items:center;gap:8px}
 .cdline{font-size:13px;color:var(--muted)}
-.cdline b{color:var(--ink);font-weight:700}
+.cdline b{color:inherit;font-weight:inherit}

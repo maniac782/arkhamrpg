@@ -1,4 +1,4 @@
-/* Enemy and ally profiles from Chapter 8 of the corebook (Allies and Enemies).
+/* Enemy and ally profiles from Chapter 8 of the Core Rulebook (Allies and Enemies).
    Skills are in the order: Agility, Athletics, Wits, Presence, Intuition, Knowledge, Resolve, Melee, Ranged, Lore (0 = can't).
    Abilities, weaknesses and gear are short summaries in our own words, not the book's text.
    The book prints each profile's dice pool in its art; "pool" here is only a starting suggestion, so check the book and adjust. */

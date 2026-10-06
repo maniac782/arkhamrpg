@@ -2,7 +2,7 @@
 
 Live character sheets and campaign tools for the Arkham Horror Roleplaying Game, at **https://arkhamrpg.web.app**.
 
-Sign in, start a campaign, invite your group, and everyone's investigator sheets stay in sync at the table. Or try it first with no account: the campaign is saved in your browser, and it moves to your account when you sign up. It's a free, unofficial fan project, not affiliated with or endorsed by Edge Studio (publisher of the Arkham Horror Roleplaying Game) or Fantasy Flight Games. You need the corebook to play.
+Sign in, start a campaign, invite your group, and everyone's investigator sheets stay in sync at the table. Or try it first with no account: the campaign is saved in your browser, and it moves to your account when you sign up. It's a free, unofficial fan project, not affiliated with or endorsed by Edge Studio (publisher of the Arkham Horror Roleplaying Game) or Fantasy Flight Games. You need the [Core Rulebook](https://store.asmodee.com/products/arkham-horror-rpg-core-rulebook) to play.
 
 This repo is the code behind the live site. It isn't packaged for running your own copy; to play, just use the site.
 
@@ -12,8 +12,8 @@ This repo is the code behind the live site. It isn't packaged for running your o
 
 - **Live investigator sheets.** Dice pools, horror, insight, injuries and traumas, skills, knacks, weapons, gear, money and XP. Spend a die on your phone and the whole table sees it straight away.
 - **Printable sheets.** Every investigator prints as a proper character sheet in two styles, Classic and Leather, on Letter, A4 or Legal paper.
-- **Step-by-step character creation.** It follows the corebook's rules, with archetype limits, the gear budget and XP worked out as you go.
-- **Tools for the GM.** A scene and turn tracker with surprise rounds, an encounter builder from the corebook's enemy profiles, and clues and handouts you reveal to everyone or one player. Also XP awards, session recaps, private notes and a hidden dice roller.
+- **Step-by-step character creation.** It follows the Core Rulebook's rules, with archetype limits, the gear budget and XP worked out as you go.
+- **Tools for the GM.** A scene and turn tracker with surprise rounds, an encounter builder from the Core Rulebook's enemy profiles, and clues and handouts you reveal to everyone or one player. Also XP awards, session recaps, private notes and a hidden dice roller.
 - **A shared Journal.** Revealed clues, the campaign tracker (threads, people, places) and recaps of past sessions.
 - **Scheduling.** A countdown to the next session, plus:
   - one-tap Add to calendar (Google, Apple, Outlook);
@@ -53,7 +53,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 
 ![Journal with revealed clues and the campaign tracker](docs/screenshots/journal.png)
 
-**New investigator:** build a character step by step by the corebook's rules.
+**New investigator:** build a character step by step by the Core Rulebook's rules.
 
 ![Step-by-step character creator showing archetype limits and starting skills](docs/screenshots/new-investigator.png)
 
@@ -83,13 +83,13 @@ This repo is the code behind the live site. It isn't packaged for running your o
 ### Inside a campaign
 - **Party:** everyone's investigators at a glance. Tap one to open their sheet.
 - **Investigator sheets:** dice pool, horror, injuries and traumas, insight, skills, knacks, weapons and gear, money, XP, and a **Recent** list of what changed. **Open printable sheet** gives a print-ready copy (Letter paper, background graphics on).
-- **New investigator:** builds a character step by step following the corebook's creation rules. An unfinished character is kept on your device for that campaign for two weeks; **Start over** clears it.
+- **New investigator:** builds a character step by step following the Core Rulebook's creation rules. An unfinished character is kept on your device for that campaign for two weeks; **Start over** clears it.
 - **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date and time, an optional length (1 to 8 hours), and the place, with Google address suggestions. Everyone sees a countdown on the campaign card and at the top of the Party tab.
   - **Add to calendar:** Google Calendar, Apple Calendar (iPhone or Mac), Outlook, or a downloaded `.ics` file. Events are called "*campaign* — Arkham Horror RPG" and last the chosen length (4 hours if none is set).
   - **Tapping an address** offers **Directions** and **Food nearby** in Google Maps.
   - **Reminders:** members get an email (and a notification, if they've turned those on) the day before.
 - **Journal:** clues and handouts the GM has revealed, enemies the GM is showing, the campaign tracker (date, threads, people, places) and **Past sessions**: a recap of each finished session, with the GM's optional summary on top.
-- **GM tab (GM only):** next session, scene and turn tracker with surprise rounds, encounter builder from the corebook's enemy profiles, clues and handouts (to everyone or one player), campaign tracker, end-of-session XP and momentous sessions, session recaps, GM notes and a hidden dice roller.
+- **GM tab (GM only):** next session, scene and turn tracker with surprise rounds, encounter builder from the Core Rulebook's enemy profiles, clues and handouts (to everyone or one player), campaign tracker, end-of-session XP and momentous sessions, session recaps, GM notes and a hidden dice roller.
 
 ### Your account
 Click your icon at the top right:
@@ -97,7 +97,7 @@ Click your icon at the top right:
 - **Reminders & notifications:** turn the day-before reminder on or off, turn on notifications for the device you're using (with a **Send a test** button), and choose whether to be notified when the GM reveals a clue to you or when it's the investigators' turn in a fight. On iPhone and iPad, notifications work in the installed app (iOS 16.4 or later). Tapping a clue notification opens that clue in the Journal.
 - **Install app**, **Send feedback** (bug, idea or other, straight to the site owner) and **Sign out**.
 
-Knack names and tiers follow each archetype's table in the corebook. Each knack's effect is a short summary of the book's rules in our own words, and can be edited on the sheet.
+Knack names and tiers follow each archetype's table in the Core Rulebook. Each knack's effect is a short summary of the book's rules in our own words, and can be edited on the sheet.
 
 ---
 
@@ -210,7 +210,7 @@ At beta size everything should cost $0 to a few cents a month.
 - `js/localdb.js`: the no-account campaign. A small stand-in for Firebase (sign-in and Firestore) that keeps everything in the browser's `localStorage` (`apl-local-v1`), so the ledger runs unchanged at `play.html?c=onthisdevice`. `js/home.js` (`migrateLocal`) copies it into a real campaign when the person signs in.
 - `js/demo.js`: the sample party shown on the welcome page (`play.html?c=samplecampaign&embed=1` in a frame). It runs on the same in-browser store but is never saved, and its times are moved forward on load so it always looks current.
 - `js/upload.js`: picture uploads to Cloud Storage. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
-- `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
+- `js/catalog.js`: archetypes, knacks, weapons and gear from the Core Rulebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.
 - `firestore.rules`: who can read and write what in the database. `storage.rules`: who can add or delete pictures. The pages hide things people can't do, but these rules are what actually enforce it.
 - `functions/`: the server functions (`index.js`, `package.json`, `.env`).
@@ -220,7 +220,7 @@ At beta size everything should cost $0 to a few cents a month.
 
 The Firebase web settings and the keys in `js/config.js` are meant to be public. They only identify the project and are limited to this site; the rules decide what anyone can do. Secrets (the Gmail app password) live only in Secret Manager.
 
-Don't copy text from the corebook into the code; game text here is summarized in our own words.
+Don't copy text from the Core Rulebook into the code; game text here is summarized in our own words.
 
 ---
 
@@ -228,7 +228,7 @@ Don't copy text from the corebook into the code; game text here is summarized in
 
 Arkham Horror RPG Ledger is an unofficial fan project. It isn't affiliated with or endorsed by Edge Studio, which publishes the Arkham Horror Roleplaying Game, or Fantasy Flight Games. Arkham Horror is a trademark of Fantasy Flight Games.
 
-- **You need the corebook to play.** The site tracks a game in progress; it doesn't teach or replace the rules.
+- **You need the [Core Rulebook](https://store.asmodee.com/products/arkham-horror-rpg-core-rulebook) to play.** The site tracks a game in progress; it doesn't teach or replace the rules.
 - **Game text is paraphrased.** Knack effects, gear notes, enemy profiles and the printable sheet's reminders are short summaries in our own words, not the book's text. Names and numbers appear only so sheets can track them.
 - **Original design.** The printable sheet follows the same fields as the official one so players feel at home, but its artwork and styling are our own, and the site uses only public-domain art. No artwork or logos from the books are reproduced.
 - **Publishers:** if you'd like anything changed or removed, email maniac78@gmail.com and it will be handled promptly.

@@ -1,4 +1,4 @@
-/* Catalogs from the Arkham Horror RPG corebook: names, tiers, costs and stats. Effects are short summaries. */
+/* Catalogs from the Arkham Horror RPG Core Rulebook: names, tiers, costs and stats. Effects are short summaries. */
 window.APL = (function(){
 const K=s=>s.split('|').map(x=>x.trim()).filter(Boolean);
 const ARCH={
@@ -11,7 +11,7 @@ const ARCH={
  Seeker:{three:['lore','ranged','wits'],two:'knowledge',t:[K('Brilliant Insight*|Dealer|Dodgy|Ear for Truth|Linguist|Scientific*|Smart|Sure-Footed|Weak Spot'),K('Attune|Empathetic|Empathic Mind|Storyteller|The Pen Is Mightier…*|Thinking Ahead*|Tracker|Very Smart'),K('Eat Lead!|Helpful|Killing Blow|Rational Thinking|Two-Pistol Fighting|Very Empathetic'),K('Flawless Memory*|I Have a Hunch*|Nosy Questions*')]},
  Survivor:{three:['athletics','intuition','melee'],two:'resolve',t:[K('Dealer|Eat Lead!|Fast|Light on Your Feet|Navigator|Nope!*|Quick Hands|Resolute|Scrappy'),K('Clever|Determination|Dodgy|Helpful|Set Them Up…|Suppressing Fire!|Trench Warfare|Very Resolute'),K('Empathic Mind|Pickpocket|Pulp Heroics|Skilled Fighter|Skilled Shot|Very Clever'),K('Last One Standing*|Not Done Yet*|Tough as Iron*')]},
 };
-// Knack effects: short summaries of the corebook rules, in our own words.
+// Knack effects: short summaries of the Core Rulebook rules, in our own words.
 const KT={
 // Adventurer unique
 'Awe-inspiring Display':'Once per session, after a successful reaction against an attack or trap, everyone within 20 ft rolls a Resolve reaction. Those who fail or skip it take −1 per die on actions and reactions against you until the scene ends.',

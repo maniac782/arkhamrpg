@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Pictures for Arkham Ledger. Files are only ever added (each upload gets a new random name) or deleted.
+// Pictures for Arkham Horror RPG Ledger. Files are only ever added (each upload gets a new random name) or deleted.
 //   users/<uid>/<file>            profile photos, written by that user
 //   campaigns/<cid>/<uid>/<file>  everything in a campaign (portraits, campaign picture, handouts),
 //                                 written by a member into their own folder

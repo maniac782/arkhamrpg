@@ -1,4 +1,4 @@
-/* Arkham Ledger — Shared state: the campaign, investigators, keys/roles, local cache, and saving a sheet.
+/* Arkham Horror RPG Ledger — Shared state: the campaign, investigators, keys/roles, local cache, and saving a sheet.
    Part of the ledger; these files load in order and share their variables. */
 // Campaign mode: ?c=<campaign id> runs this ledger inside one campaign, with accounts instead of passcodes.
 const CAMP=(()=>{try{const v=new URLSearchParams(location.search).get('c')||'';return /^[A-Za-z0-9]{10,40}$/.test(v)?v:null;}catch(e){return null;}})();

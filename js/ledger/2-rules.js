@@ -1,4 +1,4 @@
-/* Arkham Ledger — Game rules applied to a sheet: pools, damage, healing, injuries, traumas, insight, XP, gear.
+/* Arkham Horror RPG Ledger — Game rules applied to a sheet: pools, damage, healing, injuries, traumas, insight, XP, gear.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- rules ----------
 function clampPool(c){

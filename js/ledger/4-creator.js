@@ -1,4 +1,4 @@
-/* Arkham Ledger — The New investigator page (step-by-step character creator).
+/* Arkham Horror RPG Ledger — The New investigator page (step-by-step character creator).
    Part of the ledger; these files load in order and share their variables. */
 // ---------- creator ----------
 const A=window.APL;

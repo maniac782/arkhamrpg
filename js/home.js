@@ -1,4 +1,4 @@
-/* Arkham Ledger — sign-in, My campaigns, invites and campaign Settings (members, roles, house rules). */
+/* Arkham Horror RPG Ledger — sign-in, My campaigns, invites and campaign Settings (members, roles, house rules). */
 (function(){
 'use strict';
 const app=document.getElementById('app'),whoEl=document.getElementById('who'),toastEl=document.getElementById('toast');

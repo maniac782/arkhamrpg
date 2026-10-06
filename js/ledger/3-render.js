@@ -1,4 +1,4 @@
-/* Arkham Ledger — Drawing the page: tabs, party, investigator sheets, pickers, house rules.
+/* Arkham Horror RPG Ledger — Drawing the page: tabs, party, investigator sheets, pickers, house rules.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- render ----------
 function sheetStatus(c){

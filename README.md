@@ -1,4 +1,4 @@
-# Arkham Ledger
+# Arkham Horror RPG Ledger
 
 Live character sheets and campaign tools for the Arkham Horror Roleplaying Game, at **https://arkhamrpg.web.app**.
 

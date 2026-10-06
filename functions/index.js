@@ -1,4 +1,4 @@
-/* Arkham Ledger server functions.
+/* Arkham Horror RPG Ledger server functions.
    - inviteEmail: when an owner invites someone by email, send them a short email about it.
    - sessionReminders: once an hour, email members of campaigns whose next session is within 24 hours.
    Mail goes out through Gmail (MAIL_FROM in .env) using the app password kept in Secret Manager. */
@@ -38,7 +38,7 @@ const oneLine = s => String(s == null ? '' : s).replace(/[\r\n]+/g, ' ').trim().
 
 function page(title, paras, button, footer) {
   return '<div style="font-family:Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1b2230">' +
-    '<div style="font-family:Georgia,serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280">Arkham Ledger</div>' +
+    '<div style="font-family:Georgia,serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280">Arkham Horror RPG Ledger</div>' +
     '<h1 style="font-family:Georgia,serif;font-size:22px;margin:8px 0 16px">' + esc(title) + '</h1>' +
     paras.map(p => '<p style="font-size:15px;line-height:1.5;margin:0 0 12px">' + p + '</p>').join('') +
     (button ? '<p style="margin:20px 0"><a href="' + esc(button.href) + '" style="background:#1b2230;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-size:15px;display:inline-block">' + esc(button.label) + '</a></p>' : '') +
@@ -46,7 +46,7 @@ function page(title, paras, button, footer) {
 }
 
 async function send(to, subject, text, html) {
-  await mailer().sendMail({from: '"Arkham Ledger" <' + MAIL_FROM.value() + '>', to, subject, text, html});
+  await mailer().sendMail({from: '"Arkham Horror RPG Ledger" <' + MAIL_FROM.value() + '>', to, subject, text, html});
 }
 
 /* ---------- Invite emails ---------- */
@@ -74,14 +74,14 @@ exports.inviteEmail = onDocumentCreated({document: 'invites/{id}', secrets: [GMA
   const site = SITE_URL.value();
   const from = oneLine(inv.fromName) || 'Someone';
   const name = oneLine(camp.get('name') || inv.campaignName) || 'a campaign';
-  const subject = from + ' invited you to “' + name + '” on Arkham Ledger';
-  const text = from + ' invited you to join the Arkham Horror RPG campaign "' + name + '" on Arkham Ledger.\n\n' +
+  const subject = from + ' invited you to “' + name + '” on Arkham Horror RPG Ledger';
+  const text = from + ' invited you to join their campaign "' + name + '" on Arkham Horror RPG Ledger.\n\n' +
     'Sign in at ' + site + ' with this email address (' + inv.toEmail + ') and the invite will be waiting on your My campaigns page.\n\n' +
     'If you weren\'t expecting this, you can ignore it. Nothing happens unless you sign in and accept.';
   const html = page(from + ' invited you to “' + name + '”', [
-    esc(from) + ' wants you in their Arkham Horror RPG campaign <b>' + esc(name) + '</b> on Arkham Ledger, where your group keeps its investigators in sync at the table.',
+    esc(from) + ' wants you in their campaign <b>' + esc(name) + '</b> on Arkham Horror RPG Ledger, where your group keeps its investigators in sync at the table.',
     'Sign in with this email address (<b>' + esc(inv.toEmail) + '</b>) and the invite will be waiting on your <b>My campaigns</b> page.',
-  ], {href: site, label: 'Open Arkham Ledger'},
+  ], {href: site, label: 'Open Arkham Horror RPG Ledger'},
   'If you weren\'t expecting this, you can ignore it. Nothing happens unless you sign in and accept.');
 
   try { await send(inv.toEmail, subject, text, html); }
@@ -156,7 +156,7 @@ exports.calendar = onRequest({cors: false, maxInstances: 5}, async (req, res) =>
     return;
   }
   const site = SITE_URL.value();
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Arkham Ledger//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Arkham Horror RPG Ledger//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + m[1] + '-' + c.nextSession + '@arkhamrpg.web.app', 'DTSTAMP:' + icsTime(Date.now()),
     'DTSTART:' + icsTime(c.nextSession), 'DTEND:' + icsTime(c.nextSession + (c.nextHours >= 1 && c.nextHours <= 12 ? c.nextHours : 4) * HOUR),
     'SUMMARY:' + icsText(oneLine(c.name) + ' \u2014 Arkham Horror RPG'),

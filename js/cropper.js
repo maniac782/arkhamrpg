@@ -1,4 +1,4 @@
-/* Arkham Ledger — the picture positioner used for investigator portraits, profile photos and campaign pictures.
+/* Arkham Horror RPG Ledger — the picture positioner used for investigator portraits, profile photos and campaign pictures.
    openCropper(file, {title, shape:'circle'|'wide', outW, outH, maxLen, button, onSave(dataUrl), onError(msg)})
    Drag (or arrow keys) to move, wheel / pinch / slider to zoom; saves a JPEG of exactly what's in the frame. */
 (function(){

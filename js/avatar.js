@@ -1,4 +1,4 @@
-/* Arkham Ledger — the little round account icon: an uploaded photo, or the username's first letter on a colour chosen on the account page. */
+/* Arkham Horror RPG Ledger — the little round account icon: an uploaded photo, or the username's first letter on a colour chosen on the account page. */
 window.AVATAR_COLORS={slate:'#56606f',crimson:'#a3322a',rust:'#b0582c',forest:'#2f6b4f',teal:'#1f6f78',navy:'#2d4a8a',violet:'#6a3d8f',rose:'#9b3b63',brass:'#8a6417'};
 window.acctIcon=function(name,prof){
   prof=prof||{};
@@ -17,7 +17,7 @@ window.acctIcon=function(name,prof){
     return '<span class="acctwrap"><button class="acctbtn" type="button" data-acct="toggle" aria-haspopup="menu" aria-expanded="'+open+'" title="Your account">'+window.acctIcon(name,prof)+'<b class="acctname">'+esc(name)+'</b><span class="caret" aria-hidden="true">▾</span></button>'+
       '<div class="acctmenu" role="menu"'+(open?'':' hidden')+'><div class="acctmenu-head">'+window.acctIcon(name,prof)+'<span><b>'+esc(name)+'</b>'+(opt.email?'<span class="note">'+esc(opt.email)+'</span>':'')+'</span></div>'+
       '<a role="menuitem" href="./?account=1" data-a="account">Your account</a>'+(opt.admin?'<a role="menuitem" href="admin.html">Admin</a>':'')+
-      (window.isInstalledApp&&window.isInstalledApp()?'':'<button role="menuitem" type="button" data-acct="install">Install app</button>')+'<button role="menuitem" type="button" data-acct="feedback">Send feedback</button>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
+      (window.isInstalledApp&&window.isInstalledApp()?'':'<button role="menuitem" type="button" data-acct="install">Install app</button>')+'<button role="menuitem" type="button" data-acct="feedback">Send feedback</button>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Horror RPG Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
   };
   function setOpen(v){window.__acctOpen=v;document.querySelectorAll('.acctwrap').forEach(function(w){var m=w.querySelector('.acctmenu'),b=w.querySelector('.acctbtn');if(m)m.hidden=!v;if(b)b.setAttribute('aria-expanded',String(v));});}
   document.addEventListener('click',function(e){
@@ -112,7 +112,7 @@ window.acctIcon=function(name,prof){
   window.sessionHoursValue=function(v){v=Number(v);return v>=1&&v<=12?v:null;};
   window.sessionIcs=function(name,t,where,hours){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};
-    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+window.sessionHours(hours)*HOUR),
+    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Horror RPG Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+window.sessionHours(hours)*HOUR),
       'SUMMARY:'+e(name+' — Arkham Horror RPG'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
     return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   };
@@ -193,15 +193,15 @@ window.acctIcon=function(name,prof){
   function steps(){
     var ua=navigator.userAgent||'';window.__instIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),android=/Android/.test(ua);
     var ios=window.__instIOS;
-    if(ios)return ['Tap the <b>Share</b> button (the square with an arrow) in Safari\u2019s toolbar.','Scroll down and tap <b>Add to Home Screen</b>.','Tap <b>Add</b>. Arkham Ledger appears on your home screen and opens full-screen.'];
-    if(android)return ['Tap the browser\u2019s <b>\u22ee</b> menu (top right in Chrome).','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Confirm, and open Arkham Ledger from your home screen.'];
-    return ['In Chrome or Edge, click the <b>install</b> icon at the right end of the address bar (a screen with a down arrow), or open the browser menu and choose <b>Install Arkham Ledger</b>.','Open it from your Start menu, Dock or desktop like any other app. (Safari on a Mac: <b>File \u203a Add to Dock</b>.)'];
+    if(ios)return ['Tap the <b>Share</b> button (the square with an arrow) in Safari\u2019s toolbar.','Scroll down and tap <b>Add to Home Screen</b>.','Tap <b>Add</b>. Arkham Horror RPG Ledger appears on your home screen and opens full-screen.'];
+    if(android)return ['Tap the browser\u2019s <b>\u22ee</b> menu (top right in Chrome).','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Confirm, and open Arkham Horror RPG Ledger from your home screen.'];
+    return ['In Chrome or Edge, click the <b>install</b> icon at the right end of the address bar (a screen with a down arrow), or open the browser menu and choose <b>Install Arkham Horror RPG Ledger</b>.','Open it from your Start menu, Dock or desktop like any other app. (Safari on a Mac: <b>File \u203a Add to Dock</b>.)'];
   }
   window.openInstall=function(){
     if(deferred){var d=deferred;deferred=null;d.prompt();return;}
     if(document.querySelector('.inst-bg'))return;
-    var bg=document.createElement('div');bg.className='crop-bg inst-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Install Arkham Ledger');
-    bg.innerHTML='<div class="crop fbform instbox"><div class="fbhead"><div><h2>Install Arkham Ledger</h2><p class="note">Put the ledger on your home screen. It opens full-screen like an app, with its own icon.</p></div><button class="fbx" type="button" data-i="close" aria-label="Close">\u00d7</button></div>'+
+    var bg=document.createElement('div');bg.className='crop-bg inst-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Install Arkham Horror RPG Ledger');
+    bg.innerHTML='<div class="crop fbform instbox"><div class="fbhead"><div><h2>Install Arkham Horror RPG Ledger</h2><p class="note">Put the ledger on your home screen. It opens full-screen like an app, with its own icon.</p></div><button class="fbx" type="button" data-i="close" aria-label="Close">\u00d7</button></div>'+
       '<ol class="inststeps">'+steps().map(function(x){return '<li>'+x+'</li>';}).join('')+'</ol>'+
       (window.__instIOS?'<p class="note" style="margin:0">You\u2019ll sign in once more inside the app; after that it remembers you.</p>':'')+
       '<div class="row" style="justify-content:flex-end"><button class="btn pri" type="button" data-i="close">Got it</button></div></div>';

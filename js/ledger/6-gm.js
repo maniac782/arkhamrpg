@@ -1,4 +1,4 @@
-/* Arkham Ledger — Game Master tools: scene and turns, enemies, dice roller, clues, campaign tracker, wrap-up, recap, Journal and GM pages.
+/* Arkham Horror RPG Ledger — Game Master tools: scene and turns, enemies, dice roller, clues, campaign tracker, wrap-up, recap, Journal and GM pages.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- game master: table state, enemies, clues, campaign, notes, history ----------
 const NPCS=window.APL_NPCS||[],NPC_TRAUMAS=window.APL_NPC_TRAUMAS||[];

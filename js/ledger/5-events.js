@@ -1,4 +1,4 @@
-/* Arkham Ledger — Clicks, edits and passcodes on the ledger pages.
+/* Arkham Horror RPG Ledger — Clicks, edits and passcodes on the ledger pages.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- events ----------
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;go(b.dataset.tab);});

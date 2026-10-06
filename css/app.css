@@ -269,3 +269,4 @@ a.btn{text-decoration:none;color:inherit}
 .placemenu a:hover,.placemenu a:focus-visible{background:var(--surface2)}
 .placemenu.right{left:auto;right:0}
 .inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.5}
+@media (max-width:440px){.brand h1{font-size:19px;letter-spacing:0}.brand h1 .beta{font-size:9px}}

@@ -1,4 +1,4 @@
-/* Arkham Ledger — site admin page: every user and campaign, bans, username resets and campaign deletion.
+/* Arkham Horror RPG Ledger — site admin page: every user and campaign, bans, username resets and campaign deletion.
    Only accounts with an admins/{uid} document (made by hand in the Firebase console) can use it;
    the database rules enforce that, not just this page. */
 (function(){

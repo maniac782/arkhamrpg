@@ -6,6 +6,59 @@ Sign in, start a campaign, invite your group, and everyone's investigator sheets
 
 This repo is the code behind the live site. It isn't packaged for running your own copy; to play, just use the site.
 
+![The Party tab: four investigators with dice pools, horror, insight and injuries, the fight tracker and the next-session countdown](docs/screenshots/party.png)
+
+## What it does
+
+- **Live investigator sheets.** Dice pools, horror, insight, injuries and traumas, skills, knacks, weapons, gear, money and XP. Spend a die on your phone and the whole table sees it straight away.
+- **Printable sheets.** Every investigator prints as a proper character sheet in two styles, Classic and Leather, on Letter, A4 or Legal paper.
+- **Step-by-step character creation.** It follows the corebook's rules, with archetype limits, the gear budget and XP worked out as you go.
+- **Tools for the GM.** A scene and turn tracker with surprise rounds, an encounter builder from the corebook's enemy profiles, and clues and handouts you reveal to everyone or one player. Also XP awards, session recaps, private notes and a hidden dice roller.
+- **A shared Journal.** Revealed clues, the campaign tracker (threads, people, places) and recaps of past sessions.
+- **Scheduling.** A countdown to the next session, plus:
+  - one-tap Add to calendar (Google, Apple, Outlook);
+  - Directions and Food nearby;
+  - a reminder the day before, by email and push notification.
+- **Works anywhere.** Phones, tablets and computers. It can be installed like an app, and it's free with no ads.
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/sheet-phone.png" alt="An investigator sheet on a phone: dice pool and actions"></td>
+<td width="33%"><img src="docs/screenshots/calendar-phone.png" alt="Next session countdown with the Add to calendar menu open"></td>
+<td width="33%"><img src="docs/screenshots/my-campaigns-phone.png" alt="My campaigns on a phone, with countdowns to each next session"></td>
+</tr>
+<tr>
+<td align="center">Your sheet at the table</td>
+<td align="center">Next session, one tap to your calendar</td>
+<td align="center">All your campaigns</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/print-classic.jpg" alt="Printable investigator sheet, Classic style"></td>
+<td width="50%"><img src="docs/screenshots/print-leather.jpg" alt="Printable investigator sheet, Leather style"></td>
+</tr>
+<tr>
+<td align="center">Printable sheet: Classic</td>
+<td align="center">Printable sheet: Leather</td>
+</tr>
+</table>
+
+**For the GM:** track every enemy's pool, damage, injuries and traumas, and choose when players can see them.
+
+![GM encounter tracker with cultists taking damage](docs/screenshots/gm-encounter.png)
+
+**The Journal:** clues the GM has revealed (to everyone, or just to you), plus the open threads, people and places of the campaign.
+
+![Journal with revealed clues and the campaign tracker](docs/screenshots/journal.png)
+
+**New investigator:** build a character step by step by the corebook's rules.
+
+![Step-by-step character creator showing archetype limits and starting skills](docs/screenshots/new-investigator.png)
+
+<sub>Screenshots use a made-up demo campaign.</sub>
+
 ---
 
 ## For players
@@ -158,6 +211,7 @@ At beta size everything should cost $0 to a few cents a month.
 - `functions/`: the server functions (`index.js`, `package.json`, `.env`).
 - `firebase-messaging-sw.js`: the notification worker. `manifest.webmanifest` and the `icon-*.png` files: the installable app.
 - `firebase.json`: Hosting settings (caching headers, the `/cal/**` rewrite), plus where the rules and functions live.
+- `docs/screenshots/`: the README pictures, taken from a made-up demo campaign. They aren't published on the site.
 
 The Firebase web settings and the keys in `js/config.js` are meant to be public. They only identify the project and are limited to this site; the rules decide what anyone can do. Secrets (the Gmail app password) live only in Secret Manager.
 

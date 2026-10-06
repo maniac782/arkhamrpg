@@ -2,7 +2,7 @@
 
 Live character sheets and campaign tools for the Arkham Horror Roleplaying Game, at **https://arkhamrpg.web.app**.
 
-Sign in, start a campaign, invite your group, and everyone's investigator sheets stay in sync at the table. Or try it first with no account: the campaign is saved in your browser, and it moves to your account when you sign up. It's a free fan project, not affiliated with Fantasy Flight Games.
+Sign in, start a campaign, invite your group, and everyone's investigator sheets stay in sync at the table. Or try it first with no account: the campaign is saved in your browser, and it moves to your account when you sign up. It's a free, unofficial fan project, not affiliated with or endorsed by Edge Studio (publisher of the Arkham Horror Roleplaying Game) or Fantasy Flight Games. You need the corebook to play.
 
 This repo is the code behind the live site. It isn't packaged for running your own copy; to play, just use the site.
 
@@ -221,3 +221,14 @@ At beta size everything should cost $0 to a few cents a month.
 The Firebase web settings and the keys in `js/config.js` are meant to be public. They only identify the project and are limited to this site; the rules decide what anyone can do. Secrets (the Gmail app password) live only in Secret Manager.
 
 Don't copy text from the corebook into the code; game text here is summarized in our own words.
+
+---
+
+## About the game content
+
+Arkham Horror RPG Ledger is an unofficial fan project. It isn't affiliated with or endorsed by Edge Studio, which publishes the Arkham Horror Roleplaying Game, or Fantasy Flight Games. Arkham Horror is a trademark of Fantasy Flight Games.
+
+- **You need the corebook to play.** The site tracks a game in progress; it doesn't teach or replace the rules.
+- **Game text is paraphrased.** Knack effects, gear notes, enemy profiles and the printable sheet's reminders are short summaries in our own words, not the book's text. Names and numbers appear only so sheets can track them.
+- **Original design.** The printable sheet follows the same fields as the official one so players feel at home, but its artwork and styling are our own, and the site uses only public-domain art. No artwork or logos from the books are reproduced.
+- **Publishers:** if you'd like anything changed or removed, email maniac78@gmail.com and it will be handled promptly.

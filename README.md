@@ -2,7 +2,7 @@
 
 Live character sheets and campaign tools for the Arkham Horror Roleplaying Game, at **https://arkhamrpg.web.app**.
 
-Sign in, start a campaign, invite your group, and everyone's investigator sheets stay in sync at the table. It's a free fan project, not affiliated with Fantasy Flight Games.
+Sign in, start a campaign, invite your group, and everyone's investigator sheets stay in sync at the table. Or try it first with no account: the campaign is saved in your browser, and it moves to your account when you sign up. It's a free fan project, not affiliated with Fantasy Flight Games.
 
 This repo is the code behind the live site. It isn't packaged for running your own copy; to play, just use the site.
 
@@ -64,6 +64,8 @@ This repo is the code behind the live site. It isn't packaged for running your o
 ## For players
 
 ### Getting started
+**Just trying it?** On the welcome screen, choose **Try it without an account**. You get one campaign where you're the GM, saved only in that browser (nothing is sent anywhere). When you're ready, tap **Save to an account**, sign in or sign up, and the whole campaign is copied to your account and removed from the browser. If you're already signed in on that browser, **My campaigns** shows it with **Save to my account**, **Open** and **Delete**.
+
 1. Go to **arkhamrpg.web.app** and sign in with Google or an email and password.
 2. Pick a username. It's the name other players see. Your email is never shown to them.
 3. Either **start a campaign** (the **+ New campaign** tile) or **join one** from an invite link or an email invite. Email invites arrive in your inbox and wait on your **My campaigns** page.
@@ -176,6 +178,7 @@ At beta size everything should cost $0 to a few cents a month.
 - emails from the Gmail account, time zone and reminder settings;
 - notification device addresses, calendar links and Google Places address suggestions;
 - feedback and error reports;
+- the no-account campaign, which stays in the browser;
 - Firebase/Google as the host, and reCAPTCHA.
 
 ### Backlog
@@ -204,6 +207,7 @@ At beta size everything should cost $0 to a few cents a month.
   - Send feedback and Install app;
   - next-session formatting, countdowns, calendar links and the address menu;
   - Google address suggestions.
+- `js/localdb.js`: the no-account campaign. A small stand-in for Firebase (sign-in and Firestore) that keeps everything in the browser's `localStorage` (`apl-local-v1`), so the ledger runs unchanged at `play.html?c=onthisdevice`. `js/home.js` (`migrateLocal`) copies it into a real campaign when the person signs in.
 - `js/upload.js`: picture uploads to Cloud Storage. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.

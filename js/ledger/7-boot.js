@@ -5,17 +5,21 @@
 function myBC(){try{const b=JSON.parse(localStorage.getItem('apl-beta-cache')||'null');return b&&b.uid===authUid?b:{};}catch(e){return {};}}
 function myProf(){return myBC().profile||{};}
 // Connection problems show as a small warning in the top-right corner; when all is well it stays empty.
-function setStatus(m,more){const lv=document.getElementById('live');if(lv)lv.innerHTML=m?'<span class="netwarn" title="'+esc(m+(more||''))+'">'+esc(m)+(more?'<span class="wide-only">'+esc(more)+'</span>':'')+'</span>':'';}
+function setStatus(m,more){if(IS_LOCAL&&m==='Offline')return;const lv=document.getElementById('live');if(lv)lv.innerHTML=m?'<span class="netwarn" title="'+esc(m+(more||''))+'">'+esc(m)+(more?'<span class="wide-only">'+esc(more)+'</span>':'')+'</span>':'';}
 window.addEventListener('offline',()=>setStatus('Offline',' \u2014 changes will sync when you\u2019re back online'));
 window.addEventListener('online',()=>setStatus(''));
 if(navigator.onLine===false)setTimeout(()=>setStatus('Offline',' \u2014 changes will sync when you\u2019re back online'),0);
 async function bootCampaign(syncEl){
  const cfg0=window.FIREBASE_CONFIG;
- if(!cfg0||!cfg0.projectId||!window.firebase){localMode=true;render();setStatus('Not connected');return;}
+ if(!IS_LOCAL&&(!cfg0||!cfg0.projectId||!window.firebase)){localMode=true;render();setStatus('Not connected');return;}
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
- const fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
+ // The device-only campaign (no account) runs on an in-browser store instead of Firebase (js/localdb.js).
+ const isLocal=IS_LOCAL;if(isLocal)LocalFB.activate();
+ if(isLocal){const cr=document.querySelector('.crumb');if(cr)cr.textContent='\u2039 Home';}
+ if(isLocal)window.addEventListener('local-full',()=>toast('This browser is out of room, so that change wasn\u2019t saved. Save the campaign to an account to keep going.'));
+ const fb=isLocal?LocalFB.app():firebase.initializeApp(cfg,'beta');if(!isLocal&&window.armAppCheck)armAppCheck(fb);const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
  const brand=document.querySelector('.brand h1');
- const syncLine=()=>{const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
+ const syncLine=()=>{if(isLocal){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">Saved on this device only</span><a class="btn sm pri" href="./?savelocal=1">Save to an account</a></span>';return;}const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
  window.addEventListener('acct-signout',()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');});syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
  if(camp){if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';applyRoles();render();}
@@ -25,7 +29,7 @@ async function bootCampaign(syncEl){
  raw.doc('bans/'+u.uid).get().then(b=>{if(b.exists){halted='This account has been suspended, so it can\u2019t open campaigns. If you think this is a mistake, use Contact at the bottom of the page.';render();}}).catch(()=>{});
  db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch()};
  raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
-  if(!snap.exists){halted='This campaign was deleted.';render();return;}
+  if(!snap.exists){halted=isLocal?'There\u2019s no campaign saved on this device yet. Start one from the home page.':'This campaign was deleted.';render();return;}
   camp=snap.data();
   if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
   if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';

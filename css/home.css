@@ -75,6 +75,12 @@ a.btn{text-decoration:none}
 .welcome a:hover{text-decoration-color:var(--ink)}
 .invited{background:var(--surface2);border-left-color:var(--muted)}
 .newtile .plus{color:var(--muted)}
+/* try without an account */
+.trybox{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px dashed var(--line);border-radius:6px;background:var(--surface)}
+.trybox .note{line-height:1.5}
+.trybox .row{margin-top:2px}
+.savenote{padding:10px 12px;background:var(--surface2);border-radius:4px;line-height:1.5}
+.localban{border-style:dashed}
 
 /* invitation cards */
 .invcard{gap:8px}

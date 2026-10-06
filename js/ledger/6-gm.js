@@ -205,7 +205,9 @@ function gmNextHtml(){
   '<button class="btn pri" data-gact="nsset">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" data-gact="nsclear">Clear</button>':'')+'</div>'+
   '<p class="note" style="margin:0">Everyone sees a countdown on the campaign\u2019s card and the Party tab, and can add it to their calendar.</p></section>';
 }
-function setNextSession(p){const ref=firebase.app('beta').firestore().doc('campaigns/'+CAMP);return ref.update(p);}
+// FieldValue.delete() for whichever store this campaign uses (the device-only one has its own).
+const fvDel=()=>(IS_LOCAL?LocalFB.FieldValue:firebase.firestore.FieldValue).delete();
+function setNextSession(p){const ref=(IS_LOCAL?LocalFB.app():firebase.app('beta')).firestore().doc('campaigns/'+CAMP);return ref.update(p);}
 function renderGM(){
  if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>Game Master</h2><p class="note">These are the Game Master\u2019s tools. Players don\u2019t need anything here.'+(CAMP?' The campaign owner chooses the GM on the campaign page.':'')+'</p></section>';
  const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
@@ -305,8 +307,8 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'award':awardSession();break;
   case 'nsset':{const v=(document.getElementById('gm-nsdate')||{}).value,w=((document.getElementById('gm-nswhere')||{}).value||'').trim().slice(0,80),t=v?new Date(v).getTime():NaN;
    if(!Number.isFinite(t))return toast('Pick a date and time.');if(t<Date.now()-3600000)return toast('That time has already passed.');
-   setNextSession({nextSession:t,nextWhere:w,nextHours:(h=>h===null?firebase.firestore.FieldValue.delete():h)(sessionHoursValue((document.getElementById('gm-nshours')||{}).value))}).then(()=>toast('Next session set for '+sessionWhen(t)+'.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});break;}
-  case 'nsclear':setNextSession({nextSession:firebase.firestore.FieldValue.delete(),nextWhere:firebase.firestore.FieldValue.delete(),nextHours:firebase.firestore.FieldValue.delete()}).then(()=>toast('Next session cleared.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t clear it. Try again.');});break;
+   setNextSession({nextSession:t,nextWhere:w,nextHours:(h=>h===null?fvDel():h)(sessionHoursValue((document.getElementById('gm-nshours')||{}).value))}).then(()=>toast('Next session set for '+sessionWhen(t)+'.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});break;}
+  case 'nsclear':setNextSession({nextSession:fvDel(),nextWhere:fvDel(),nextHours:fvDel()}).then(()=>toast('Next session cleared.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t clear it. Try again.');});break;
   case 'nextsession':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gmLog('Session '+table.session+' started',false);gm.wrap={};toast('Session '+table.session+' started.');break;
   case 'gldel':gmLogList=gmLogList.filter(x=>x.id!==id);render();gmDel('gmlog/'+id);break;
   case 'glclear':gmLogList.forEach(x=>gmDel('gmlog/'+x.id));gmLogList=[];render();break;

@@ -25,13 +25,13 @@ function renderTabs(){
 // The next meetup, set by the owner or GM in the campaign's Settings.
 function nextSessionBar(){
  if(!CAMP||!camp||!window.sessionShown)return '';
- const t=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
+ const t=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe||IS_LOCAL?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
  if(!sessionShown(t))return '';
  return '<div class="nextsess"><div class="grow"><span class="lbl">Next session \u00b7 <span data-cd="'+t+'">'+esc(sessionRel(t))+'</span></span><span><b>'+esc(sessionSpan(t,camp.nextHours))+'</b>'+(camp.nextWhere?'<span class="note"> \u00b7 '+placeHtml(camp.nextWhere)+'</span>':'')+'</span></div>'+
-  calMenuHtml(camp.name,t,camp.nextWhere,CAMP,camp.nextHours)+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
+  calMenuHtml(camp.name,t,camp.nextWhere,IS_LOCAL?null:CAMP,camp.nextHours)+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
 }
 function renderParty(){
- let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+
+ let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. '+(IS_LOCAL?'Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.':'Every change syncs to everyone at the table.')+'</div>'+
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">You have your investigator. Only the campaign owner can add more.</p>':'')+
   (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?'+ Create my investigator':'+ Add an investigator')+'</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
   '<div class="party">';
@@ -226,7 +226,7 @@ function gmPinHtml(){
 }
 function houseToggle(){
  const hr=HR();const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n).filter(Boolean);
- if(!names.length)return CAMP&&keys.master?'<p class="note" style="margin:0 0 8px">No house rules yet. Add custom weapons, gear or rule changes in <a href="./?settings='+encodeURIComponent(CAMP)+'">Settings</a>.</p>':'';
+ if(!names.length)return CAMP&&keys.master&&!IS_LOCAL?'<p class="note" style="margin:0 0 8px">No house rules yet. Add custom weapons, gear or rule changes in <a href="./?settings='+encodeURIComponent(CAMP)+'">Settings</a>.</p>':'';
  const can=(!db&&localMode)||!!keys.master;
  return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>'+(CAMP&&!isGMView()?'':'House rules ')+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' '+(CAMP?'Only the campaign owner can change this.':'Only the master key can change this.')+'')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
 }

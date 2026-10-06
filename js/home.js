@@ -7,7 +7,7 @@ let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTim
 const MAX_OWNED=10;
 // state
 let fb=null,auth=null,db=null,user=null,profile=undefined,camps=[],campUnsub=null,profUnsub=null,inbox=[],outbox=[],inboxUnsub=null,outUnsub=null,outCid=null;
-let banned=false,isAdm=false,seenDone=false;
+let banned=false,isAdm=false,seenDone=false,wantSave=false;
 const ui={importing:'',confirmImport:false,mode:'signin',err:'',busy:false,view:'home',cid:null,confirmDel:false,confirmLeave:false,kick:null,newOpen:false,clear:new Set()};
 
 function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c.projectId).startsWith('PASTE')&&window.firebase;}
@@ -134,17 +134,25 @@ const signOutHtml=()=>'<button class="nav-l" data-a="signout">Sign out</button>'
 const errHtml=()=>ui.err?'<p class="err" role="alert">'+esc(ui.err)+'</p>':'';
 function field(id,label,type,extra){return '<label class="field wide"><span class="lbl">'+label+'</span><input class="f" id="'+id+'" type="'+type+'" '+(extra||'')+'></label>';}
 
+// The no-account way in: a campaign kept only in this browser (js/localdb.js) until they make an account.
+const hasLocal=()=>{try{return !!(window.LocalFB&&LocalFB.exists());}catch(e){return false;}};
+const localName=()=>{try{const d=LocalFB.dump();return (d.camp&&d.camp.name)||'Your campaign';}catch(e){return 'Your campaign';}};
+function localTryHtml(){
+ if(hasLocal())return '<div class="trybox"><b>Welcome back</b><span class="note"><b>'+esc(localName())+'</b> is saved in this browser. Make an account any time to keep it safe and invite your group.</span><div class="row"><a class="btn pri" href="play.html?c='+LOCAL_CAMP+'">Continue on this device \u2192</a></div></div>';
+ return '<div class="trybox"><b>Just looking?</b><span class="note">Try it without an account. Your campaign is saved in this browser only. When you\u2019re ready, make an account and it moves over with you.</span><div class="row"><button class="btn" data-a="trylocal">Try it without an account</button></div></div>';
+}
 function introHtml(){
  const step=(n,t,d)=>'<li><span class="stepn">'+n+'</span><span><b>'+t+'</b><span class="note">'+d+'</span></span></li>';
  const inv=(typeof pendingJoin!=='undefined'&&pendingJoin)?'<p class="invited">You\u2019ve been invited to join <b>'+esc(pendingJoin.name||'a campaign')+'</b>. Sign in or create an account and you\u2019ll be asked to join.</p>':'';
- return '<section class="intro">'+inv+'<h2>Live character sheets for the Arkham Horror Roleplaying Game</h2>'+
+ return '<section class="intro">'+inv+(hasLocal()?localTryHtml():'')+'<h2>Live character sheets for the Arkham Horror Roleplaying Game</h2>'+
   '<p>Everyone\u2019s investigator stays in sync at the table: spend a die, take an injury or earn XP and the whole group sees it. The GM gets scenes, enemies, clues and session recaps.</p>'+
   '<ol class="steps">'+step(1,'Sign in','With Google or an email and password.')+step(2,'Start a campaign or join one','Start your own and invite your group, or open an invite link a friend sent you.')+step(3,'Build your investigator','Step by step, following the corebook\u2019s character creation.')+'</ol>'+
-  '<p class="note">Free, no ads. A fan project, not affiliated with Fantasy Flight Games. <a href="help.html">How it works</a></p></section>';
+  (hasLocal()?'':localTryHtml())+'<p class="note">Free, no ads. A fan project, not affiliated with Fantasy Flight Games. <a href="help.html">How it works</a></p></section>';
 }
 function authView(){
  const up=ui.mode==='signup',reset=ui.mode==='reset';
  let h='<section class="sec auth"><h2>'+(reset?'Reset your password':up?'Create an account':'Sign in')+'</h2>';
+ if(wantSave&&hasLocal()&&!reset)h+='<p class="note savenote" style="margin:0">Sign in or create an account and <b>'+esc(localName())+'</b> will be copied to it, ready to share with your group.</p>';
  if(!reset)h+='<button class="btn gbtn" data-a="google" '+(ui.busy?'disabled':'')+'><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.5z"/></svg>Continue with Google</button><div class="or">or with email</div>';
  h+='<form id="authform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('em','Email','email','autocomplete="email" required')+
   (reset?'':field('pw','Password','password','autocomplete="'+(up?'new-password':'current-password')+'" minlength="6" required'))+
@@ -188,6 +196,7 @@ function homeView(){
  let h='';
  if(pendingJoin&&!camps.some(c=>c.id===pendingJoin.cid))h+='<section class="sec"><div class="sec-head"><h2>You\u2019re invited</h2></div><div class="camps"><div class="camp hasimg invcard">'+bannerHtml({id:pendingJoin.cid,name:pendingJoin.name||'?'},null)+'<h3>'+esc(pendingJoin.name||'A campaign')+'</h3><span class="note">You opened an invite link. Join to see the party and make your investigator.</span>'+errHtml()+'<div class="row invbtns"><button class="btn pri" data-a="ljoin" '+(ui.busy?'disabled':'')+'>Join campaign</button><button class="btn" data-a="lskip">Not now</button></div></div></div></section>';
  if(user.email&&!user.emailVerified&&!user.providerData.some(x=>x.providerId==='google.com'))h+='<section class="sec"><p class="note" style="margin:0">Verify your email to see invites sent to <b>'+esc(user.email)+'</b>. Check your inbox for the link, then reload. <button class="btn sm" data-a="reverify">Send it again</button></p></section>';
+ if(hasLocal())h+=localBannerHtml();
  if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>You\u2019re invited</h2></div><div class="camps">'+inbox.map(inviteCard).join('')+'</div></section>';
  h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length?'<span class="note">'+owned.length+' of '+MAX_OWNED+'</span>':'')+'</div>';
  const tile=owned.length<MAX_OWNED?'<button class="camp newtile" data-a="newopen"><span class="plus" aria-hidden="true">+</span><b>New campaign</b><span class="note">'+(owned.length?'Start another and invite your group.':'Start a campaign and invite your group.')+'</span></button>':'';
@@ -195,6 +204,13 @@ function homeView(){
  h+='</section><section class="sec"><div class="sec-head"><h2>Campaigns you’re in</h2></div>'+
   (member.length?(member.length>1&&!dragHinted()&&owned.length<2?'<p class="note draghint">Tip: press and hold a campaign (or click and drag) to move it.</p>':'')+'<div class="camps">'+member.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">None yet. When a friend invites you, it’ll show up here.</p>')+'</section>';
  return h;
+}
+function localBannerHtml(){
+ const nm=localName();
+ let h='<section class="sec localban"><div class="sec-head"><h2>On this device</h2></div><p class="note" style="margin:0"><b>'+esc(nm)+'</b> is saved only in this browser. Save it to your account to keep it safe, open it anywhere and invite your group.</p>'+errHtml();
+ if(ui.localBusy)return h+'<p class="note" style="margin:0">Saving to your account\u2026 keep this page open.</p></section>';
+ if(ui.confirmLocalDel)return h+'<p class="note" style="margin:0">Delete \u201c'+esc(nm)+'\u201d from this browser? This can\u2019t be undone.</p><div class="row"><button class="btn dng" data-a="dellocalyes">Yes, delete it</button><button class="btn" data-a="dellocalno">Cancel</button></div></section>';
+ return h+'<div class="row"><button class="btn pri" data-a="savelocal">Save to my account</button><a class="btn" href="play.html?c='+LOCAL_CAMP+'">Open</a><button class="btn" data-a="dellocal">Delete\u2026</button></div></section>';
 }
 function newView(){
  const nm=((document.getElementById('cname')||{}).value||'').trim(),gm=ui.newGM||'me';
@@ -300,7 +316,7 @@ async function saveUsername(){
 
 // ---------- campaigns ----------
 function watchCampaigns(){if(campUnsub)campUnsub();
- campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));saveBC();render();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));toast('Couldn’t load your campaigns.');});}
+ campUnsub=db.collection('campaigns').where('memberIds','array-contains',user.uid).onSnapshot(qs=>{camps=[];qs.forEach(d=>camps.push({...d.data(),id:d.id}));camps.sort((a,b)=>String(a.name).localeCompare(String(b.name)));ui.campsLoaded=true;saveBC();render();maybeSaveLocal();},e=>{(window.quotaHit&&quotaHit(e),console.warn(e));toast('Couldn’t load your campaigns.');});}
 async function createCampaign(){
  const name=((document.getElementById('cname')||{}).value||'').trim();
  if(!name)throw {msg:'Give the campaign a name.'};
@@ -312,6 +328,49 @@ async function createCampaign(){
  if((ui.newGM||'me')==='me')await ref.update({gmUid:user.uid}).catch(()=>{});
  if(ui.newPhoto)await storeImage(ui.newPhoto,'campaigns/'+ref.id+'/'+user.uid).then(u=>ref.update({photo:u})).catch(()=>toast('The picture didn\u2019t save; add it again in Settings.'));
  ui.newPhoto=null;ui.newGM=null;ui.newId=null;ui.view='invite';ui.cid=ref.id;ui.waitCid=ref.id;window.scrollTo(0,0);
+}
+
+// Copies the device-only campaign into a new campaign on this account (owner and GM), then forgets the local copy.
+function swapUid(v,uid){
+ if(v===LOCAL_UID)return uid;
+ if(Array.isArray(v))return v.map(x=>swapUid(x,uid));
+ if(v&&typeof v==='object'){const o={};Object.keys(v).forEach(k=>{o[k===LOCAL_UID?uid:k]=swapUid(v[k],uid);});return o;}
+ return v;
+}
+async function storeInline(v,folder){
+ if(typeof v==='string'&&v.indexOf('data:image/jpeg')===0)return storeImage(v,folder);
+ if(Array.isArray(v)){const out=[];for(const x of v)out.push(await storeInline(x,folder));return out;}
+ if(v&&typeof v==='object'){const o={};for(const k of Object.keys(v))o[k]=await storeInline(v[k],folder);return o;}
+ return v;
+}
+function forgetLocal(){LocalFB.clear();try{Object.keys(localStorage).filter(k=>k.indexOf(LOCAL_CAMP)>=0).forEach(k=>localStorage.removeItem(k));}catch(e){}}
+async function migrateLocal(){
+ const d=LocalFB.dump();if(!d.camp)return;
+ if(camps.filter(c=>c.ownerUid===user.uid).length>=MAX_OWNED)throw {msg:'You own '+MAX_OWNED+' campaigns, the most allowed. Delete one first, then save this one.'};
+ ui.localBusy=true;render();
+ try{
+  const uid=user.uid,ref=db.collection('campaigns').doc(),folder='campaigns/'+ref.id+'/'+uid;
+  await ref.set({name:String(d.camp.name||'My campaign').slice(0,60),ownerUid:uid,memberIds:[uid],roles:{[uid]:'owner'},names:{[uid]:profile.username},created:FV().serverTimestamp()});
+  await ref.update({joinCode:newCode()}).catch(()=>{});
+  await ref.update({gmUid:uid}).catch(()=>{});
+  const ns={};['nextSession','nextWhere','nextHours'].forEach(k=>{if(d.camp[k]!=null)ns[k]=d.camp[k];});
+  if(Object.keys(ns).length)await ref.update(ns).catch(()=>{});
+  if(photoOk(d.camp.photo))await storeImage(d.camp.photo,folder).then(u=>ref.update({photo:u})).catch(()=>{});
+  // Everything inside the campaign, with "local" swapped for this account and pictures moved to file storage.
+  // Investigators first, so players/<uid> can point at one that already exists.
+  const skip=/^(locks|grants)\//,rank=p=>p.indexOf('characters/')===0?0:p.indexOf('players/')===0?1:2;
+  const docs=d.docs.filter(([p])=>!skip.test(p)).sort((a,b)=>rank(a[0])-rank(b[0]));
+  let failed=0;
+  for(const [p,data] of docs){
+   const parts=p.split('/').map(x=>x===LOCAL_UID?uid:x);
+   try{const v=swapUid(data,uid);if(parts[0]==='characters'&&v&&v.player==='You')v.player=v.ownerUid===uid?profile.username:'';await db.doc('campaigns/'+ref.id+'/'+parts.join('/')).set(await storeInline(v,folder));}catch(e){failed++;console.warn('Copying',p,e);}
+  }
+  if(failed&&failed===docs.length){await ref.delete().catch(()=>{});throw {msg:'Couldn\u2019t copy the campaign. It\u2019s still saved on this device; try again.'};}
+  forgetLocal();
+  wantSave=false;try{sessionStorage.removeItem('apl-savelocal');}catch(e){}
+  ui.view='invite';ui.cid=ref.id;ui.waitCid=ref.id;window.scrollTo(0,0);
+  toast(failed?'Saved to your account, but '+failed+' item'+(failed>1?'s':'')+' didn\u2019t copy.':'Saved to your account.');
+ }finally{ui.localBusy=false;}
 }
 
 // ---------- invites & members ----------
@@ -452,6 +511,11 @@ window.addEventListener('acct-signout',()=>auth&&auth.signOut());
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account')e.preventDefault();
  switch(a){
   case 'google':busy(google);break;
+  case 'trylocal':LocalFB.create('My campaign');location.href='play.html?c='+LOCAL_CAMP;break;
+  case 'savelocal':busy(migrateLocal);break;
+  case 'dellocal':ui.confirmLocalDel=true;render();break;
+  case 'dellocalno':ui.confirmLocalDel=false;render();break;
+  case 'dellocalyes':ui.confirmLocalDel=false;forgetLocal();toast('Deleted from this browser.');render();break;
   case 'mode':ui.mode=b.dataset.m;ui.err='';render();break;
   case 'signout':auth.signOut();break;
   case 'newopen':ui.view='new';ui.newId=db.collection('campaigns').doc().id;ui.err='';ui.newPhoto=null;ui.newGM=null;ui.clear.add('cname');render();window.scrollTo(0,0);{const i=document.getElementById('cname');if(i)i.focus();}break;
@@ -517,6 +581,10 @@ try{const q=new URLSearchParams(location.search).get('join');const n=new URLSear
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
  if(q)history.replaceState(null,'',location.pathname);
  if(!pendingJoin){const sj=JSON.parse(sessionStorage.getItem('apl-join')||'null');if(sj&&sj.cid&&sj.code)pendingJoin=sj;}}catch(e){}
+// Came from "Save to an account" in a device-only campaign: remember it through sign-in, then copy it over.
+try{if(new URLSearchParams(location.search).has('savelocal')){sessionStorage.setItem('apl-savelocal','1');history.replaceState(null,'',location.pathname);}wantSave=sessionStorage.getItem('apl-savelocal')==='1';}catch(e){}
+if(wantSave)ui.mode='signup';
+function maybeSaveLocal(){if(wantSave&&user&&profile&&watching&&ui.campsLoaded&&!ui.localBusy&&!banned&&hasLocal()){wantSave=false;try{sessionStorage.removeItem('apl-savelocal');}catch(e){}busy(migrateLocal);}}
 auth.getRedirectResult().catch(e=>{ui.err=authErr(e);render();});
 // Remember who was signed in and their campaigns, so a reload shows the page straight away.
 const BC='apl-beta-cache';let bc=null,watching=false;
@@ -529,7 +597,7 @@ auth.onAuthStateChanged(u=>{
  user=u&&!u.isAnonymous?u:null;watching=false;
  if(!same){profile=undefined;camps=[];if(!ui.waitCid&&!(u&&ui.view==='account'))ui.view='home';}
  if(!user){try{localStorage.removeItem(BC);Object.keys(localStorage).filter(k=>k.startsWith('apl-memo-')).forEach(k=>localStorage.removeItem(k));}catch(e){}bc=null;}
- ui.err='';ui.busy=false;
+ ui.err='';ui.busy=false;ui.campsLoaded=false;
  banned=false;isAdm=false;seenDone=false;
  if(user){const uid=user.uid;
   db.doc('bans/'+uid).get().then(s=>{banned=s.exists;render();}).catch(()=>{});

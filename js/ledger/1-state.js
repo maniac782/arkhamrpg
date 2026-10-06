@@ -2,6 +2,8 @@
    Part of the ledger; these files load in order and share their variables. */
 // Campaign mode: ?c=<campaign id> runs this ledger inside one campaign, with accounts instead of passcodes.
 const CAMP=(()=>{try{const v=new URLSearchParams(location.search).get('c')||'';return /^[A-Za-z0-9]{10,40}$/.test(v)?v:null;}catch(e){return null;}})();
+// The campaign kept only in this browser ("Try it without an account", js/localdb.js).
+const IS_LOCAL=!!(CAMP&&window.LOCAL_CAMP&&CAMP===window.LOCAL_CAMP);
 // No campaign in the address: go to My campaigns (STOP keeps the rest from starting).
 const STOP=!CAMP;if(STOP)location.replace('./');
 let camp=null,halted=null;

@@ -200,7 +200,7 @@ const localInput=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad2(d.getMo
 function gmNextHtml(){
  const t=camp&&camp.nextSession,on=window.sessionShown&&sessionShown(t);
  return '<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="cdtext" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'<span class="note">Not set</span>')+'</div>'+
-  '<div class="row" style="align-items:flex-end"><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="gm-nsdate" value="'+(on?localInput(t):'')+'"></label>'+
+  '<div class="row" style="align-items:flex-end"><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="gm-nsdate" value="'+(on?localInput(t):'')+'"></label>'+sessionHoursSelect('gm-nshours',camp.nextHours)+
   '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="gm-nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?camp.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" data-gact="nsset">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" data-gact="nsclear">Clear</button>':'')+'</div>'+
   '<p class="note" style="margin:0">Everyone sees a countdown on the campaign\u2019s card and the Party tab, and can add it to their calendar.</p></section>';
@@ -305,8 +305,8 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'award':awardSession();break;
   case 'nsset':{const v=(document.getElementById('gm-nsdate')||{}).value,w=((document.getElementById('gm-nswhere')||{}).value||'').trim().slice(0,80),t=v?new Date(v).getTime():NaN;
    if(!Number.isFinite(t))return toast('Pick a date and time.');if(t<Date.now()-3600000)return toast('That time has already passed.');
-   setNextSession({nextSession:t,nextWhere:w}).then(()=>toast('Next session set for '+sessionWhen(t)+'.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});break;}
-  case 'nsclear':setNextSession({nextSession:firebase.firestore.FieldValue.delete(),nextWhere:firebase.firestore.FieldValue.delete()}).then(()=>toast('Next session cleared.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t clear it. Try again.');});break;
+   setNextSession({nextSession:t,nextWhere:w,nextHours:sessionHours((document.getElementById('gm-nshours')||{}).value)}).then(()=>toast('Next session set for '+sessionWhen(t)+'.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});break;}
+  case 'nsclear':setNextSession({nextSession:firebase.firestore.FieldValue.delete(),nextWhere:firebase.firestore.FieldValue.delete(),nextHours:firebase.firestore.FieldValue.delete()}).then(()=>toast('Next session cleared.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t clear it. Try again.');});break;
   case 'nextsession':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gmLog('Session '+table.session+' started',false);gm.wrap={};toast('Session '+table.session+' started.');break;
   case 'gldel':gmLogList=gmLogList.filter(x=>x.id!==id);render();gmDel('gmlog/'+id);break;
   case 'glclear':gmLogList.forEach(x=>gmDel('gmlog/'+x.id));gmLogList=[];render();break;

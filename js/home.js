@@ -163,9 +163,9 @@ function localInput(t){const d=new Date(t);return d.getFullYear()+'-'+pad2(d.get
 function nextSessionHtml(c,can){
  const t=c.nextSession,on=sessionShown(t);
  let h='<section class="sec"><div class="sec-head"><h2>Next session</h2>'+(on?'<span class="cdtext" data-cd="'+t+'">'+esc(sessionRel(t))+'</span>':'')+'</div>';
- if(on)h+='<p style="margin:0"><b>'+esc(sessionWhen(t))+'</b>'+(c.nextWhere?' \u00b7 '+placeHtml(c.nextWhere):'')+'</p><div class="row">'+calMenuHtml(c.name,t,c.nextWhere,c.id)+'</div>';
+ if(on)h+='<p style="margin:0"><b>'+esc(sessionSpan(t,c.nextHours))+'</b>'+(c.nextWhere?' \u00b7 '+placeHtml(c.nextWhere):'')+'</p><div class="row">'+calMenuHtml(c.name,t,c.nextWhere,c.id,c.nextHours)+'</div>';
  else if(!can)h+='<p class="note" style="margin:0">Nothing scheduled yet. The owner or GM can set it.</p>';
- if(can)h+='<form id="nsform" class="row" style="align-items:flex-end" novalidate><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="nsdate" value="'+(on?localInput(t):'')+'"></label>'+
+ if(can)h+='<form id="nsform" class="row" style="align-items:flex-end" novalidate><label class="field"><span class="lbl">Date and time</span><input class="f" type="datetime-local" id="nsdate" value="'+(on?localInput(t):'')+'"></label>'+sessionHoursSelect('nshours',c.nextHours)+
   '<label class="field" style="flex:1;min-width:180px"><span class="lbl">Where (optional)</span><input class="f" id="nswhere" maxlength="80" data-place autocomplete="off" placeholder="e.g. Dan\u2019s place, or Discord" value="'+esc(on?c.nextWhere||'':'')+'"></label>'+
   '<button class="btn pri" type="submit">'+(on?'Update':'Set')+'</button>'+(on?'<button class="btn" type="button" data-a="nsclear">Clear</button>':'')+'</form>'+
   '<p class="note" style="margin:0">Shows a countdown on the campaign\u2019s card and in the ledger for everyone. Times are in each person\u2019s own time zone.</p>';
@@ -376,9 +376,9 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
  if(id==='authform')busy(emailSubmit);
  else if(id==='unform')busy(saveUsername);
  else if(id==='newform')busy(createCampaign);
- else if(id==='nsform')busy(async()=>{const v=(document.getElementById('nsdate')||{}).value,w=((document.getElementById('nswhere')||{}).value||'').trim().slice(0,80);const t=v?new Date(v).getTime():NaN;
+ else if(id==='nsform'){const hv=(document.getElementById('nshours')||{}).value;busy(async()=>{const v=(document.getElementById('nsdate')||{}).value,w=((document.getElementById('nswhere')||{}).value||'').trim().slice(0,80);const t=v?new Date(v).getTime():NaN;
   if(!Number.isFinite(t))throw {msg:'Pick a date and time.'};if(t<Date.now()-3600000)throw {msg:'That time has already passed.'};
-  await db.doc('campaigns/'+ui.cid).update({nextSession:t,nextWhere:w});toast('Next session set for '+sessionWhen(t)+'.');});
+  await db.doc('campaigns/'+ui.cid).update({nextSession:t,nextWhere:w,nextHours:sessionHours(hv)});toast('Next session set for '+sessionWhen(t)+'.');});}
  else if(id==='invform')busy(sendInvite);
  else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});const c0=camps.find(x=>x.id===ui.cid);if(c0)c0.name=n.slice(0,60);toast('Renamed.');});
 });
@@ -405,7 +405,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'hedit':ui.hedit=b.dataset.id;render();break;
   case 'hdone':ui.hedit=null;render();break;
   case 'hdel':if(hr){const k=LIST[b.dataset.kind];hr[k]=hr[k].filter(x=>x.id!==b.dataset.id);if(ui.hedit===b.dataset.id)ui.hedit=null;saveHouse();render();}break;
-  case 'nsclear':db.doc('campaigns/'+ui.cid).update({nextSession:FV().delete(),nextWhere:FV().delete()}).then(()=>toast('Next session cleared.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t clear it. Try again.');});break;
+  case 'nsclear':db.doc('campaigns/'+ui.cid).update({nextSession:FV().delete(),nextWhere:FV().delete(),nextHours:FV().delete()}).then(()=>toast('Next session cleared.'),er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t clear it. Try again.');});break;
   case 'avphotodel':dropImage(profile.photo);profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'avc':{const k='color',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;

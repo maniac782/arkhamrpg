@@ -96,18 +96,26 @@ window.acctIcon=function(name,prof){
   });
   document.addEventListener('keydown',function(ev){if(ev.key==='Escape')document.querySelectorAll('.placemenu').forEach(function(m){m.hidden=true;});});
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
-  window.sessionIcs=function(name,t,where){
+  // Expected session length in hours (owner/GM choose 1-12; 4 if never set).
+  window.sessionHours=function(h){h=Number(h);return h>=1&&h<=12?h:4;};
+  // "Fri, Oct 23, 6:00 – 10:00 PM": start and expected end.
+  window.sessionSpan=function(t,h){var end=t+window.sessionHours(h)*HOUR;
+    try{var fmt=new Intl.DateTimeFormat([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});if(fmt.formatRange)return fmt.formatRange(new Date(t),new Date(end));}catch(e){}
+    return window.sessionWhen(t)+' \u2013 '+new Date(end).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});};
+  // The Length dropdown used where the owner or GM sets the next session.
+  window.sessionHoursSelect=function(id,h){h=window.sessionHours(h);var o='';for(var i=1;i<=8;i++)o+='<option value="'+i+'"'+(i===h?' selected':'')+'>'+i+' hour'+(i===1?'':'s')+'</option>';return '<label class="field"><span class="lbl">Length</span><select class="f" id="'+id+'">'+o+'</select></label>';};
+  window.sessionIcs=function(name,t,where,hours){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};
-    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+4*HOUR),
+    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+window.sessionHours(hours)*HOUR),
       'SUMMARY:'+e(name+' — Arkham Horror'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
     return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   };
   // "Add to calendar" with a menu: Google Calendar, Apple Calendar (a real link that iPhones and Macs open in Calendar),
   // Outlook, or the file itself.
-  window.calMenuHtml=function(name,t,where,cid){
+  window.calMenuHtml=function(name,t,where,cid,hours){
     var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},iso=function(x){return new Date(x).toISOString().replace(/\.\d{3}/,'');};
-    var title=(name||'Session')+' \u2014 Arkham Horror',end=t+4*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details='Open the ledger: '+link;
+    var title=(name||'Session')+' \u2014 Arkham Horror',end=t+window.sessionHours(hours)*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details='Open the ledger: '+link;
     var g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+f(t)+'/'+f(end)+'&details='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
     var o='https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject='+encodeURIComponent(title)+'&startdt='+encodeURIComponent(iso(t))+'&enddt='+encodeURIComponent(iso(end))+'&body='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
     var a=cid?'/cal/'+encodeURIComponent(cid)+'.ics':'';
@@ -117,7 +125,7 @@ window.acctIcon=function(name,prof){
       '<a role="menuitem" href="'+e(g)+'" target="_blank" rel="noopener">Google Calendar</a>'+
       (a?'<a role="menuitem" href="'+e(a)+'">Apple Calendar (iPhone, Mac)</a>':'')+
       '<a role="menuitem" href="'+e(o)+'" target="_blank" rel="noopener">Outlook</a>'+
-      '<a role="menuitem" href="'+window.sessionIcs(name,t,where)+'" download="'+e(fileName)+'">Download file (.ics)</a></span></span>';
+      '<a role="menuitem" href="'+window.sessionIcs(name,t,where,hours)+'" download="'+e(fileName)+'">Download file (.ics)</a></span></span>';
   };
   // Keep every countdown on the page current without redrawing anything else.
   setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t)){if(el.hasAttribute('data-cdb'))el.innerHTML=window.sessionRelHtml(t);else el.textContent=window.sessionRel(t);}else el.remove();});},30000);

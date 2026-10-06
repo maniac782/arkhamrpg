@@ -235,9 +235,10 @@ service cloud.firestore {
       allow update: if realUser() && oldC().get('deleting', false) != true && (
         (isOwner() && changedOnly(['name']) && goodName())
         || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
-        || ((isOwner() || gmOf(oldC()) == me()) && changedOnly(['nextSession', 'nextWhere'])
+        || ((isOwner() || gmOf(oldC()) == me()) && changedOnly(['nextSession', 'nextWhere', 'nextHours'])
           && (!('nextSession' in newC()) || newC().nextSession is int)
-          && (!('nextWhere' in newC()) || (newC().nextWhere is string && newC().nextWhere.size() <= 80)))
+          && (!('nextWhere' in newC()) || (newC().nextWhere is string && newC().nextWhere.size() <= 80))
+          && (!('nextHours' in newC()) || (newC().nextHours is number && newC().nextHours >= 1 && newC().nextHours <= 12)))
         || (isOwner() && changedOnly(['art']) && newC().art is int && newC().art >= 0 && newC().art < 100)
         || (isOwner() && changedOnly(['photo']) && (!('photo' in newC()) || (newC().photo is string && picOk(newC().photo, 150000))))
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)

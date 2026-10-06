@@ -2,7 +2,7 @@
    Part of the ledger; these files load in order and share their variables. */
 // ---------- events ----------
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;go(b.dataset.tab);});
-function go(t){active=t;try{localStorage.setItem(TAB_KEY,t);}catch(e){}render();window.scrollTo(0,0);}
+function go(t){active=t;try{if(!IS_DEMO)localStorage.setItem(TAB_KEY,t);}catch(e){}render();window.scrollTo(0,0);}
 const app=document.getElementById('app');
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{

@@ -18,7 +18,7 @@ function render(){
  const a=document.activeElement,keep=a&&a.id&&app.contains(a)?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;
  // keep whatever people have typed when the page redraws
  const vals={};app.querySelectorAll('input[id],textarea[id]').forEach(el=>{if(el.type!=='file')vals[el.id]=el.value;});
- if(!user){whoEl.innerHTML='';app.innerHTML=authView();}
+ if(!user){whoEl.innerHTML='';welcomeView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">Loading your account…</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
  else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+acctMenuHtml(profile.username,profile,{email:(auth&&auth.currentUser&&auth.currentUser.email)||user.email||'',admin:isAdm})+'</span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
@@ -142,16 +142,26 @@ function localTryHtml(){
  return '<div class="trybox"><b>Just looking?</b><span class="note">Try it without an account. Your campaign is saved in this browser only. When you\u2019re ready, make an account and it moves over with you.</span><div class="row"><button class="btn" data-a="trylocal">Try it without an account</button></div></div>';
 }
 function introHtml(){
- const step=(n,t,d)=>'<li><span class="stepn">'+n+'</span><span><b>'+t+'</b><span class="note">'+d+'</span></span></li>';
- const inv=(typeof pendingJoin!=='undefined'&&pendingJoin)?'<p class="invited">You\u2019ve been invited to join <b>'+esc(pendingJoin.name||'a campaign')+'</b>. Sign in or create an account and you\u2019ll be asked to join.</p>':'';
+ const inv=(typeof pendingJoin!=='undefined'&&pendingJoin)?'<p class="invited">You’ve been invited to join <b>'+esc(pendingJoin.name||'a campaign')+'</b>. Sign in or create an account and you’ll be asked to join.</p>':'';
+ const cta=hasLocal()?'':'<div class="row cta"><button class="btn pri" data-a="trylocal">Start a campaign, no account needed</button><a class="btn narrow-only" href="#signin">Sign in</a></div><p class="note" style="margin:0">It’s saved in this browser until you make an account, then it moves over with you.</p>';
  return '<section class="intro">'+inv+(hasLocal()?localTryHtml():'')+'<h2>Live character sheets for the Arkham Horror Roleplaying Game</h2>'+
-  '<p>Everyone\u2019s investigator stays in sync at the table: spend a die, take an injury or earn XP and the whole group sees it. The GM gets scenes, enemies, clues and session recaps.</p>'+
-  '<ol class="steps">'+step(1,'Sign in','With Google or an email and password.')+step(2,'Start a campaign or join one','Start your own and invite your group, or open an invite link a friend sent you.')+step(3,'Build your investigator','Step by step, following the corebook\u2019s character creation.')+'</ol>'+
-  (hasLocal()?'':localTryHtml())+'<p class="note">Free, no ads. A fan project, not affiliated with Fantasy Flight Games. <a href="help.html">How it works</a></p></section>';
+  '<p>Everyone’s investigator stays in sync at the table: spend a die, take an injury or earn XP and the whole group sees it. The GM gets scenes, enemies, clues and session recaps.</p>'+cta+
+  '<p class="note">Free, no ads. A fan project, not affiliated with Fantasy Flight Games. <a href="help.html">How it works</a></p></section>';
+}
+// The sample party: the real ledger in a frame, running on invented data that isn't saved (js/demo.js).
+function demoHtml(){
+ return '<section class="demo" aria-label="Sample campaign"><div class="demohead"><h2>Have a look around</h2><span class="note">A sample campaign with an invented party. Open a sheet, spend some dice or try the GM tab. Nothing here is saved.</span></div>'+
+  '<iframe id="demoframe" src="play.html?c='+DEMO_CAMP+'&amp;embed=1" title="Sample campaign" loading="lazy"></iframe></section>';
+}
+// Signed out: the intro, the sign-in card and the sample party. The frame is made once, so redraws don't reset it.
+function welcomeView(){
+ const fr=document.getElementById('demoframe');
+ if(fr&&app.contains(fr)){document.getElementById('introbox').innerHTML=introHtml();document.getElementById('authbox').innerHTML=authView();return;}
+ app.innerHTML='<div class="welcome"><div id="introbox">'+introHtml()+'</div><div id="authbox">'+authView()+'</div>'+demoHtml()+'</div>';
 }
 function authView(){
  const up=ui.mode==='signup',reset=ui.mode==='reset';
- let h='<section class="sec auth"><h2>'+(reset?'Reset your password':up?'Create an account':'Sign in')+'</h2>';
+ let h='<section class="sec auth" id="signin"><h2>'+(reset?'Reset your password':up?'Create an account':'Sign in')+'</h2>';
  if(wantSave&&hasLocal()&&!reset)h+='<p class="note savenote" style="margin:0">Sign in or create an account and <b>'+esc(localName())+'</b> will be copied to it, ready to share with your group.</p>';
  if(!reset)h+='<button class="btn gbtn" data-a="google" '+(ui.busy?'disabled':'')+'><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.5z"/></svg>Continue with Google</button><div class="or">or with email</div>';
  h+='<form id="authform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('em','Email','email','autocomplete="email" required')+
@@ -161,8 +171,7 @@ function authView(){
  h+='<div class="row" style="justify-content:space-between">'+(reset?'<button class="btn sm" data-a="mode" data-m="signin">Back to sign in</button>':
   (up?'<span class="note">Already have an account?</span><button class="btn sm" data-a="mode" data-m="signin">Sign in</button>':'<button class="btn sm" data-a="mode" data-m="reset">Forgot password?</button><button class="btn sm" data-a="mode" data-m="signup">Create an account</button>'))+'</div>';
  h+='<p class="note" style="margin:0;font-size:11px;text-align:center">Protected by reCAPTCHA. Google\u2019s <a href="https://policies.google.com/privacy" rel="noopener">Privacy Policy</a> and <a href="https://policies.google.com/terms" rel="noopener">Terms</a> apply. See our <a href="privacy.html">privacy policy</a>.</p>';
- h+='</section>';
- return '<div class="welcome">'+introHtml()+h+'</div>';
+ return h+'</section>';
 }
 function usernameView(){
  return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">It\u2019s the name other players see in your campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+
@@ -581,6 +590,8 @@ try{const q=new URLSearchParams(location.search).get('join');const n=new URLSear
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
  if(q)history.replaceState(null,'',location.pathname);
  if(!pendingJoin){const sj=JSON.parse(sessionStorage.getItem('apl-join')||'null');if(sj&&sj.cid&&sj.code)pendingJoin=sj;}}catch(e){}
+// "Start your own" from the sample party.
+try{if(new URLSearchParams(location.search).has('try')){if(!hasLocal())LocalFB.create('My campaign');location.replace('play.html?c='+LOCAL_CAMP);return;}}catch(e){}
 // Came from "Save to an account" in a device-only campaign: remember it through sign-in, then copy it over.
 try{if(new URLSearchParams(location.search).has('savelocal')){sessionStorage.setItem('apl-savelocal','1');history.replaceState(null,'',location.pathname);}wantSave=sessionStorage.getItem('apl-savelocal')==='1';}catch(e){}
 if(wantSave)ui.mode='signup';

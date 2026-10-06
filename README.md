@@ -64,7 +64,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 ## For players
 
 ### Getting started
-**Just trying it?** On the welcome screen, choose **Try it without an account**. You get one campaign where you're the GM, saved only in that browser (nothing is sent anywhere). When you're ready, tap **Save to an account**, sign in or sign up, and the whole campaign is copied to your account and removed from the browser. If you're already signed in on that browser, **My campaigns** shows it with **Save to my account**, **Open** and **Delete**.
+**Just trying it?** The welcome screen has a sample campaign with an invented party you can click around in (nothing there is saved). To start your own, choose **Start a campaign, no account needed**. You get one campaign where you're the GM, saved only in that browser (nothing is sent anywhere). When you're ready, tap **Save to an account**, sign in or sign up, and the whole campaign is copied to your account and removed from the browser. If you're already signed in on that browser, **My campaigns** shows it with **Save to my account**, **Open** and **Delete**.
 
 1. Go to **arkhamrpg.web.app** and sign in with Google or an email and password.
 2. Pick a username. It's the name other players see. Your email is never shown to them.
@@ -208,6 +208,7 @@ At beta size everything should cost $0 to a few cents a month.
   - next-session formatting, countdowns, calendar links and the address menu;
   - Google address suggestions.
 - `js/localdb.js`: the no-account campaign. A small stand-in for Firebase (sign-in and Firestore) that keeps everything in the browser's `localStorage` (`apl-local-v1`), so the ledger runs unchanged at `play.html?c=onthisdevice`. `js/home.js` (`migrateLocal`) copies it into a real campaign when the person signs in.
+- `js/demo.js`: the sample party shown on the welcome page (`play.html?c=samplecampaign&embed=1` in a frame). It runs on the same in-browser store but is never saved, and its times are moved forward on load so it always looks current.
 - `js/upload.js`: picture uploads to Cloud Storage. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.

@@ -31,7 +31,7 @@ function nextSessionBar(){
   calMenuHtml(camp.name,t,camp.nextWhere,IS_LOCAL?null:CAMP,camp.nextHours)+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
 }
 function renderParty(){
- let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. '+(IS_LOCAL?'Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.':'Every change syncs to everyone at the table.')+'</div>'+
+ let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. '+(IS_DEMO?'This is a sample campaign, so nothing you change here is saved.':IS_LOCAL?'Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.':'Every change syncs to everyone at the table.')+'</div>'+
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">You have your investigator. Only the campaign owner can add more.</p>':'')+
   (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?'+ Create my investigator':'+ Add an investigator')+'</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
   '<div class="party">';

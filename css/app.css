@@ -272,3 +272,7 @@ a.btn{text-decoration:none;color:inherit}
 @media (max-width:440px){.brand h1{font-size:19px;letter-spacing:0}.brand h1 .beta{font-size:9px}}
 @keyframes clueflash{0%,30%{box-shadow:0 0 0 2px var(--ink);background:var(--surface2)}100%{box-shadow:0 0 0 0 transparent}}
 .clue.flash{animation:clueflash 2.6s ease-out}
+/* the sample party inside the welcome page (play.html?c=samplecampaign&embed=1) */
+.embed .brand,.embed .foot{display:none}
+.embed .top{top:0}
+.embed main{padding-bottom:24px}

@@ -3,7 +3,11 @@
 // Campaign mode: ?c=<campaign id> runs this ledger inside one campaign, with accounts instead of passcodes.
 const CAMP=(()=>{try{const v=new URLSearchParams(location.search).get('c')||'';return /^[A-Za-z0-9]{10,40}$/.test(v)?v:null;}catch(e){return null;}})();
 // The campaign kept only in this browser ("Try it without an account", js/localdb.js).
-const IS_LOCAL=!!(CAMP&&window.LOCAL_CAMP&&CAMP===window.LOCAL_CAMP);
+// The sample party shown on the welcome page (js/demo.js): the same in-browser store, but nothing is kept.
+const IS_DEMO=!!(CAMP&&window.DEMO_CAMP&&CAMP===window.DEMO_CAMP);
+const IS_LOCAL=!!(CAMP&&((window.LOCAL_CAMP&&CAMP===window.LOCAL_CAMP)||IS_DEMO));
+// ?embed=1: shown inside the welcome page, without the site's header and footer.
+const EMBED=IS_DEMO&&/[?&]embed=1/.test(location.search);if(EMBED){document.documentElement.classList.add('embed');document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(a&&!a.target&&!a.hasAttribute('download')&&(a.getAttribute('href')||'').charAt(0)!=='#')a.target='_top';},true);}
 // No campaign in the address: go to My campaigns (STOP keeps the rest from starting).
 const STOP=!CAMP;if(STOP)location.replace('./');
 let camp=null,halted=null;
@@ -74,13 +78,13 @@ let kpickSel={},pickSel={},xpAmt={};
 // Last-seen party, kept on this device so a refresh shows the sheets right away while Firebase reconnects.
 const CACHE_KEY='apl-cache-v1'+(CAMP?'-'+CAMP:'');
 let CACHED=null;
-try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');CACHED=k;
+try{const k=IS_DEMO?null:JSON.parse(localStorage.getItem(CACHE_KEY)||'null');CACHED=k;
  if(CAMP&&k&&k.camp&&k.uid){camp=k.camp;authUid=k.uid;}
  if(k&&Array.isArray(k.slots)&&k.slots.length&&k.slots.every(isSlotId)){SLOTS=k.slots;SLOTS.forEach(x=>{if(k.chars&&k.chars[x])chars[x]=norm(k.chars[x],slotNum(x));});(k.keys||[]).forEach(x=>keys[x]=true);gmClaimed=!!k.gm;}}catch(e){}
 let cacheT;
-function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{const d={slots:SLOTS,chars:{},keys:Object.keys(keys).filter(k=>keys[k]),gm:gmClaimed,table,house,...(CAMP?{camp,uid:authUid}:{})};SLOTS.forEach(x=>d.chars[x]=chars[x]);
+function saveCache(){if(IS_DEMO)return;clearTimeout(cacheT);cacheT=setTimeout(()=>{const d={slots:SLOTS,chars:{},keys:Object.keys(keys).filter(k=>keys[k]),gm:gmClaimed,table,house,...(CAMP?{camp,uid:authUid}:{})};SLOTS.forEach(x=>d.chars[x]=chars[x]);
  try{localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e){try{SLOTS.forEach(x=>d.chars[x]={...chars[x],portrait:''});localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e2){}}},400);}
-try{const t=localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
+try{const t=IS_DEMO?null:localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
 SLOTS.forEach(s=>{if(!chars[s])chars[s]=blank(slotNum(s));});
 
 const toastEl=document.getElementById('toast');let toastT;

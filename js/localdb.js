@@ -6,9 +6,10 @@
   var LOCAL_KEY='apl-local-v1';
   window.LOCAL_CAMP='onthisdevice';         // the campaign id the ledger uses for the device-only campaign
   window.LOCAL_UID='local';
-  var store=null,subs=[],saveT=0,n=0,full=false;
+  window.DEMO_CAMP='samplecampaign';       // the sample party on the welcome page (js/demo.js): in memory only, never saved
+  var store=null,subs=[],saveT=0,n=0,full=false,noPersist=false;
   function load(){if(store)return store;try{var j=JSON.parse(localStorage.getItem(LOCAL_KEY)||'null');store=j&&j.docs?j.docs:{};}catch(e){store={};}return store;}
-  function persist(){clearTimeout(saveT);saveT=setTimeout(function(){
+  function persist(){if(noPersist)return;clearTimeout(saveT);saveT=setTimeout(function(){
     try{localStorage.setItem(LOCAL_KEY,JSON.stringify({v:1,saved:Date.now(),docs:store}));full=false;}
     catch(e){if(!full){full=true;window.dispatchEvent(new CustomEvent('local-full'));}}
   },150);}
@@ -82,7 +83,7 @@
     FieldValue:FV,
     exists:function(){return !!load()['campaigns/'+window.LOCAL_CAMP];},
     // Everything stored for the device-only campaign, as [path relative to the campaign, data] pairs.
-    dump:function(){var s=load(),pre='campaigns/'+window.LOCAL_CAMP+'/';return {camp:clone(s['campaigns/'+window.LOCAL_CAMP]),docs:Object.keys(s).filter(function(k){return k.indexOf(pre)===0;}).map(function(k){return [k.slice(pre.length),clone(s[k])];})};},
+    dump:function(cid){cid=cid||window.LOCAL_CAMP;var s=load(),pre='campaigns/'+cid+'/';return {camp:clone(s['campaigns/'+cid]),docs:Object.keys(s).filter(function(k){return k.indexOf(pre)===0;}).map(function(k){return [k.slice(pre.length),clone(s[k])];})};},
     clear:function(){store={};try{localStorage.removeItem(LOCAL_KEY);}catch(e){}},
     // A fresh device-only campaign: you're the owner and the GM, with one blank investigator to start.
     create:function(name){
@@ -92,9 +93,11 @@
       s[c].roles[window.LOCAL_UID]='owner';s[c].names[window.LOCAL_UID]='You';
       persist();clearTimeout(saveT);try{localStorage.setItem(LOCAL_KEY,JSON.stringify({v:1,saved:Date.now(),docs:s}));}catch(e){}
     },
+    // The sample campaign: start from these documents, keep changes in memory only (a reload starts fresh).
+    demo:function(docs){noPersist=true;store=clone(docs||{});},
     // In the ledger: make firebase.app('beta') and FieldValue point at the device-only store.
     activate:function(){
-      var fb=window.firebase;if(!fb)return;
+      var fb=window.firebase;if(!fb)return;if(fb.__localfb)return;fb.__localfb=true;
       var realApp=fb.app;fb.app=function(nm){return nm==='beta'?app:realApp.apply(fb,arguments);};
       try{if(fb.firestore)fb.firestore.FieldValue=FV;}catch(e){}
     }

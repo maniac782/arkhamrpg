@@ -4,7 +4,6 @@ Things to do later, roughly in order of importance.
 
 - **App Check for picture uploads.** Firebase → App Check → APIs → Cloud Storage → Enforce, once nearly all requests show as verified.
 - **RSVP for the next session.** "I'm in / Can't make it" under the countdown; reminder emails could say how many are coming.
-
 - **Shared dice roller for players.** Rolls visible to the table in Recent.
 - **Tidy up replaced pictures.** Old portrait/photo files stay in Storage when replaced.
 - **Email deliverability.** If invites/reminders keep landing in spam, move to a custom domain with a sending service (Resend/Postmark free tier).

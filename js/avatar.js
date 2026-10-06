@@ -90,7 +90,9 @@ window.acctIcon=function(name,prof){
   document.addEventListener('click',function(ev){
     var b=ev.target.closest&&ev.target.closest('[data-placemenu]');
     document.querySelectorAll('.placemenu').forEach(function(m){if(!b||m!==b.nextElementSibling){m.hidden=true;if(m.previousElementSibling)m.previousElementSibling.setAttribute('aria-expanded','false');}});
-    if(b){ev.preventDefault();var m=b.nextElementSibling;m.hidden=!m.hidden;b.setAttribute('aria-expanded',String(!m.hidden));}
+    if(b){ev.preventDefault();var m=b.nextElementSibling;m.hidden=!m.hidden;b.setAttribute('aria-expanded',String(!m.hidden));
+      // Keep the menu on screen: flip it to the other side of its button if it would run off an edge.
+      if(!m.hidden){m.style.left='';m.style.right='';var r=m.getBoundingClientRect();if(r.left<8){m.style.left='0';m.style.right='auto';}else if(r.right>window.innerWidth-8){m.style.left='auto';m.style.right='0';}}}
   });
   document.addEventListener('keydown',function(ev){if(ev.key==='Escape')document.querySelectorAll('.placemenu').forEach(function(m){m.hidden=true;});});
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
@@ -111,7 +113,7 @@ window.acctIcon=function(name,prof){
     var a=cid?'/cal/'+encodeURIComponent(cid)+'.ics':'';
     var fileName=String(name||'session').replace(/[^\w -]+/g,'')+'.ics';
     return '<span class="placewrap"><button type="button" class="btn sm" data-placemenu aria-haspopup="true" aria-expanded="false">Add to calendar<span class="placecaret" aria-hidden="true">\u25be</span></button>'+
-      '<span class="placemenu" role="menu" hidden>'+
+      '<span class="placemenu right" role="menu" hidden>'+
       '<a role="menuitem" href="'+e(g)+'" target="_blank" rel="noopener">Google Calendar</a>'+
       (a?'<a role="menuitem" href="'+e(a)+'">Apple Calendar (iPhone, Mac)</a>':'')+
       '<a role="menuitem" href="'+e(o)+'" target="_blank" rel="noopener">Outlook</a>'+

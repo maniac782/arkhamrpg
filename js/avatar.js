@@ -17,7 +17,7 @@ window.acctIcon=function(name,prof){
     return '<span class="acctwrap"><button class="acctbtn" type="button" data-acct="toggle" aria-haspopup="menu" aria-expanded="'+open+'" title="Your account">'+window.acctIcon(name,prof)+'<b class="acctname">'+esc(name)+'</b><span class="caret" aria-hidden="true">▾</span></button>'+
       '<div class="acctmenu" role="menu"'+(open?'':' hidden')+'><div class="acctmenu-head">'+window.acctIcon(name,prof)+'<span><b>'+esc(name)+'</b>'+(opt.email?'<span class="note">'+esc(opt.email)+'</span>':'')+'</span></div>'+
       '<a role="menuitem" href="./?account=1" data-a="account">Your account</a>'+(opt.admin?'<a role="menuitem" href="admin.html">Admin</a>':'')+
-      '<button role="menuitem" type="button" data-acct="feedback">Send feedback</button>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
+      (window.isInstalledApp&&window.isInstalledApp()?'':'<button role="menuitem" type="button" data-acct="install">Install app</button>')+'<button role="menuitem" type="button" data-acct="feedback">Send feedback</button>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
   };
   function setOpen(v){window.__acctOpen=v;document.querySelectorAll('.acctwrap').forEach(function(w){var m=w.querySelector('.acctmenu'),b=w.querySelector('.acctbtn');if(m)m.hidden=!v;if(b)b.setAttribute('aria-expanded',String(v));});}
   document.addEventListener('click',function(e){
@@ -25,6 +25,7 @@ window.acctIcon=function(name,prof){
     if(t&&t.dataset.acct==='toggle'){e.stopPropagation();setOpen(!window.__acctOpen);return;}
     if(t&&t.dataset.acct==='signout'){setOpen(false);window.dispatchEvent(new CustomEvent('acct-signout'));return;}
     if(t&&t.dataset.acct==='feedback'){setOpen(false);openFeedback();return;}
+    if(t&&t.dataset.acct==='install'){setOpen(false);window.openInstall();return;}
     if(window.__acctOpen&&!(e.target.closest&&e.target.closest('.acctmenu')))setOpen(false);
     else if(window.__acctOpen&&e.target.closest('.acctmenu a'))setOpen(false);
   },true);
@@ -180,4 +181,32 @@ window.acctIcon=function(name,prof){
   },true);
   document.addEventListener('focusout',function(e){if(e.target===cur)setTimeout(close,150);});
   window.addEventListener('resize',place);window.addEventListener('scroll',place,true);
+})();
+
+/* Install as an app. Chrome, Edge and Android offer a one-tap install prompt (kept from beforeinstallprompt);
+   iPhones and iPads need Share > Add to Home Screen, so those get short instructions instead. */
+(function(){
+  var deferred=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;});
+  window.addEventListener('appinstalled',function(){deferred=null;});
+  window.isInstalledApp=function(){try{return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}catch(e){return false;}};
+  function steps(){
+    var ua=navigator.userAgent||'';window.__instIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),android=/Android/.test(ua);
+    var ios=window.__instIOS;
+    if(ios)return ['Tap the <b>Share</b> button (the square with an arrow) in Safari\u2019s toolbar.','Scroll down and tap <b>Add to Home Screen</b>.','Tap <b>Add</b>. Arkham Ledger appears on your home screen and opens full-screen.'];
+    if(android)return ['Tap the browser\u2019s <b>\u22ee</b> menu (top right in Chrome).','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Confirm, and open Arkham Ledger from your home screen.'];
+    return ['In Chrome or Edge, click the <b>install</b> icon at the right end of the address bar (a screen with a down arrow), or open the browser menu and choose <b>Install Arkham Ledger</b>.','Open it from your Start menu, Dock or desktop like any other app. (Safari on a Mac: <b>File \u203a Add to Dock</b>.)'];
+  }
+  window.openInstall=function(){
+    if(deferred){var d=deferred;deferred=null;d.prompt();return;}
+    if(document.querySelector('.inst-bg'))return;
+    var bg=document.createElement('div');bg.className='crop-bg inst-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Install Arkham Ledger');
+    bg.innerHTML='<div class="crop fbform instbox"><div class="fbhead"><div><h2>Install Arkham Ledger</h2><p class="note">Put the ledger on your home screen. It opens full-screen like an app, with its own icon.</p></div><button class="fbx" type="button" data-i="close" aria-label="Close">\u00d7</button></div>'+
+      '<ol class="inststeps">'+steps().map(function(x){return '<li>'+x+'</li>';}).join('')+'</ol>'+
+      (window.__instIOS?'<p class="note" style="margin:0">You\u2019ll sign in once more inside the app; after that it remembers you.</p>':'')+
+      '<div class="row" style="justify-content:flex-end"><button class="btn pri" type="button" data-i="close">Got it</button></div></div>';
+    document.body.appendChild(bg);
+    var close=function(){bg.remove();document.removeEventListener('keydown',esc);};var esc=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',esc);
+    bg.addEventListener('click',function(e){if(e.target===bg||e.target.closest('[data-i=close]'))close();});
+  };
 })();

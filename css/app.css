@@ -268,3 +268,4 @@ a.btn{text-decoration:none;color:inherit}
 .placemenu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px;white-space:nowrap}
 .placemenu a:hover,.placemenu a:focus-visible{background:var(--surface2)}
 .placemenu.right{left:auto;right:0}
+.inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.5}

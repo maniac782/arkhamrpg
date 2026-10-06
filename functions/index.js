@@ -159,7 +159,7 @@ exports.calendar = onRequest({cors: false, maxInstances: 5}, async (req, res) =>
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Arkham Ledger//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + m[1] + '-' + c.nextSession + '@arkhamrpg.web.app', 'DTSTAMP:' + icsTime(Date.now()),
     'DTSTART:' + icsTime(c.nextSession), 'DTEND:' + icsTime(c.nextSession + (c.nextHours >= 1 && c.nextHours <= 12 ? c.nextHours : 4) * HOUR),
-    'SUMMARY:' + icsText(oneLine(c.name) + ' \u2014 Arkham Horror'),
+    'SUMMARY:' + icsText(oneLine(c.name) + ' \u2014 Arkham Horror RPG'),
     c.nextWhere ? 'LOCATION:' + icsText(oneLine(c.nextWhere)) : '',
     'DESCRIPTION:' + icsText('Open the ledger: ' + site + '/play.html?c=' + m[1]),
     'URL:' + site + '/play.html?c=' + m[1],

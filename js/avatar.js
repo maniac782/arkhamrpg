@@ -107,7 +107,7 @@ window.acctIcon=function(name,prof){
   window.sessionIcs=function(name,t,where,hours){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};
     var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+window.sessionHours(hours)*HOUR),
-      'SUMMARY:'+e(name+' — Arkham Horror'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+      'SUMMARY:'+e(name+' — Arkham Horror RPG'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
     return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   };
   // "Add to calendar" with a menu: Google Calendar, Apple Calendar (a real link that iPhones and Macs open in Calendar),
@@ -115,7 +115,7 @@ window.acctIcon=function(name,prof){
   window.calMenuHtml=function(name,t,where,cid,hours){
     var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},iso=function(x){return new Date(x).toISOString().replace(/\.\d{3}/,'');};
-    var title=(name||'Session')+' \u2014 Arkham Horror',end=t+window.sessionHours(hours)*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details='Open the ledger: '+link;
+    var title=(name||'Session')+' \u2014 Arkham Horror RPG',end=t+window.sessionHours(hours)*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details='Open the ledger: '+link;
     var g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+f(t)+'/'+f(end)+'&details='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
     var o='https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject='+encodeURIComponent(title)+'&startdt='+encodeURIComponent(iso(t))+'&enddt='+encodeURIComponent(iso(end))+'&body='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
     var a=cid?'/cal/'+encodeURIComponent(cid)+'.ics':'';

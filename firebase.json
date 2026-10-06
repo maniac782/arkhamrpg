@@ -51,6 +51,15 @@
           }
         ]
       }
+    ],
+    "rewrites": [
+      {
+        "source": "/cal/**",
+        "function": {
+          "functionId": "calendar",
+          "region": "us-central1"
+        }
+      }
     ]
   },
   "firestore": {

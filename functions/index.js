@@ -4,6 +4,7 @@
    Mail goes out through Gmail (MAIL_FROM in .env) using the app password kept in Secret Manager. */
 const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {onRequest} = require('firebase-functions/v2/https');
 const {defineSecret, defineString} = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
@@ -137,4 +138,34 @@ exports.sessionReminders = onSchedule({schedule: 'every 60 minutes', secrets: [G
       catch (e) { logger.error('Reminder email failed', {cid: doc.id, err: String(e && e.message || e)}); }
     }
   }
+});
+
+/* ---------- Calendar file ----------
+   arkhamrpg.web.app/cal/<campaign id>.ics serves the campaign's next session as a calendar event.
+   A real link (rather than a downloaded file) is what lets iPhones and Macs open it straight in Calendar.
+   It shows only the campaign name, time and place, to people who have the campaign's id. */
+function icsText(s) { return String(s == null ? '' : s).replace(/([,;\\])/g, '\\$1').replace(/\r?\n/g, '\\n'); }
+function icsTime(ms) { return new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+exports.calendar = onRequest({cors: false, maxInstances: 5}, async (req, res) => {
+  const m = /\/cal\/([A-Za-z0-9]{10,40})\.ics$/.exec(req.path || '');
+  if (!m) { res.status(404).send('Not found'); return; }
+  const snap = await db.doc('campaigns/' + m[1]).get().catch(() => null);
+  const c = snap && snap.exists ? snap.data() : null;
+  if (!c || c.deleting || typeof c.nextSession !== 'number' || c.nextSession < Date.now() - 6 * HOUR) {
+    res.status(404).set('Content-Type', 'text/plain; charset=utf-8').send('No upcoming session is set for this campaign.');
+    return;
+  }
+  const site = SITE_URL.value();
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Arkham Ledger//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', 'UID:' + m[1] + '-' + c.nextSession + '@arkhamrpg.web.app', 'DTSTAMP:' + icsTime(Date.now()),
+    'DTSTART:' + icsTime(c.nextSession), 'DTEND:' + icsTime(c.nextSession + 4 * HOUR),
+    'SUMMARY:' + icsText(oneLine(c.name) + ' \u2014 Arkham Horror'),
+    c.nextWhere ? 'LOCATION:' + icsText(oneLine(c.nextWhere)) : '',
+    'DESCRIPTION:' + icsText('Open the ledger: ' + site + '/play.html?c=' + m[1]),
+    'URL:' + site + '/play.html?c=' + m[1],
+    'END:VEVENT', 'END:VCALENDAR'].filter(Boolean);
+  res.set('Content-Type', 'text/calendar; charset=utf-8');
+  res.set('Content-Disposition', 'inline; filename="arkham-session.ics"');
+  res.set('Cache-Control', 'public, max-age=60');
+  res.send(lines.join('\r\n') + '\r\n');
 });

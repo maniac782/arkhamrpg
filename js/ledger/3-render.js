@@ -28,7 +28,7 @@ function nextSessionBar(){
  const t=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
  if(!sessionShown(t))return '';
  return '<div class="nextsess"><div class="grow"><span class="lbl">Next session \u00b7 <span data-cd="'+t+'">'+esc(sessionRel(t))+'</span></span><span><b>'+esc(sessionWhen(t))+'</b>'+(camp.nextWhere?'<span class="note"> \u00b7 '+placeHtml(camp.nextWhere)+'</span>':'')+'</span></div>'+
-  '<a class="btn sm" href="'+sessionIcs(camp.name,t,camp.nextWhere)+'" download="'+esc((camp.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
+  calMenuHtml(camp.name,t,camp.nextWhere,CAMP)+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
 }
 function renderParty(){
  let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+

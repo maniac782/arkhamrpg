@@ -100,6 +100,23 @@ window.acctIcon=function(name,prof){
       'SUMMARY:'+e(name+' — Arkham Horror'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
     return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   };
+  // "Add to calendar" with a menu: Google Calendar, Apple Calendar (a real link that iPhones and Macs open in Calendar),
+  // Outlook, or the file itself.
+  window.calMenuHtml=function(name,t,where,cid){
+    var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+    var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},iso=function(x){return new Date(x).toISOString().replace(/\.\d{3}/,'');};
+    var title=(name||'Session')+' \u2014 Arkham Horror',end=t+4*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details='Open the ledger: '+link;
+    var g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+f(t)+'/'+f(end)+'&details='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
+    var o='https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject='+encodeURIComponent(title)+'&startdt='+encodeURIComponent(iso(t))+'&enddt='+encodeURIComponent(iso(end))+'&body='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
+    var a=cid?'/cal/'+encodeURIComponent(cid)+'.ics':'';
+    var fileName=String(name||'session').replace(/[^\w -]+/g,'')+'.ics';
+    return '<span class="placewrap"><button type="button" class="btn sm" data-placemenu aria-haspopup="true" aria-expanded="false">Add to calendar<span class="placecaret" aria-hidden="true">\u25be</span></button>'+
+      '<span class="placemenu" role="menu" hidden>'+
+      '<a role="menuitem" href="'+e(g)+'" target="_blank" rel="noopener">Google Calendar</a>'+
+      (a?'<a role="menuitem" href="'+e(a)+'">Apple Calendar (iPhone, Mac)</a>':'')+
+      '<a role="menuitem" href="'+e(o)+'" target="_blank" rel="noopener">Outlook</a>'+
+      '<a role="menuitem" href="'+window.sessionIcs(name,t,where)+'" download="'+e(fileName)+'">Download file (.ics)</a></span></span>';
+  };
   // Keep every countdown on the page current without redrawing anything else.
   setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t)){if(el.hasAttribute('data-cdb'))el.innerHTML=window.sessionRelHtml(t);else el.textContent=window.sessionRel(t);}else el.remove();});},30000);
 })();

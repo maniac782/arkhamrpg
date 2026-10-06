@@ -378,7 +378,7 @@ app.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
  else if(id==='newform')busy(createCampaign);
  else if(id==='nsform'){const hv=(document.getElementById('nshours')||{}).value;busy(async()=>{const v=(document.getElementById('nsdate')||{}).value,w=((document.getElementById('nswhere')||{}).value||'').trim().slice(0,80);const t=v?new Date(v).getTime():NaN;
   if(!Number.isFinite(t))throw {msg:'Pick a date and time.'};if(t<Date.now()-3600000)throw {msg:'That time has already passed.'};
-  await db.doc('campaigns/'+ui.cid).update({nextSession:t,nextWhere:w,nextHours:sessionHours(hv)});toast('Next session set for '+sessionWhen(t)+'.');});}
+  await db.doc('campaigns/'+ui.cid).update({nextSession:t,nextWhere:w,nextHours:sessionHoursValue(hv)===null?FV().delete():sessionHoursValue(hv)});toast('Next session set for '+sessionWhen(t)+'.');});}
  else if(id==='invform')busy(sendInvite);
  else if(id==='renform')busy(async()=>{const n=document.getElementById('rname').value.trim();if(!n)throw {msg:'Give the campaign a name.'};await db.doc('campaigns/'+ui.cid).update({name:n.slice(0,60)});const c0=camps.find(x=>x.id===ui.cid);if(c0)c0.name=n.slice(0,60);toast('Renamed.');});
 });

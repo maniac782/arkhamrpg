@@ -96,14 +96,16 @@ window.acctIcon=function(name,prof){
   });
   document.addEventListener('keydown',function(ev){if(ev.key==='Escape')document.querySelectorAll('.placemenu').forEach(function(m){m.hidden=true;});});
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
-  // Expected session length in hours (owner/GM choose 1-12; 4 if never set).
+  // Expected session length in hours for calendar events (owner/GM may choose 1-12; calendars assume 4 when it's not set).
   window.sessionHours=function(h){h=Number(h);return h>=1&&h<=12?h:4;};
   // "Fri, Oct 23, 6:00 – 10:00 PM": start and expected end.
-  window.sessionSpan=function(t,h){var end=t+window.sessionHours(h)*HOUR;
+  window.sessionSpan=function(t,h){h=Number(h);if(!(h>=1&&h<=12))return window.sessionWhen(t);var end=t+h*HOUR;
     try{var fmt=new Intl.DateTimeFormat([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});if(fmt.formatRange)return fmt.formatRange(new Date(t),new Date(end));}catch(e){}
     return window.sessionWhen(t)+' \u2013 '+new Date(end).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});};
   // The Length dropdown used where the owner or GM sets the next session.
-  window.sessionHoursSelect=function(id,h){h=window.sessionHours(h);var o='';for(var i=1;i<=8;i++)o+='<option value="'+i+'"'+(i===h?' selected':'')+'>'+i+' hour'+(i===1?'':'s')+'</option>';return '<label class="field"><span class="lbl">Length</span><select class="f" id="'+id+'">'+o+'</select></label>';};
+  window.sessionHoursSelect=function(id,h){h=Number(h);var o='<option value="">Not set</option>';for(var i=1;i<=8;i++)o+='<option value="'+i+'"'+(i===h?' selected':'')+'>'+i+' hour'+(i===1?'':'s')+'</option>';return '<label class="field"><span class="lbl">Length (optional)</span><select class="f" id="'+id+'">'+o+'</select></label>';};
+  // What to save for the Length dropdown: a number of hours, or null when left as "Not set".
+  window.sessionHoursValue=function(v){v=Number(v);return v>=1&&v<=12?v:null;};
   window.sessionIcs=function(name,t,where,hours){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};
     var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+window.sessionHours(hours)*HOUR),

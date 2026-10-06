@@ -305,7 +305,7 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'award':awardSession();break;
   case 'nsset':{const v=(document.getElementById('gm-nsdate')||{}).value,w=((document.getElementById('gm-nswhere')||{}).value||'').trim().slice(0,80),t=v?new Date(v).getTime():NaN;
    if(!Number.isFinite(t))return toast('Pick a date and time.');if(t<Date.now()-3600000)return toast('That time has already passed.');
-   setNextSession({nextSession:t,nextWhere:w,nextHours:sessionHours((document.getElementById('gm-nshours')||{}).value)}).then(()=>toast('Next session set for '+sessionWhen(t)+'.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});break;}
+   setNextSession({nextSession:t,nextWhere:w,nextHours:(h=>h===null?firebase.firestore.FieldValue.delete():h)(sessionHoursValue((document.getElementById('gm-nshours')||{}).value))}).then(()=>toast('Next session set for '+sessionWhen(t)+'.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'nsclear':setNextSession({nextSession:firebase.firestore.FieldValue.delete(),nextWhere:firebase.firestore.FieldValue.delete(),nextHours:firebase.firestore.FieldValue.delete()}).then(()=>toast('Next session cleared.'),e=>{if(window.quotaHit&&quotaHit(e))return;toast('Couldn\u2019t clear it. Try again.');});break;
   case 'nextsession':SLOTS.filter(gmCan).forEach(x=>R.newSession(x,true));saveTable({session:(table.session||1)+1,scene:'',fight:false,phase:'',round:0});gmLog('Session '+table.session+' started',false);gm.wrap={};toast('Session '+table.session+' started.');break;
   case 'gldel':gmLogList=gmLogList.filter(x=>x.id!==id);render();gmDel('gmlog/'+id);break;

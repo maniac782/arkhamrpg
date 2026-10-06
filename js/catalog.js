@@ -206,7 +206,7 @@ const $=v=>'$'+(Number(v)||0).toFixed(2);
 // Printable two-page Letter sheet, same look as the paper-style sheet.
 function sheetHtml(c){
  const knRows=[];const byT={1:[],2:[],3:[],4:[]};(c.knacks||[]).forEach(k=>{(byT[k.tier]||byT[1]).push(k);});
- [[1,3],[2,2],[3,2],[4,1]].forEach(([t,n])=>{const have=byT[t];for(let i=0;i<Math.max(n,have.length);i++){const k=have[i];knRows.push('<div class="kr"><span class="tl">Tier '+['I','II','III','IV'][t-1]+'</span><span>'+(k?'<b>'+e(k.name||'')+'.</b> '+e(k.text||knackText(k.name)):'')+'</span></div>');}});
+ [[1,3],[2,2],[3,2],[4,1]].forEach(([t,n])=>{const have=byT[t];for(let i=0;i<Math.max(n,have.length);i++){const k=have[i];knRows.push('<div class="kr"><span class="tl">Tier '+['I','II','III','IV'][t-1]+'</span><span>'+(k?'<b>'+e(k.name||'')+(/[.!?…]$/.test(k.name||'')?'':'.')+'</b> '+e(k.text||knackText(k.name)):'')+'</span></div>');}});
  const w=(c.weapons||[]).slice(0,4);while(w.length<3)w.push(null);
  const pips=n=>{let s='';for(let i=0;i<n;i++)s+='<i class="pip"></i>';return s||'—';};
  const skills=SK.map(([k,n])=>{const s=(c.skills||{})[k]||{r:6,max:''};return '<div class="sk"><span class="sn">'+n+'</span><span class="rt">'+s.r+'+</span><span class="mx"><small>max</small><em>'+(s.max?s.max+'+':'')+'</em></span></div>';}).join('');

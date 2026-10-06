@@ -92,6 +92,11 @@ a.btn{text-decoration:none}
 .cdline b{color:inherit;font-weight:inherit}
 /* Dragging campaign cards to reorder them */
 .camps > .camp[data-cid]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.camp.dragging{position:fixed;z-index:80;margin:0;pointer-events:none;transform:scale(1.03) rotate(-.6deg);box-shadow:0 18px 40px rgba(0,0,0,.45);border-color:var(--muted)}
-.camp.dragph{border:2px dashed var(--line);background:transparent;box-shadow:none}
+.camps > .camp[data-cid]{transition:transform .18s ease,box-shadow .18s ease}
+.camp.pressing{transform:scale(.98);transition:transform .38s ease}
+.camp.dragging{position:fixed;z-index:80;margin:0;pointer-events:none;transform:scale(1.04) rotate(-1deg);box-shadow:0 22px 48px rgba(0,0,0,.5);border-color:var(--muted);transition:transform .15s ease,box-shadow .15s ease;animation:liftup .15s ease}
+@keyframes liftup{from{transform:scale(1) rotate(0)}to{transform:scale(1.04) rotate(-1deg)}}
+.camp.dragph{border:2px dashed var(--line);background:transparent;box-shadow:none;border-radius:10px}
+.draghint{margin:-4px 0 0;transition:opacity .3s}
+.draghint.gone{opacity:0}
 body.dragging-camp{cursor:grabbing;-webkit-user-select:none;user-select:none}

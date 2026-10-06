@@ -58,6 +58,7 @@ function loadPrefs(){if(ui.prefs!==undefined||!user)return;ui.prefs=null;db.doc(
 // Campaign cards in the order you dragged them into (new ones go at the end). Remembered on this device too,
 // so the page doesn't jump while your settings load.
 const ORDER_KEY='apl-camp-order';
+function dragHinted(){try{return !!localStorage.getItem('apl-drag-hint');}catch(e){return false;}}
 function myOrder(){if(ui.prefs&&Array.isArray(ui.prefs.campOrder))return ui.prefs.campOrder;try{return JSON.parse(localStorage.getItem(ORDER_KEY)||'[]');}catch(e){return [];}}
 function sortByMyOrder(list){const o=myOrder(),at=id=>{const i=o.indexOf(id);return i<0?1e6:i;};return list.map((c,i)=>({c,i})).sort((a,b)=>(at(a.c.id)-at(b.c.id))||(a.i-b.i)).map(x=>x.c);}
 function saveMyOrder(ids){ids=ids.slice(0,60);ui.prefs={...(ui.prefs||{}),campOrder:ids};try{localStorage.setItem(ORDER_KEY,JSON.stringify(ids));}catch(e){}
@@ -190,9 +191,9 @@ function homeView(){
  if(inbox.length)h+='<section class="sec"><div class="sec-head"><h2>You\u2019re invited</h2></div><div class="camps">'+inbox.map(inviteCard).join('')+'</div></section>';
  h+='<section class="sec"><div class="sec-head"><h2>Campaigns you own</h2>'+(owned.length?'<span class="note">'+owned.length+' of '+MAX_OWNED+'</span>':'')+'</div>';
  const tile=owned.length<MAX_OWNED?'<button class="camp newtile" data-a="newopen"><span class="plus" aria-hidden="true">+</span><b>New campaign</b><span class="note">'+(owned.length?'Start another and invite your group.':'Start a campaign and invite your group.')+'</span></button>':'';
- h+='<div class="camps">'+owned.map(campCard).join('')+tile+'</div>'+(owned.length>=MAX_OWNED?'<p class="note" style="margin:0">You own '+MAX_OWNED+' campaigns, the most allowed. Delete one to start another.</p>':'');
+ h+=(owned.length>1&&!dragHinted()?'<p class="note draghint">Tip: press and hold a campaign (or click and drag) to move it.</p>':'')+'<div class="camps">'+owned.map(campCard).join('')+tile+'</div>'+(owned.length>=MAX_OWNED?'<p class="note" style="margin:0">You own '+MAX_OWNED+' campaigns, the most allowed. Delete one to start another.</p>':'');
  h+='</section><section class="sec"><div class="sec-head"><h2>Campaigns you’re in</h2></div>'+
-  (member.length?'<div class="camps">'+member.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">None yet. When a friend invites you, it’ll show up here.</p>')+'</section>';
+  (member.length?(member.length>1&&!dragHinted()&&owned.length<2?'<p class="note draghint">Tip: press and hold a campaign (or click and drag) to move it.</p>':'')+'<div class="camps">'+member.map(campCard).join('')+'</div>':'<p class="note" style="margin:0">None yet. When a friend invites you, it’ll show up here.</p>')+'</section>';
  return h;
 }
 function newView(){
@@ -541,60 +542,79 @@ auth.onAuthStateChanged(u=>{
 render();
 
 /* Reorder campaign cards: press and hold a card (phones) or click and drag it (computers), then drop it where it
-   should go. Cards only move within their own section. */
+   should go. Cards only move within their own section. Other cards slide out of the way (FLIP animation). */
 (function(){
  let st=null;
  const cards=g=>[...g.querySelectorAll(':scope > .camp[data-cid]')];
  const allIds=()=>[...document.querySelectorAll('.camps > .camp[data-cid]')].map(c=>c.dataset.cid);
+ const reduce=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+ // Move the placeholder, sliding every other card from its old spot to its new one.
+ function flip(fn){
+  const els=[...st.grid.children].filter(c=>c!==st.card),before=new Map(els.map(c=>[c,c.getBoundingClientRect()]));
+  fn();
+  if(reduce())return;
+  els.forEach(c=>{const a=before.get(c),b=c.getBoundingClientRect();const dx=a.left-b.left,dy=a.top-b.top;if(!dx&&!dy)return;
+   c.style.transition='none';c.style.transform='translate('+dx+'px,'+dy+'px)';c.getBoundingClientRect();
+   c.style.transition='transform .22s cubic-bezier(.2,.7,.3,1)';c.style.transform='';c._moving=Date.now()+230;
+   clearTimeout(c._ft);c._ft=setTimeout(()=>{c.style.transition='';},260);});
+ }
  function begin(){
   if(!st||st.dragging)return;
   const r=st.card.getBoundingClientRect();
-  st.dragging=true;ui.dragging=true;st.offX=st.x-r.left;st.offY=st.y-r.top;st.was=allIds().join();
+  st.dragging=true;ui.dragging=true;st.offX=st.x-r.left;st.offY=st.y-r.top;st.w=r.width;st.h=r.height;st.was=allIds().join();
   st.ph=document.createElement('div');st.ph.className='camp dragph';st.ph.style.height=r.height+'px';
   st.grid.insertBefore(st.ph,st.card);
   Object.assign(st.card.style,{width:r.width+'px',height:r.height+'px',left:r.left+'px',top:r.top+'px'});
   st.card.classList.add('dragging');document.body.classList.add('dragging-camp');
   try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
+  try{localStorage.setItem('apl-drag-hint','1');}catch(e){}
+  document.querySelectorAll('.draghint').forEach(h=>h.classList.add('gone'));
  }
  function move(x,y){
-  st.card.style.left=(x-st.offX)+'px';st.card.style.top=(y-st.offY)+'px';
+  const L=x-st.offX,T=y-st.offY;st.card.style.left=L+'px';st.card.style.top=T+'px';
   if(y<70)window.scrollBy(0,-14);else if(y>window.innerHeight-70)window.scrollBy(0,14);
-  let best=null,bd=1e9;
-  for(const c of cards(st.grid)){if(c===st.card)continue;const r=c.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,d=Math.hypot(x-cx,y-cy);if(d<bd){bd=d;best={c,r,cx,cy};}}
-  if(!best)return;
-  const pr=st.ph.getBoundingClientRect();if(Math.hypot(x-(pr.left+pr.width/2),y-(pr.top+pr.height/2))<bd)return;
-  const sameRow=Math.abs(y-best.cy)<best.r.height/2,before=sameRow?x<best.cx:y<best.cy;
-  st.grid.insertBefore(st.ph,before?best.c:best.c.nextSibling);
+  // the card under the middle of the one being dragged takes its place
+  const cx=L+st.w/2,cy=T+st.h/2;
+  const list=[...st.grid.children].filter(c=>c!==st.card&&(c.dataset.cid||c===st.ph));
+  const now=Date.now(),over=list.find(c=>{if(c===st.ph||(c._moving&&c._moving>now))return false;const r=c.getBoundingClientRect();return cx>r.left&&cx<r.right&&cy>r.top&&cy<r.bottom;});
+  if(!over)return;
+  const ia=list.indexOf(st.ph),ib=list.indexOf(over);
+  flip(()=>st.grid.insertBefore(st.ph,ib>ia?over.nextSibling:over));
  }
  function finish(){
   if(!st)return;clearTimeout(st.timer);const s=st;st=null;
   if(!s.dragging)return;
+  const from=s.card.getBoundingClientRect(),to=s.ph.getBoundingClientRect();
   s.grid.insertBefore(s.card,s.ph);s.ph.remove();
   s.card.classList.remove('dragging');document.body.classList.remove('dragging-camp');
   ['width','height','left','top'].forEach(k=>s.card.style[k]='');
-  // a drag isn't a tap: swallow the click that follows it
+  if(!reduce()){ // glide into the gap
+   s.card.style.transition='none';s.card.style.transform='translate('+(from.left-to.left)+'px,'+(from.top-to.top)+'px) scale(1.03)';s.card.getBoundingClientRect();
+   s.card.style.transition='transform .2s cubic-bezier(.2,.7,.3,1)';s.card.style.transform='';setTimeout(()=>{s.card.style.transition='';},230);
+  }
   const stop=e=>{e.preventDefault();e.stopPropagation();};window.addEventListener('click',stop,true);setTimeout(()=>window.removeEventListener('click',stop,true),400);
   ui.dragging=false;
   const ids=allIds();if(ids.join()!==s.was)saveMyOrder(ids);
-  if(ui.renderAfterDrag){ui.renderAfterDrag=false;render();}
+  if(ui.renderAfterDrag){ui.renderAfterDrag=false;setTimeout(render,240);}
  }
  app.addEventListener('pointerdown',e=>{
   const card=e.target.closest('.camps > .camp[data-cid]');
   if(!card||e.button>0||e.target.closest('button,input,select,textarea'))return;
   if(cards(card.parentElement).length<2)return;
   st={card,grid:card.parentElement,id:e.pointerId,x:e.clientX,y:e.clientY,type:e.pointerType,dragging:false};
-  if(e.pointerType!=='mouse')st.timer=setTimeout(begin,380);
+  if(e.pointerType!=='mouse'){card.classList.add('pressing');st.timer=setTimeout(()=>{card.classList.remove('pressing');begin();},380);}
  });
  window.addEventListener('pointermove',e=>{
   if(!st||e.pointerId!==st.id)return;
   if(!st.dragging){
    const d=Math.hypot(e.clientX-st.x,e.clientY-st.y);
    if(st.type==='mouse'){if(d<6)return;begin();}
-   else{if(d>10){clearTimeout(st.timer);st=null;}return;}
+   else{if(d>10){clearTimeout(st.timer);st.card.classList.remove('pressing');st=null;}return;}
   }
   e.preventDefault();move(e.clientX,e.clientY);
  });
- window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',finish);
+ const up=()=>{if(st&&!st.dragging)st.card.classList.remove('pressing');finish();};
+ window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
  // while a card is held, the finger moves the card instead of scrolling the page
  document.addEventListener('touchmove',e=>{if(st&&st.dragging)e.preventDefault();},{passive:false});
  app.addEventListener('contextmenu',e=>{if(st&&e.target.closest('.camps > .camp[data-cid]'))e.preventDefault();});

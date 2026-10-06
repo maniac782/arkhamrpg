@@ -13,9 +13,15 @@
   var hash=(location.hash||'').slice(1),id=hash.split('&')[0],html=null;
   // #d=<sheet data>: opened in Safari from the iPhone app to print, so rebuild the sheet from the data in the address.
   if(id.indexOf('d=')===0){
+    // Bring the chosen style and paper along, and print straight away when asked (&go=1).
+    var q={};hash.split('&').slice(1).forEach(function(x){var kv=x.split('=');q[kv[0]]=kv[1];});
+    try{if(q.t==='classic'||q.t==='ledger')localStorage.setItem('apl-sheet-theme',q.t);if(/^(letter|a4|legal)$/.test(q.p||''))localStorage.setItem('apl-sheet-paper',q.p);}catch(e){}
     var s=document.createElement('script');s.src='js/catalog.js';
     s.onload=function(){try{var b=id.slice(2).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
-      var c=JSON.parse(decodeURIComponent(escape(atob(b))));var h=window.APL.sheetHtml(c);document.open();document.write(h);document.close();}
+      var c=JSON.parse(decodeURIComponent(escape(atob(b))));var h=window.APL.sheetHtml(c);document.open();document.write(h);document.close();
+      if(q.go){try{history.replaceState(null,'',location.pathname+'#'+id+(q.t?'&t='+q.t:'')+(q.p?'&p='+q.p:''));}catch(e){}
+        var go=function(){setTimeout(function(){window.print();},500);};
+        if(document.readyState==='complete')(document.fonts&&document.fonts.ready?document.fonts.ready.then(go,go):go());else window.addEventListener('load',function(){(document.fonts&&document.fonts.ready?document.fonts.ready.then(go,go):go());});}}
       catch(e){document.getElementById('msg').textContent='This sheet link is damaged. Go back to the ledger and tap \u201cOpen printable sheet\u201d again.';}};
     document.head.appendChild(s);return;
   }

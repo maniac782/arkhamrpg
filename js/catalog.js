@@ -210,7 +210,7 @@ function sheetData(c){const d={...c};delete d.log;if(typeof d.portrait==='string
 const SHEET_JS='function closeSheet(){try{window.close()}catch(e){}setTimeout(function(){var m=location.hash.match(/back=([^&]+)/);if(m){location.href=decodeURIComponent(m[1]);return;}if(history.length>1)history.back();else location.href="./";},250);}'+
  'function iosApp(){return navigator.standalone===true||(/iP(hone|ad|od)/.test(navigator.userAgent)&&matchMedia("(display-mode: standalone)").matches);}'+
  'function doPrint(){if(!iosApp()){window.print();return;}var d=btoa(unescape(encodeURIComponent(JSON.stringify(SHEET)))).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"");'+
- 'location.href="x-safari-https://"+(location.host||"arkhamrpg.web.app")+"/print.html#d="+d;'+
+ 'location.href="x-safari-https://"+(location.host||"arkhamrpg.web.app")+"/print.html#d="+d+"&t="+document.getElementById("theme").value+"&p="+document.getElementById("paper").value+"&go=1";'+
  'setTimeout(function(){if(document.visibilityState==="visible"){var m=document.getElementById("pmsg");m.hidden=false;m.textContent="To print, open arkhamrpg.web.app in Safari and print the sheet from there.";}},1500);}';
 // Printable two-page Letter sheet, same look as the paper-style sheet.
 function sheetHtml(c){

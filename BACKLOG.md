@@ -9,6 +9,8 @@ Things to do later, roughly in order of importance.
 - **Email deliverability.** If invites/reminders keep landing in spam, move to a custom domain with a sending service (Resend/Postmark free tier).
 
 ## Done
+- Reorder campaign cards by press-and-hold / drag, saved per account (October 6, 2026).
+- Push notifications: reminders, revealed clues, investigators' turn (October 6, 2026).
 - Install as an app: manifest, home-screen icons and an Install app menu item (October 6, 2026).
 - Daily Firestore backups, kept 14 days (October 6, 2026). Firestore → Disaster Recovery. A restore goes into a new database ("Restore with Cloud Shell" on a backup), then data is copied back.
 - App Check token lifetime raised from 1 hour to 7 days (October 5, 2026), so reCAPTCHA's 10,000 free checks a month go much further.

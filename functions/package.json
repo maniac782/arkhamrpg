@@ -1,7 +1,7 @@
 {
   "name": "arkham-ledger-functions",
   "private": true,
-  "description": "Server functions for Arkham Horror RPG Ledger: invite emails and session reminders.",
+  "description": "Server functions for Arkham Horror RPG Ledger: invite emails, session reminders, calendar links and push notifications.",
   "main": "index.js",
   "engines": {
     "node": "22"

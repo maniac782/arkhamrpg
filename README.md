@@ -13,7 +13,12 @@ This repo is the code behind the live site. It isn't packaged for running your o
 ### Getting started
 1. Go to **arkhamrpg.web.app** and sign in with Google or an email and password.
 2. Pick a username. It's the name other players see. Your email is never shown to them.
-3. Either **start a campaign** (the **+ New campaign** tile) or **join one** from an invite link or an email invite waiting on your **My campaigns** page.
+3. Either **start a campaign** (the **+ New campaign** tile) or **join one** from an invite link or an email invite. Email invites arrive in your inbox and wait on your **My campaigns** page.
+4. Optional: choose **Install app** in the menu under your icon to put the ledger on your home screen. It opens full-screen like an app. (On iPhone and iPad: Safari's **Share** button, then **Add to Home Screen**.)
+
+### My campaigns
+- Each campaign shows as a card with its picture, your role, the member count and a countdown to the next session.
+- **Rearrange the cards:** press and hold one (or click and drag on a computer) and drop it where you want it. The order is saved to your account, so it's the same on every device.
 
 ### Roles in a campaign
 - **Owner:** whoever started the campaign. Invites players, picks the GM, sets house rules and the campaign picture, and can remove members or delete the campaign. By default the owner plays by the same rules as everyone else; ticking **Let me edit every investigator** in Settings lets them change any sheet and delete Recent entries.
@@ -24,12 +29,18 @@ This repo is the code behind the live site. It isn't packaged for running your o
 - **Party:** everyone's investigators at a glance. Tap one to open their sheet.
 - **Investigator sheets:** dice pool, horror, injuries and traumas, insight, skills, knacks, weapons and gear, money, XP, and a **Recent** list of what changed. **Open printable sheet** gives a print-ready copy (Letter paper, background graphics on).
 - **New investigator:** builds a character step by step following the corebook's creation rules. An unfinished character is kept on your device for that campaign for two weeks; **Start over** clears it.
-- **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date, time and place, with Google address suggestions. Members get a reminder email the day before (they can turn it off in Your account). Everyone sees a countdown on the campaign card and the Party tab, with **Add to calendar** (Google, Apple via the `calendar` function at `/cal/<id>.ics`, Outlook, or a file); tapping an address offers **Directions** and **Food nearby**.
+- **Next session:** the owner (in Settings) or the GM (on the GM tab) sets the date and time, an optional length (1 to 8 hours), and the place, with Google address suggestions. Everyone sees a countdown on the campaign card and at the top of the Party tab.
+  - **Add to calendar:** Google Calendar, Apple Calendar (iPhone or Mac), Outlook, or a downloaded `.ics` file. Events are called "*campaign* — Arkham Horror RPG" and last the chosen length (4 hours if none is set).
+  - **Tapping an address** offers **Directions** and **Food nearby** in Google Maps.
+  - **Reminders:** members get an email (and a notification, if they've turned those on) the day before.
 - **Journal:** clues and handouts the GM has revealed, enemies the GM is showing, the campaign tracker (date, threads, people, places) and **Past sessions**: a recap of each finished session, with the GM's optional summary on top.
-- **GM tab (GM only):** scene and turn tracker with surprise rounds, encounter builder from the corebook's enemy profiles, clues and handouts (to everyone or one player), campaign tracker, end-of-session XP and momentous sessions, session recaps, GM notes and a hidden dice roller.
+- **GM tab (GM only):** next session, scene and turn tracker with surprise rounds, encounter builder from the corebook's enemy profiles, clues and handouts (to everyone or one player), campaign tracker, end-of-session XP and momentous sessions, session recaps, GM notes and a hidden dice roller.
 
 ### Your account
-Click your icon at the top right for **Your account**, where you can upload a profile photo or pick a colour for your initial, and **Delete my account** (removes your username, profile and sign-in, deletes campaigns you own and takes you out of the rest).
+Click your icon at the top right:
+- **Your account:** upload a profile photo or pick a colour for your initial; **Reminders & notifications**; and **Delete my account** (removes your username, profile and sign-in, deletes campaigns you own and takes you out of the rest).
+- **Reminders & notifications:** turn the day-before reminder on or off, turn on notifications for the device you're using (with a **Send a test** button), and choose whether to be notified when the GM reveals a clue to you or when it's the investigators' turn in a fight. On iPhone and iPad, notifications work in the installed app (iOS 16.4 or later). Tapping a clue notification opens that clue in the Journal.
+- **Install app**, **Send feedback** (bug, idea or other, straight to the site owner) and **Sign out**.
 
 Knack names and tiers follow each archetype's table in the corebook. Each knack's effect is a short summary of the book's rules in our own words, and can be edited on the sheet.
 
@@ -38,8 +49,18 @@ Knack names and tiers follow each archetype's table in the corebook. Each knack'
 ## For the site owner
 
 ### How it's hosted
-- **Firebase Hosting** serves the site at arkhamrpg.web.app. **Firestore** holds the data, **Firebase Authentication** handles sign-in (Google and email/password), and **App Check** with reCAPTCHA Enterprise blocks bots. The project is on Firebase's Blaze (pay-as-you-go) plan, which keeps the free allowances below and charges only for use above them; there's no server code.
-- **Every push to `main` deploys automatically** through `.github/workflows/deploy-firebase.yml`: the site goes to Firebase Hosting and `firestore.rules` is published. The GitHub secret `FIREBASE_SERVICE_ACCOUNT` holds a service account with the roles **Firebase Hosting Admin**, **API Keys Viewer**, **Firebase Rules Admin**, **Service Usage Consumer** and **Cloud Datastore Viewer**. If the rules job fails, the old rules stay in place.
+- **Firebase Hosting** serves the site at arkhamrpg.web.app. **Firestore** holds the data, **Cloud Storage** holds pictures, **Firebase Authentication** handles sign-in (Google and email/password), **Cloud Functions** send email and notifications, and **App Check** with reCAPTCHA Enterprise blocks bots.
+- The project is on Firebase's **Blaze** (pay-as-you-go) plan: the free allowances still apply and only use above them is charged (see *Costs and limits*). It started with a $300, 90-day Google Cloud free trial; confirm the paid account when Google emails about the trial ending, or billing stops and the free limits apply again.
+- **Every push to `main` deploys automatically** through `.github/workflows/deploy-firebase.yml`, in three jobs:
+  - **deploy:** the site to Firebase Hosting.
+  - **rules:** `firestore.rules`.
+  - **backend:** `storage.rules` and the server functions in `functions/`. If it fails, the end of its log appears in the run's annotations.
+  If a job fails, what was there before stays in place.
+- The GitHub secret `FIREBASE_SERVICE_ACCOUNT` holds the **github-deploy** service account. Its roles are Firebase Hosting Admin, API Keys Viewer, Firebase Rules Admin, Service Usage Consumer, Cloud Datastore Viewer, Cloud Functions Admin, Service Account User, Cloud Scheduler Admin, Secret Manager Admin, Service Usage Admin, Artifact Registry Administrator and Eventarc Admin.
+- Google's own service accounts also need a few roles, set up once:
+  - the Storage service agent: **Firebase Rules Firestore Service Agent**, so `storage.rules` can check campaign membership;
+  - the Pub/Sub service agent: **Service Account Token Creator**;
+  - the default compute account: **Cloud Run Invoker** and **Eventarc Event Receiver**.
 - Pages and scripts are served with `Cache-Control: no-cache` (see `firebase.json`), so players get changes on their next reload.
 - The version number (bumped with every change) is in each page's footer and at the bottom of the account menu.
 
@@ -47,32 +68,65 @@ Knack names and tiers follow each archetype's table in the corebook. Each knack'
 `admin.html` lists every user and campaign with search and totals (users, active this week, campaigns, suspended). An admin can:
 - **Suspend** an account: it can still sign in and look, but the database refuses every change it makes, and it's taken out of campaigns it joined. Campaigns it owns stay so their players keep their sheets. **Unsuspend** lifts it (they'll need new invites).
 - **Change username**, for example to replace an offensive one.
-- **Delete** any campaign, including its hidden GM material.
-- **Feedback** tab: messages people send with **Send feedback** in the account menu (bug, idea or other, with the page, browser and version). Mark each one **Done** to clear it.
-- **Errors** tab: unexpected errors people hit while signed in (message, page, browser, version, who), recorded automatically by `js/config.js` (at most a few per visit). Clear them once dealt with.
+- **Delete** any campaign, including its hidden GM material and pictures.
+- **Feedback** tab: messages people send with **Send feedback** (bug, idea or other, with the page, browser and version). Mark each one **Done** to clear it.
+- **Errors** tab: unexpected errors people hit while signed in (message, page, browser, version, who), recorded automatically by `js/config.js` (at most a few per visit). Errors from code the browser injects (crypto wallets, in-app browsers) are ignored. Clear them once dealt with.
 
 Admins are accounts with a document in the `admins` collection in Firestore whose ID is their user ID (Firebase → Authentication → Users → **User UID**); it needs no fields. Email addresses and disabling a sign-in entirely are handled in Firebase → Authentication.
 
-### Server functions, email and pictures
-- `functions/` holds two server functions, deployed by the GitHub Action: **inviteEmail** emails someone when an owner invites them by email (at most 30 a day per inviter), and **sessionReminders** runs hourly and emails members whose next session is within 24 hours (once per session; people can opt out in Your account, which sets `prefs/<uid>.noRemind`).
-- Mail goes out from **arkhamrpgledger@gmail.com** (`functions/.env`) using a Gmail app password stored in Google Cloud **Secret Manager** as `GMAIL_APP_PASSWORD`. To change the password, add a new version of that secret and re-run the deploy.
-- Pictures (portraits, profile and campaign photos, handouts) are uploaded to Cloud Storage by `js/upload.js`, and the database stores their links. `storage.rules` decides who may add or delete files. If an upload fails, the picture is saved inline in the database as before, so older inline pictures keep working too.
-- Address suggestions use the Places API (New) key in `window.PLACES_KEY` in `js/config.js`, limited in Google Cloud to arkhamrpg.web.app and to that one API.
-- The GitHub service account also needs: Cloud Functions Admin, Service Account User, Cloud Scheduler Admin, Secret Manager Admin, Service Usage Admin, Artifact Registry Administrator and Eventarc Admin. The Storage service agent needs Firebase Rules Firestore Service Agent so `storage.rules` can check campaign membership.
+### Server functions (`functions/index.js`)
+| Function | What it does |
+|---|---|
+| **inviteEmail** | When an owner invites someone by email, emails them about it (at most 30 a day per inviter; only if the inviter owns the campaign). |
+| **sessionReminders** | Runs hourly. For campaigns whose next session is within 24 hours, emails each member once (in their own time zone) and sends a notification to their devices. Skips people who turned reminders off. |
+| **calendar** | Serves `arkhamrpg.web.app/cal/<campaign id>.ics` (via a Hosting rewrite), the next session as a calendar event, so iPhones and Macs open it straight in Calendar. |
+| **clueAlert** | When the GM reveals a clue, notifies the player it's for, or every player if it's for everyone. The notification opens the clue in the Journal. |
+| **turnAlert** | In a fight, when play passes to the investigators, notifies players who turned that on (off by default). |
+
+### Email
+Mail goes out from **arkhamrpgledger@gmail.com** (set in `functions/.env`) through Gmail, using an app password stored in Google Cloud **Secret Manager** as `GMAIL_APP_PASSWORD`; it's never in this repo. To change it, add a new version of that secret and re-run the deploy. New Gmail accounts can land in spam at first; it improves as people mark the mail "Not spam". If it doesn't, the fix is a custom domain with a sending service (see `BACKLOG.md`).
+
+### Push notifications
+- Devices that turn on notifications save their push token in `devices/<token>` (with the owner's uid). The functions above send to those tokens with Firebase Cloud Messaging and delete tokens that no longer work.
+- `firebase-messaging-sw.js` (served at the site root) shows each notification and opens its link when tapped. It doesn't cache pages. It has its own copy of the Firebase settings because workers can't load `js/config.js`.
+- The Web Push public key is `window.PUSH_KEY` in `js/config.js` (Firebase → Project settings → Cloud Messaging → Web Push certificates). With it empty, the notification switch is hidden.
+- What each person wants is in their private `prefs/<uid>` document: `noRemind`, `noCluePush`, `pushTurns`, their time zone `tz`, and `campOrder` (their order of campaign cards).
+
+### Pictures
+Portraits, profile and campaign photos, and handouts are uploaded to Cloud Storage by `js/upload.js`, and the database stores their links. Files go under `users/<uid>/` or `campaigns/<cid>/<uid>/`; `storage.rules` decides who may add or delete them. If an upload fails, the picture is saved inline in the database instead, so older inline pictures keep working too. Deleting a campaign or an account removes its pictures.
+
+### Address suggestions
+The "Where" boxes use Google's Places API (New) with the key in `window.PLACES_KEY` in `js/config.js`. In Google Cloud it's limited to arkhamrpg.web.app and to that one API. Google doesn't allow a daily cap on this account, so watch the budget alert.
+
+### Installable app
+`manifest.webmanifest` with `icon-192.png`, `icon-512.png` and `icon-maskable-512.png` (padded for Android's round masks), plus `apple-touch-icon.png` for iPhone. The account menu's **Install app** uses the browser's install prompt where there is one, and shows Add to Home Screen steps on iPhone and iPad.
 
 ### Bot protection (App Check)
-The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`, and the web app is registered with it in Firebase → **Security → App Check**. Once **App Check → APIs** shows nearly all requests as verified, **Enforce** it for Cloud Firestore and Authentication. If pages stop loading data after enforcing, turn enforcement off there again. The key's allowed domains (Google Cloud → reCAPTCHA) must include every address the site is served from.
+The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`, and the web app is registered with it in Firebase → **Security → App Check** (Google now calls it Fraud Defense). It's **enforced for Cloud Firestore and Authentication**. Cloud Storage isn't enforced yet (see `BACKLOG.md`). If pages stop loading data after enforcing something, turn enforcement off there again. The token lifetime is 7 days. The key's allowed domains (Google Cloud → reCAPTCHA) must include every address the site is served from.
 
 ### Costs and limits
-- **Backups:** Firestore makes a daily backup, kept 14 days (Firestore → Disaster Recovery). They cost a fraction of a cent a month at this size. Restoring creates a new database from a backup, from which data can be copied back.
-- The free allowance is about **50,000 database reads a day**. A busy game session with five people uses a few thousand. Above that, Blaze charges a few cents per 100,000 reads instead of pausing the site.
+At beta size everything should cost $0 to a few cents a month.
+- **Firestore:** about 50,000 reads and 20,000 writes a day free; a busy session with five people uses a few thousand reads. Above that it's a few cents per 100,000 reads.
+- **Cloud Functions, Cloud Scheduler, Secret Manager, Cloud Messaging, Hosting, Authentication:** well inside their free amounts. Push notifications are free.
+- **Cloud Storage:** the bucket is in US-EAST1 (no-cost location), so 5 GB and 100 GB of downloads a month are free.
+- **Places API:** 10,000 address lookups a month free, then about $2.83 per 1,000.
+- **reCAPTCHA Enterprise:** 10,000 checks a month free; with 7-day tokens each device uses about one a week.
+- **Backups:** Firestore makes a daily backup, kept 14 days (Firestore → Disaster Recovery). That's a fraction of a cent a month at this size. A restore creates a new database from a backup, from which data can be copied back. Pictures in Storage aren't included.
+- **Function images:** Artifact Registry keeps the packaged functions; old images are deleted after a day. It costs at most a few cents.
 - Spending and the budget alert are under Firebase → **Usage and billing → Account & budgets**. Budget alerts only email; they don't stop charges.
-- If billing ever lapses (for example when the free-trial credit ends without confirming a paid account), the free limits apply again and every page shows a banner when the daily limit is hit; nothing is lost.
-- reCAPTCHA Enterprise is free for 10,000 checks a month. The App Check token lifetime is set to 7 days, so each device uses about one check a week.
+- If billing ever lapses, the free limits apply again and every page shows a banner when the daily limit is hit; nothing is lost.
 
 ### Privacy
-`privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. Things it currently covers: account and username, profile photo or colour, campaign data and pictures, invites by email, roughly when people last visited, Firebase/Google as the host, and reCAPTCHA.
+`privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. It currently covers:
+- account and username, profile photo or colour, and roughly when people last visited;
+- campaign data and pictures in Cloud Storage, and invites by email;
+- emails from the Gmail account, time zone and reminder settings;
+- notification device addresses, calendar links and Google Places address suggestions;
+- feedback and error reports;
+- Firebase/Google as the host, and reCAPTCHA.
 
+### Backlog
+`BACKLOG.md` lists what's planned next and what's been done to the project's settings.
 
 ### The original ledger
 `old/` (arkhamrpg.web.app/old) is the first single-party version with passcodes, a master key and a GM PIN, kept unchanged for reference. Its data is separate from the campaigns. `beta/` only forwards old links (including old invite links) to the main site.
@@ -80,24 +134,31 @@ The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`
 ---
 
 ## Code layout
-- `index.html`: home page (sign-in, My campaigns, New campaign, campaign Settings, account). Script: `js/home.js`.
-- `play.html?c=<campaign id>`: the ledger for one campaign. Scripts in `js/ledger/`, loaded in order:
+- `index.html`: home page (sign-in, My campaigns, New campaign, campaign Settings, Your account). Script: `js/home.js`.
+- `play.html?c=<campaign id>`: the ledger for one campaign (`#clue-<id>` opens the Journal at that clue). Scripts in `js/ledger/`, loaded in order:
   1. `1-state.js`: campaign, roles, saving and the local cache
   2. `2-rules.js`: game rules (dice pools, XP costs, gear)
-  3. `3-render.js`: drawing the party, sheets and Journal
+  3. `3-render.js`: drawing the party, sheets, next-session bar and Journal
   4. `4-creator.js`: the New investigator creator
   5. `5-events.js`: buttons and form edits
-  6. `6-gm.js`: GM tools, activity log and session recaps
+  6. `6-gm.js`: GM tools, activity log, session recaps and opening clues from links
   7. `7-boot.js`: connecting to Firebase and starting up
 - `admin.html` with `js/admin.js` and `css/admin.css`: the admin page.
 - `privacy.html`: the privacy policy. `help.html`: the **How it works** page for players (linked in every footer and from the sign-in screen); keep it in step with new features.
-- `js/config.js`: Firebase settings, the App Check and Places keys, and the daily-limit banner.
-- `js/upload.js`: picture uploads to Cloud Storage. `storage.rules`: who may add or delete pictures. `functions/`: the email functions.
-- `js/avatar.js`: the account icon and account menu. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
+- `js/config.js`: Firebase settings, the App Check, Places and Web Push keys, the daily-limit banner and the error reporter.
+- `js/avatar.js`: shared helpers used on every page:
+  - the account icon and menu;
+  - Send feedback and Install app;
+  - next-session formatting, countdowns, calendar links and the address menu;
+  - Google address suggestions.
+- `js/upload.js`: picture uploads to Cloud Storage. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
 - `js/catalog.js`: archetypes, knacks, weapons and gear from the corebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.
-- `firestore.rules`: who can read and write what. The page hides things people can't do, but these rules are what actually enforce it.
+- `firestore.rules`: who can read and write what in the database. `storage.rules`: who can add or delete pictures. The pages hide things people can't do, but these rules are what actually enforce it.
+- `functions/`: the server functions (`index.js`, `package.json`, `.env`).
+- `firebase-messaging-sw.js`: the notification worker. `manifest.webmanifest` and the `icon-*.png` files: the installable app.
+- `firebase.json`: Hosting settings (caching headers, the `/cal/**` rewrite), plus where the rules and functions live.
 
-The Firebase web settings in `js/config.js` (API key, project ID and so on) are meant to be public; they only identify the project, and the rules decide what anyone can do.
+The Firebase web settings and the keys in `js/config.js` are meant to be public. They only identify the project and are limited to this site; the rules decide what anyone can do. Secrets (the Gmail app password) live only in Secret Manager.
 
 Don't copy text from the corebook into the code; game text here is summarized in our own words.

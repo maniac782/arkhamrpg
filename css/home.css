@@ -86,5 +86,7 @@ a.btn{text-decoration:none}
 
 /* next-session badge on campaign cards */
 .camp{position:relative}
-.cdbadge{position:absolute;top:10px;left:10px;z-index:1;font-size:12px;color:#f3efe4;background:rgba(10,12,16,.72);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 10px}
-.cdbadge b{font-weight:700}
+/* Countdown at the bottom of a campaign card, beside Settings, so the picture stays uncovered. */
+.campfoot{justify-content:space-between;align-items:center;gap:8px}
+.cdline{font-size:13px;color:var(--muted)}
+.cdline b{color:var(--ink);font-weight:700}

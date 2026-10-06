@@ -218,8 +218,28 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .crumbrow{display:flex;align-items:center;gap:8px}
 .crumbrow .beta,.brand .beta{font-family:var(--body);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;vertical-align:middle}
 .crumbrow .beta{margin:0}
-.fbform{width:min(440px,100%);align-items:stretch}
-.fbkinds{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
+.fbform{width:min(480px,100%);align-items:stretch;gap:14px}
+.fbhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.fbhead h2{margin:0 0 4px}
+.fbhead .note{margin:0}
+.fbx{all:unset;cursor:pointer;font-size:24px;line-height:1;color:var(--muted);padding:2px 6px;border-radius:6px}
+.fbx:hover{color:var(--ink);background:var(--surface2)}
+.fbx:focus-visible{outline:2px solid var(--muted)}
+.fbkinds{display:flex;gap:6px;padding:4px;background:var(--surface2);border:1px solid var(--line);border-radius:10px}
+.fbkinds .fbkind{flex:1 1 0;min-width:0;display:block;position:relative;cursor:pointer}
+.fbkind input{position:absolute;opacity:0;pointer-events:none}
+.fbkind span{display:block;text-align:center;white-space:nowrap;padding:8px 6px;border-radius:7px;font-size:14px;font-weight:600;color:var(--muted);transition:background .15s,color .15s}
+.fbkind:hover span{color:var(--ink)}
+.fbkind input:checked+span{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25),0 0 0 1px var(--line)}
+.fbkind input:focus-visible+span{outline:2px solid var(--muted);outline-offset:1px}
+.fbbox{position:relative}
+.fbbox textarea{display:block;width:100%;box-sizing:border-box;min-height:140px;resize:vertical;padding:12px 12px 26px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);font:inherit;font-size:15px;line-height:1.5}
+.fbbox textarea:focus{outline:none;border-color:var(--muted)}
+.fbbox textarea::placeholder{color:var(--muted)}
+.fbcount{position:absolute;right:12px;bottom:8px;font-size:11px;color:var(--muted);pointer-events:none}
+.fbfoot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.fbfoot .note{margin:0;font-size:12px;flex:1;min-width:180px}
+.fbfoot .row{margin-left:auto}
 .fbkinds label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
 .fbform .err{color:var(--danger);font-size:13px;margin:0}
 .nextsess{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}

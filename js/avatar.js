@@ -38,14 +38,17 @@ window.acctIcon=function(name,prof){
   window.openFeedback=function(){
     if(document.querySelector('.fb-bg'))return;
     var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Send feedback');
-    bg.innerHTML='<form class="crop fbform" novalidate><h2>Send feedback</h2>'+
-      '<div class="fbkinds" role="radiogroup" aria-label="What kind of feedback">'+[['bug','Something\u2019s broken'],['idea','Idea'],['other','Other']].map(function(k,i){return '<label><input type="radio" name="fbk" value="'+k[0]+'"'+(i===0?' checked':'')+'> '+k[1]+'</label>';}).join('')+'</div>'+
-      '<label class="field" style="width:100%"><span class="lbl">Message</span><textarea class="f" id="fbmsg" rows="5" maxlength="2000" placeholder="What happened, or what would make the site better?"></textarea></label>'+
-      '<p class="note" style="margin:0;width:100%">The page you\u2019re on, your browser and the site version are included so it\u2019s easier to look into.</p>'+
+    var kinds=[['bug','Bug','What happened? What were you trying to do?'],['idea','Idea','What would make the site better for your group?'],['other','Other','What\u2019s on your mind?']];
+    bg.innerHTML='<form class="crop fbform" novalidate>'+
+      '<div class="fbhead"><div><h2>Send feedback</h2><p class="note">Bugs, ideas, anything. It goes straight to the person who runs the site.</p></div><button class="fbx" type="button" data-f="cancel" aria-label="Close">\u00d7</button></div>'+
+      '<div class="fbkinds" role="radiogroup" aria-label="What kind of feedback">'+kinds.map(function(k,i){return '<label class="fbkind"><input type="radio" name="fbk" value="'+k[0]+'"'+(i===0?' checked':'')+'><span>'+k[1]+'</span></label>';}).join('')+'</div>'+
+      '<div class="fbbox"><textarea id="fbmsg" rows="6" maxlength="2000" aria-label="Message" placeholder="'+kinds[0][2]+'"></textarea><span class="fbcount" id="fbcount">0 / 2000</span></div>'+
       '<p class="err" id="fberr" hidden></p>'+
-      '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" type="button" data-f="cancel">Cancel</button><button class="btn pri" type="submit">Send</button></div></form>';
+      '<div class="fbfoot"><span class="note">Includes the page you\u2019re on, your browser and the site version.</span><div class="row"><button class="btn" type="button" data-f="cancel">Cancel</button><button class="btn pri" type="submit">Send</button></div></div></form>';
     document.body.appendChild(bg);
-    var form=bg.querySelector('form'),ta=bg.querySelector('#fbmsg'),er=bg.querySelector('#fberr');ta.focus();ta.addEventListener('input',function(){er.hidden=true;});
+    var form=bg.querySelector('form'),ta=bg.querySelector('#fbmsg'),er=bg.querySelector('#fberr'),cnt=bg.querySelector('#fbcount');ta.focus();
+    ta.addEventListener('input',function(){er.hidden=true;cnt.textContent=ta.value.length+' / 2000';});
+    form.addEventListener('change',function(e){if(e.target.name==='fbk'){var k=kinds.filter(function(x){return x[0]===e.target.value;})[0];if(k)ta.placeholder=k[2];ta.focus();}});
     var close=function(){bg.remove();document.removeEventListener('keydown',esc);};
     var esc=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',esc);
     bg.addEventListener('click',function(e){if(e.target===bg||e.target.closest('[data-f=cancel]'))close();});

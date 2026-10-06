@@ -2,7 +2,7 @@
    - inviteEmail: when an owner invites someone by email, send them a short email about it.
    - sessionReminders: once an hour, email members of campaigns whose next session is within 24 hours.
    Mail goes out through Gmail (MAIL_FROM in .env) using the app password kept in Secret Manager. */
-const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onDocumentCreated, onDocumentWritten, onDocumentUpdated} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {onRequest} = require('firebase-functions/v2/https');
 const {defineSecret, defineString} = require('firebase-functions/params');
@@ -47,6 +47,44 @@ function page(title, paras, button, footer) {
 
 async function send(to, subject, text, html) {
   await mailer().sendMail({from: '"Arkham Horror RPG Ledger" <' + MAIL_FROM.value() + '>', to, subject, text, html});
+}
+
+/* ---------- Push notifications ----------
+   Each phone or browser that turned notifications on has a devices/<token> document with its owner's uid.
+   pushTo sends one notification to every device of the given people and forgets devices that are gone. */
+async function pushTo(uids, title, body, link, tag) {
+  uids = [...new Set(uids.filter(Boolean))];
+  if (!uids.length) return;
+  const tokens = [];
+  for (let i = 0; i < uids.length; i += 30) {
+    const qs = await db.collection('devices').where('uid', 'in', uids.slice(i, i + 30)).get().catch(() => null);
+    if (qs) qs.forEach(d => tokens.push(d.id));
+  }
+  if (!tokens.length) return;
+  const site = SITE_URL.value();
+  for (let i = 0; i < tokens.length; i += 500) {
+    const batch = tokens.slice(i, i + 500);
+    const res = await admin.messaging().sendEachForMulticast({
+      tokens: batch,
+      webpush: {
+        notification: {title: oneLine(title), body: String(body || '').slice(0, 200), icon: site + '/icon-192.png', badge: site + '/icon-192.png', tag: tag || undefined},
+        fcmOptions: {link: link || site},
+      },
+    }).catch(e => { logger.error('Push failed', {err: String(e && e.message || e)}); return null; });
+    if (!res) continue;
+    await Promise.all(res.responses.map((r, k) => {
+      const code = r.error && r.error.code;
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token' || code === 'messaging/invalid-argument') {
+        return db.doc('devices/' + batch[k]).delete().catch(() => {});
+      }
+      return null;
+    }));
+  }
+}
+async function prefsFor(uids) {
+  const out = {};
+  await Promise.all(uids.map(uid => db.doc('prefs/' + uid).get().then(s => { out[uid] = s.exists ? s.data() : {}; }, () => { out[uid] = {}; })));
+  return out;
 }
 
 /* ---------- Invite emails ---------- */
@@ -122,6 +160,11 @@ exports.sessionReminders = onSchedule({schedule: 'every 60 minutes', secrets: [G
     const name = oneLine(c.name) || 'Your campaign';
     const where = oneLine(c.nextWhere);
     const link = site + '/play.html?c=' + encodeURIComponent(doc.id);
+    const pushUids = uids.filter(uid => !bannedSet.has(uid) && (prefOf[uid] || {}).noRemind !== true);
+    for (const uid of pushUids) {
+      const tz = typeof (prefOf[uid] || {}).tz === 'string' && prefOf[uid].tz ? prefOf[uid].tz : 'America/New_York';
+      await pushTo([uid], name + ' is coming up', whenText(c.nextSession, tz) + (where ? ' \u00b7 ' + where : ''), link, 'remind-' + doc.id).catch(() => {});
+    }
     for (const u of users.users || []) {
       const p = prefOf[u.uid] || {};
       if (!u.email || u.disabled || p.noRemind === true || bannedSet.has(u.uid)) continue;
@@ -168,4 +211,44 @@ exports.calendar = onRequest({cors: false, maxInstances: 5}, async (req, res) =>
   res.set('Content-Disposition', 'inline; filename="arkham-session.ics"');
   res.set('Cache-Control', 'public, max-age=60');
   res.send(lines.join('\r\n') + '\r\n');
+});
+
+/* ---------- Clue revealed ----------
+   When the GM reveals a clue, notify the player it's for (or every player when it's for everyone). */
+exports.clueAlert = onDocumentWritten('campaigns/{cid}/clues/{id}', async (event) => {
+  const before = event.data && event.data.before && event.data.before.exists ? event.data.before.data() : null;
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after || after.shown !== true || (before && before.shown === true && before.to === after.to)) return;
+  const cid = event.params.cid;
+  const camp = await db.doc('campaigns/' + cid).get();
+  if (!camp.exists || camp.get('deleting')) return;
+  const c = camp.data();
+  let uids = [];
+  if (after.to === 'all') uids = (c.memberIds || []).filter(u => u !== c.gmUid);
+  else if (/^p([1-9]|1[0-2])$/.test(String(after.to || ''))) {
+    const ch = await db.doc('campaigns/' + cid + '/characters/' + after.to).get().catch(() => null);
+    if (ch && ch.exists && ch.get('ownerUid')) uids = [ch.get('ownerUid')];
+  }
+  if (!uids.length) return;
+  const prefs = await prefsFor(uids);
+  uids = uids.filter(u => prefs[u].noCluePush !== true);
+  const title = oneLine(after.title) || 'A new clue';
+  await pushTo(uids, 'New clue in ' + (oneLine(c.name) || 'your campaign'), after.to === 'all' ? title : title + ' (just for you)',
+    SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid), 'clue-' + event.params.id);
+});
+
+/* ---------- Investigators' turn ----------
+   In a fight, when play passes to the investigators, notify players who turned this on. */
+exports.turnAlert = onDocumentUpdated('campaigns/{cid}/table/state', async (event) => {
+  const b = event.data.before.data() || {}, a = event.data.after.data() || {};
+  if (!a.fight || a.phase !== 'investigators' || (b.phase === 'investigators' && b.round === a.round)) return;
+  const cid = event.params.cid;
+  const camp = await db.doc('campaigns/' + cid).get();
+  if (!camp.exists || camp.get('deleting')) return;
+  const c = camp.data();
+  let uids = (c.memberIds || []).filter(u => u !== c.gmUid);
+  const prefs = await prefsFor(uids);
+  uids = uids.filter(u => prefs[u].pushTurns === true);
+  await pushTo(uids, 'Investigators\u2019 turn' + (a.round ? ' \u00b7 round ' + a.round : ''), (a.scene ? oneLine(a.scene) + ' \u2014 ' : '') + (oneLine(c.name) || ''),
+    SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid), 'turn-' + cid);
 });

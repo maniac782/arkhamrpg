@@ -11,6 +11,9 @@ window.FIREBASE_CONFIG = {
 /* Bot protection (Firebase App Check with reCAPTCHA Enterprise).
    Paste the reCAPTCHA Enterprise site key here. Left empty, App Check stays off. */
 window.APP_CHECK_KEY = "6Ld_M9otAAAAAPKV4kSfUhxdn4oH6Z1NclhUdc-Y";
+/* Web Push key pair for notifications (Firebase > Project settings > Cloud Messaging > Web Push certificates:
+   the public "Key pair" string). Left empty, the notification switch stays hidden. */
+window.PUSH_KEY = "";
 /* Google Places key for address suggestions in "Where" boxes. Limit it in Google Cloud to this site's
    addresses and to Places API (New) only, with a daily request cap. Left empty, suggestions stay off. */
 window.PLACES_KEY = "AIzaSyAFmIarmHdwN6nMf0TNFexVr9Ab4BvdOnQ";

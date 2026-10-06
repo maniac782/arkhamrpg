@@ -145,9 +145,18 @@ service cloud.firestore {
     match /prefs/{uid} {
       allow read, delete: if signedIn() && request.auth.uid == uid;
       allow create, update: if realUser() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['tz', 'noRemind'])
+        && request.resource.data.keys().hasOnly(['tz', 'noRemind', 'noCluePush', 'pushTurns'])
+        && request.resource.data.get('noCluePush', false) is bool && request.resource.data.get('pushTurns', false) is bool
         && request.resource.data.get('tz', '') is string && request.resource.data.get('tz', '').size() <= 50
         && request.resource.data.get('noRemind', false) is bool;
+    }
+    // Phones and browsers that turned on notifications. The document id is the device's push token.
+    match /devices/{token} {
+      allow read, delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create, update: if realUser() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'ua', 't'])
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 300 && request.resource.data.t is int
+        && token.size() < 400;
     }
     match /bans/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());

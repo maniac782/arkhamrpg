@@ -40,8 +40,7 @@ function accountView(){
   '<div class="field"><span class="lbl">Photo</span><div class="row" style="gap:8px;align-items:center"><label class="btn sm" for="avphoto" style="cursor:pointer">'+(profile.photo?'Change photo':'Upload a photo')+'</label><input type="file" id="avphoto" accept="image/*" hidden>'+(profile.photo?'<button class="btn sm" data-a="avphotodel">Remove photo</button>':'')+'</div><span class="note">'+(profile.photo?'Your photo is showing. Remove it to use your first letter on a colour instead.':'Or show your first letter on the colour you pick below.')+'</span></div>'+
   '<div class="field"><span class="lbl">Colour</span><div class="swatches">'+Object.keys(AVATAR_COLORS).map(k=>'<button class="swatch'+(k===curC?' on':'')+'" data-a="avc" data-v="'+k+'" style="background:'+AVATAR_COLORS[k]+'" aria-label="'+k+'" aria-pressed="'+(k===curC)+'"></button>').join('')+'</div></div>'+'</section>';
  if(ui.prefs===undefined){ui.prefs=null;db.doc('prefs/'+user.uid).get().then(s=>{ui.prefs=s.exists?s.data():{};render();},()=>{ui.prefs={};render();});}
- h+='<section class="sec"><h2>Emails</h2>'+(ui.prefs?'<label class="row" style="gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-a="remindtog"'+(ui.prefs.noRemind?'':' checked')+'> Email me a reminder the day before a session</label>':'<p class="note" style="margin:0">Loading…</p>')+
-  '<p class="note" style="margin:0">Reminders go to '+esc((auth.currentUser&&auth.currentUser.email)||user.email||'your sign-in email')+' for any campaign with a next session set.</p></section>';
+ h+=notifySection();
  h+='<section class="sec"><h2>Delete my account</h2>';
  if(ui.delBusy)return h+'<p class="note" style="margin:0">Deleting your account\u2026 keep this page open.</p></section>';
  h+='<p class="note" style="margin:0">This removes your username and sign-in for good.'+(own.length?' Campaigns you own are deleted for everyone: <b>'+own.map(c=>esc(c.name)).join(', ')+'</b>.':'')+(inn.length?' You\u2019ll leave '+inn.map(c=>'<b>'+esc(c.name)+'</b>').join(', ')+'; investigators you played there stay with those campaigns.':'')+' This can\u2019t be undone.</p>';
@@ -53,6 +52,55 @@ function accountView(){
 function myTz(){try{return (Intl.DateTimeFormat().resolvedOptions().timeZone||'').slice(0,50);}catch(e){return '';}}
 // Keeps the time zone used for reminder emails current (stored privately in prefs/{uid}).
 function saveTz(){const tz=myTz();if(!tz||!user)return;db.doc('prefs/'+user.uid).get().then(s=>{const p=s.exists?s.data():{};if(p.tz!==tz)return db.doc('prefs/'+user.uid).set({...p,tz});}).catch(()=>{});}
+// ---------- Reminders and notifications (Your account) ----------
+const PUSH_TOK='apl-push-token';
+function pushLocal(){try{return localStorage.getItem(PUSH_TOK)||'';}catch(e){return '';}}
+function pushSupport(){
+ const ua=navigator.userAgent||'',ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+ const standalone=window.isInstalledApp&&isInstalledApp();
+ if(!window.PUSH_KEY)return 'off';
+ if(ios&&!standalone)return 'ios-install';
+ if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return 'unsupported';
+ if(Notification.permission==='denied')return 'denied';
+ return pushLocal()&&Notification.permission==='granted'?'on':'ready';
+}
+function notifySection(){
+ const p=ui.prefs,st=pushSupport(),cb=(a,on,label)=>'<label class="row" style="gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-a="'+a+'"'+(on?' checked':'')+'> '+label+'</label>';
+ let h='<section class="sec"><h2>Reminders &amp; notifications</h2>';
+ if(!p)return h+'<p class="note" style="margin:0">Loading…</p></section>';
+ h+=cb('remindtog',!p.noRemind,'Remind me the day before a session')+'<p class="note" style="margin:0">By email to '+esc((auth.currentUser&&auth.currentUser.email)||user.email||'your sign-in email')+(st==='off'?'':', and as a notification on devices where they’re on')+'.</p>';
+ if(st==='off')return h+'</section>';
+ h+='<div class="field"><span class="lbl">Notifications on this device</span>';
+ if(st==='on')h+='<div class="row" style="gap:10px;align-items:center"><span class="cdtext">On</span><button class="btn sm" data-a="pushoff">Turn off</button><button class="btn sm" data-a="pushtest">Send a test</button></div>';
+ else if(st==='ready')h+='<div class="row" style="gap:10px;align-items:center"><button class="btn sm pri" data-a="pushon">Turn on notifications</button></div>';
+ else if(st==='ios-install')h+='<p class="note" style="margin:0">On iPhone and iPad, notifications work in the installed app. Choose <b>Install app</b> in the menu under your icon, open the ledger from your home screen, then turn them on here.</p>';
+ else if(st==='denied')h+='<p class="note" style="margin:0">Notifications are blocked for this site. Allow them in your browser’s site settings (or the phone’s Settings › Notifications), then come back here.</p>';
+ else h+='<p class="note" style="margin:0">This browser can’t show notifications. Try Chrome, Edge, Firefox or Safari, or the installed app on your phone.</p>';
+ h+='</div>';
+ h+=cb('clutog',!p.noCluePush,'When the GM reveals a clue to me')+cb('turntog',!!p.pushTurns,'When it’s the investigators’ turn in a fight')+
+  '<p class="note" style="margin:0">These go to every device where notifications are on.</p>';
+ return h+'</section>';
+}
+function savePrefs(patch,okMsg){const before={...(ui.prefs||{})};ui.prefs={...before,...patch};render();
+ return db.doc('prefs/'+user.uid).set({...ui.prefs,tz:myTz()}).then(()=>okMsg&&toast(okMsg),()=>{ui.prefs=before;render();toast('Couldn’t save that.');});}
+async function pushOn(){
+ try{
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){render();return toast(perm==='denied'?'Notifications are blocked. Allow them in your browser settings.':'Notifications weren’t turned on.');}
+  const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  const tok=await firebase.messaging(fb).getToken({vapidKey:window.PUSH_KEY,serviceWorkerRegistration:reg});
+  if(!tok)throw new Error('no token');
+  await db.doc('devices/'+tok).set({uid:user.uid,ua:String(navigator.userAgent||'').slice(0,300),t:Date.now()});
+  try{localStorage.setItem(PUSH_TOK,tok);}catch(e){}
+  render();toast('Notifications are on for this device.');
+ }catch(e){console.warn('push',e);toast('Couldn’t turn on notifications here. Try again.');render();}
+}
+async function pushOff(){
+ const tok=pushLocal();try{localStorage.removeItem(PUSH_TOK);}catch(e){}
+ if(tok)await db.doc('devices/'+tok).delete().catch(()=>{});
+ try{await firebase.messaging(fb).deleteToken();}catch(e){}
+ render();toast('Notifications are off for this device.');
+}
 async function deleteAccount(){
  const u=auth.currentUser;if(!u)return;const uid=u.uid;ui.delBusy=true;render();
  try{
@@ -63,6 +111,7 @@ async function deleteAccount(){
   }
   for(const c of camps.filter(x=>x.ownerUid!==uid))await memberOut(c,uid).catch(()=>{});
   const b=db.batch();if(profile&&profile.usernameLower)b.delete(db.doc('usernames/'+profile.usernameLower));b.delete(db.doc('users/'+uid));b.delete(db.doc('prefs/'+uid));await b.commit();
+  {const tok=pushLocal();if(tok)await db.doc('devices/'+tok).delete().catch(()=>{});}
   await dropFolder('users/'+uid);
   try{Object.keys(localStorage).filter(k=>/^apl-(beta-cache|memo-|cache-v1-|creator-v1)/.test(k)).forEach(k=>localStorage.removeItem(k));}catch(e){}
   try{await u.delete();}catch(e){await auth.signOut().catch(()=>{});}
@@ -409,7 +458,12 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'avphotodel':dropImage(profile.photo);profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t remove it. Try again.');});break;
   case 'avc':{const k='color',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast('Couldn\u2019t save that. Try again.');});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;
-  case 'remindtog':{const on=b.checked;ui.prefs={...(ui.prefs||{}),noRemind:!on};db.doc('prefs/'+user.uid).set({...ui.prefs,tz:myTz()}).then(()=>toast(on?'Session reminders on.':'Session reminders off.'),()=>{ui.prefs.noRemind=on;render();toast('Couldn’t save that.');});break;}
+  case 'remindtog':{const on=b.checked;savePrefs({noRemind:!on},on?'Session reminders on.':'Session reminders off.');break;}
+  case 'clutog':{const on=b.checked;savePrefs({noCluePush:!on},on?'Clue notifications on.':'Clue notifications off.');break;}
+  case 'turntog':{const on=b.checked;savePrefs({pushTurns:on},on?'Turn notifications on.':'Turn notifications off.');break;}
+  case 'pushon':pushOn();break;
+  case 'pushoff':pushOff();break;
+  case 'pushtest':try{navigator.serviceWorker.ready.then(r=>r.showNotification('Arkham Horror RPG Ledger',{body:'Notifications are working on this device.',icon:'icon-192.png'}));}catch(e){toast('Couldn\u2019t show a test here.');}break;
   case 'acctdelask':ui.delAsk=true;render();break;
   case 'acctdelno':ui.delAsk=false;render();break;
   case 'acctreauth':try{sessionStorage.setItem('apl-del-after','1');}catch(e){}auth.signOut();break;

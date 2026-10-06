@@ -270,3 +270,5 @@ a.btn{text-decoration:none;color:inherit}
 .placemenu.right{left:auto;right:0}
 .inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.5}
 @media (max-width:440px){.brand h1{font-size:19px;letter-spacing:0}.brand h1 .beta{font-size:9px}}
+@keyframes clueflash{0%,30%{box-shadow:0 0 0 2px var(--ink);background:var(--surface2)}100%{box-shadow:0 0 0 0 transparent}}
+.clue.flash{animation:clueflash 2.6s ease-out}

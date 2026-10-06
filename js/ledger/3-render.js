@@ -281,4 +281,5 @@ function render(){
  const app=document.getElementById('app');
  app.innerHTML=active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty();
  if(keepId){const el=document.getElementById(keepId);if(el)try{el.focus({preventScroll:true});}catch(e){}}
+ if(typeof focusPendingClue==='function')focusPendingClue();
 }

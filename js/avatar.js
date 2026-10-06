@@ -210,3 +210,13 @@ window.acctIcon=function(name,prof){
     bg.addEventListener('click',function(e){if(e.target===bg||e.target.closest('[data-i=close]'))close();});
   };
 })();
+
+/* A tapped notification asks an already-open page to show its link (see firebase-messaging-sw.js). */
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  navigator.serviceWorker.addEventListener('message',function(e){
+    var link=e.data&&e.data.openLink;if(typeof link!=='string')return;
+    try{var u=new URL(link,location.origin);if(u.origin!==location.origin)return;
+      if(u.pathname===location.pathname&&u.search===location.search&&u.hash){location.hash=u.hash;}else location.href=u.href;}catch(err){}
+  });
+})();

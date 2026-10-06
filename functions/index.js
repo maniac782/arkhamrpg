@@ -66,9 +66,10 @@ async function pushTo(uids, title, body, link, tag) {
     const batch = tokens.slice(i, i + 500);
     const res = await admin.messaging().sendEachForMulticast({
       tokens: batch,
+      // Data-only: the page's background worker (firebase-messaging-sw.js) shows it and decides what a tap opens.
       webpush: {
-        notification: {title: oneLine(title), body: String(body || '').slice(0, 200), icon: site + '/icon-192.png', badge: site + '/icon-192.png', tag: tag || undefined},
-        fcmOptions: {link: link || site},
+        headers: {Urgency: 'high'},
+        data: {title: oneLine(title), body: String(body || '').slice(0, 200), link: link || site, tag: tag || ''},
       },
     }).catch(e => { logger.error('Push failed', {err: String(e && e.message || e)}); return null; });
     if (!res) continue;
@@ -234,7 +235,7 @@ exports.clueAlert = onDocumentWritten('campaigns/{cid}/clues/{id}', async (event
   uids = uids.filter(u => prefs[u].noCluePush !== true);
   const title = oneLine(after.title) || 'A new clue';
   await pushTo(uids, 'New clue in ' + (oneLine(c.name) || 'your campaign'), after.to === 'all' ? title : title + ' (just for you)',
-    SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid), 'clue-' + event.params.id);
+    SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid) + '#clue-' + encodeURIComponent(event.params.id), 'clue-' + event.params.id);
 });
 
 /* ---------- Investigators' turn ----------

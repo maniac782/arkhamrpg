@@ -132,7 +132,7 @@ function rollDice(){const n=Math.max(1,Math.min(20,Number(gm.rollN)||1)),t=Math.
 // ---------- clues ----------
 function clueHtml(c,master){
  const to=c.to&&c.to!=='all'?(chars[c.to]?chars[c.to].name:'one investigator'):'';
- return '<div class="clue'+(master&&!c.shown?' draft':'')+'">'+(master?'<div class="row" style="justify-content:space-between"><span class="chip'+(c.shown?' ok':'')+'">'+(c.shown?'Revealed':'Not revealed yet')+'</span><div class="row" style="gap:6px"><button class="btn sm'+(c.shown?'':' pri')+'" data-gact="cshow" data-id="'+c.id+'">'+(c.shown?'Hide again':'Reveal')+'</button><button class="btn sm icon" data-gact="cdel" data-id="'+c.id+'" aria-label="Delete clue">×</button></div></div>':'')+
+ return '<div class="clue'+(master&&!c.shown?' draft':'')+'"'+(master?'':' data-clue-id="'+esc(c.id||'')+'"')+'>'+(master?'<div class="row" style="justify-content:space-between"><span class="chip'+(c.shown?' ok':'')+'">'+(c.shown?'Revealed':'Not revealed yet')+'</span><div class="row" style="gap:6px"><button class="btn sm'+(c.shown?'':' pri')+'" data-gact="cshow" data-id="'+c.id+'">'+(c.shown?'Hide again':'Reveal')+'</button><button class="btn sm icon" data-gact="cdel" data-id="'+c.id+'" aria-label="Delete clue">×</button></div></div>':'')+
   '<h3>'+esc(c.title||'Untitled')+'</h3>'+(to?'<div class="note">For '+esc(to)+'</div>':'')+(c.img?'<img src="'+c.img+'" alt="'+esc(c.title||'Handout')+'" class="handout">':'')+(c.body?'<p style="white-space:pre-wrap;margin:6px 0 0">'+esc(c.body)+'</p>':'')+'</div>';
 }
 function pickClueImage(f){if(!f||!/^image\//.test(f.type))return toast('Choose an image file.');const url=URL.createObjectURL(f);const img=new Image();
@@ -331,4 +331,16 @@ function gmChange(el){
  if(el.dataset.gsum){const n=el.dataset.gsum;campaign.summaries={...(campaign.summaries||{}),[n]:el.value.trim().slice(0,2000)};saveCampaign();toast('Summary saved.');return true;}
  if(el.dataset.grecap){if(el.value)loadRecap(Number(el.value));else{historySession=null;render();}return true;}
  return false;
+}
+
+// Opening a clue from a notification (play.html?c=...#clue-<id>): show the Journal and scroll to that clue.
+let pendingClue=null;
+function readClueHash(){const m=/^#clue-([A-Za-z0-9_-]{1,60})$/.exec(location.hash||'');if(!m)return false;pendingClue=m[1];active='journal';return true;}
+readClueHash();
+window.addEventListener('hashchange',()=>{if(readClueHash())render();});
+function focusPendingClue(){
+ if(!pendingClue||active!=='journal')return;
+ const el=document.querySelector('[data-clue-id="'+pendingClue+'"]');if(!el)return;
+ pendingClue=null;try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+ setTimeout(()=>{el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),2600);},60);
 }

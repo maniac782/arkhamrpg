@@ -155,14 +155,16 @@ function demoHtml(){
 }
 // Signed out: the intro, the sign-in card and the sample party. The frame is made once, so redraws don't reset it.
 function welcomeView(){
+ // Came from "Save to an account": just the sign-in card, so it's right there on a phone.
+ if(wantSave&&hasLocal()){app.innerHTML='<div class="savewrap"><a class="btn sm" data-a="savecancel" href="play.html?c='+LOCAL_CAMP+'">\u2039 Back to '+esc(localName())+'</a>'+authView()+'</div>';return;}
  const fr=document.getElementById('demoframe');
  if(fr&&app.contains(fr)){document.getElementById('introbox').innerHTML=introHtml();document.getElementById('authbox').innerHTML=authView();return;}
  app.innerHTML='<div class="welcome"><div id="introbox">'+introHtml()+'</div><div id="authbox">'+authView()+'</div>'+demoHtml()+'</div>';
 }
 function authView(){
  const up=ui.mode==='signup',reset=ui.mode==='reset';
- let h='<section class="sec auth" id="signin"><h2>'+(reset?'Reset your password':up?'Create an account':'Sign in')+'</h2>';
- if(wantSave&&hasLocal()&&!reset)h+='<p class="note savenote" style="margin:0">Sign in or create an account and <b>'+esc(localName())+'</b> will be copied to it, ready to share with your group.</p>';
+ let h='<section class="sec auth" id="signin"><h2>'+(reset?'Reset your password':wantSave&&hasLocal()?'Save your campaign':up?'Create an account':'Sign in')+'</h2>';
+ if(wantSave&&hasLocal()&&!reset)h+='<p class="note savenote" style="margin:0">Create a free account (or sign in) and <b>'+esc(localName())+'</b> moves over to it, ready to invite your group. Nothing is lost.</p>';
  if(!reset)h+='<button class="btn gbtn" data-a="google" '+(ui.busy?'disabled':'')+'><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.5z"/></svg>Continue with Google</button><div class="or">or with email</div>';
  h+='<form id="authform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('em','Email','email','autocomplete="email" required')+
   (reset?'':field('pw','Password','password','autocomplete="'+(up?'new-password':'current-password')+'" minlength="6" required'))+
@@ -174,7 +176,7 @@ function authView(){
  return h+'</section>';
 }
 function usernameView(){
- return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">It\u2019s the name other players see in your campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+
+ return '<section class="sec auth"><h2>Pick a username</h2><p class="note" style="margin:0">It\u2019s the name other players see in your campaigns. 3–20 letters, numbers or underscores. Your email is never shown to other players.</p>'+(wantSave&&hasLocal()?'<p class="note savenote" style="margin:0">Next, <b>'+esc(localName())+'</b> moves over to your account.</p>':'')+
   '<form id="unform" style="display:flex;flex-direction:column;gap:10px" novalidate>'+field('un','Username','text','autocomplete="username" maxlength="20" autocapitalize="off" spellcheck="false" required')+errHtml()+
   '<button class="btn pri wide" type="submit" '+(ui.busy?'disabled':'')+'>Save username</button></form></section>';
 }
@@ -520,6 +522,7 @@ window.addEventListener('acct-signout',()=>auth&&auth.signOut());
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account')e.preventDefault();
  switch(a){
   case 'google':busy(google);break;
+  case 'savecancel':wantSave=false;try{sessionStorage.removeItem('apl-savelocal');}catch(er){}break;
   case 'trylocal':LocalFB.create('My campaign');location.href='play.html?c='+LOCAL_CAMP;break;
   case 'savelocal':busy(migrateLocal);break;
   case 'dellocal':ui.confirmLocalDel=true;render();break;

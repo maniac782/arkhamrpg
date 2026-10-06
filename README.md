@@ -64,6 +64,7 @@ Admins are accounts with a document in the `admins` collection in Firestore whos
 The reCAPTCHA Enterprise site key is in `window.APP_CHECK_KEY` in `js/config.js`, and the web app is registered with it in Firebase → **Security → App Check**. Once **App Check → APIs** shows nearly all requests as verified, **Enforce** it for Cloud Firestore and Authentication. If pages stop loading data after enforcing, turn enforcement off there again. The key's allowed domains (Google Cloud → reCAPTCHA) must include every address the site is served from.
 
 ### Costs and limits
+- **Backups:** Firestore makes a daily backup, kept 14 days (Firestore → Disaster Recovery). They cost a fraction of a cent a month at this size. Restoring creates a new database from a backup, from which data can be copied back.
 - The free allowance is about **50,000 database reads a day**. A busy game session with five people uses a few thousand. Above that, Blaze charges a few cents per 100,000 reads instead of pausing the site.
 - Spending and the budget alert are under Firebase → **Usage and billing → Account & budgets**. Budget alerts only email; they don't stop charges.
 - If billing ever lapses (for example when the free-trial credit ends without confirming a paid account), the free limits apply again and every page shows a banner when the daily limit is hit; nothing is lost.

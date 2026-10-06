@@ -28,7 +28,7 @@ function nextSessionBar(){
  const t=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
  if(!sessionShown(t))return '';
  return '<div class="nextsess"><div class="grow"><span class="lbl">Next session \u00b7 <span data-cd="'+t+'">'+esc(sessionRel(t))+'</span></span><span><b>'+esc(sessionWhen(t))+'</b>'+(camp.nextWhere?'<span class="note"> \u00b7 '+esc(camp.nextWhere)+'</span>':'')+'</span></div>'+
-  '<a class="btn sm" href="'+sessionIcs(camp.name,t,camp.nextWhere)+'" download="'+esc((camp.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(mapsHref(camp.nextWhere)?'<a class="btn sm" href="'+esc(mapsHref(camp.nextWhere))+'" target="_blank" rel="noopener">Directions</a>':'')+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
+  '<a class="btn sm" href="'+sessionIcs(camp.name,t,camp.nextWhere)+'" download="'+esc((camp.name||'session').replace(/[^\w -]+/g,''))+'.ics">Add to calendar</a>'+(mapsHref(camp.nextWhere)?'<a class="btn sm" href="'+esc(mapsHref(camp.nextWhere))+'" target="_blank" rel="noopener">Directions</a>':'')+(foodHref(camp.nextWhere)?'<a class="btn sm" href="'+esc(foodHref(camp.nextWhere))+'" target="_blank" rel="noopener">Food nearby</a>':'')+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
 }
 function renderParty(){
  let h=turnBar()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. Every change syncs to everyone at the table.</div>'+

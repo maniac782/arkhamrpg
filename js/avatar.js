@@ -78,6 +78,8 @@ window.acctIcon=function(name,prof){
   window.sessionRelHtml=function(t){var s=window.sessionRel(t);return /^in /.test(s)?'in <b>'+s.slice(3)+'</b>':'<b>'+s+'</b>';};
   // Directions for a place that looks like an address (has a number or a comma), e.g. not "Discord".
   window.mapsHref=function(where){where=String(where||'').trim();if(!where||!/[0-9,]/.test(where)||/^https?:/i.test(where))return '';return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(where);};
+  // Food near the session's place, as a Google Maps search (same rule as Directions: only for real addresses).
+  window.foodHref=function(where){if(!window.mapsHref(where))return '';return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent('restaurants near '+String(where).trim());};
   window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
   window.sessionIcs=function(name,t,where){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};

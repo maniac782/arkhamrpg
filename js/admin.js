@@ -8,11 +8,12 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 let toastT;function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,3200);}
 const DAY=86400000;
 let auth=null,db=null,me=null,authKnown=false,state='loading',users=[],camps=[],bans={},errs=[],fbs=[],loadedAt=0;
-const ui={tab:'users',q:'',ask:null,rename:null,busy:false};
+const ui={tab:'users',q:'',ask:null,rename:null,busy:false,sort:'new'};
+try{const s=localStorage.getItem('apl-adm-sort');if(s)ui.sort=s;}catch(e){}
 
 // ---------- helpers ----------
 const ms=v=>v==null?0:typeof v==='number'?v:v.toMillis?v.toMillis():v.seconds?v.seconds*1000:0;
-const ago=t=>{if(!t)return '—';const d=Math.floor((Date.now()-t)/DAY);return d<=0?'Today':d===1?'Yesterday':d<30?d+' days ago':new Date(t).toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'});};
+const ago=t=>{if(!t)return '—';const d=Math.floor((Date.now()-t)/DAY);return d<=0&&new Date(t).toDateString()===new Date().toDateString()?'today '+new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):d<=0?'Yesterday':d===1?'Yesterday':d<30?d+' days ago':new Date(t).toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'});};
 const nameOf=uid=>{const u=users.find(x=>x.id===uid);return u?u.username:'(deleted account)';};
 const photoOk=p=>window.imgOk(p);
 const FV=()=>firebase.firestore.FieldValue;
@@ -93,15 +94,18 @@ function render(){
 }
 function usersHtml(){
  const q=ui.q.trim().toLowerCase();
- const list=users.filter(u=>!q||String(u.username||'').toLowerCase().includes(q)).sort((a,b)=>ms(b.lastSeen)-ms(a.lastSeen)||String(a.username).localeCompare(b.username));
- if(!list.length)return '<p class="note">No users match.</p>';
- return '<div class="list adm">'+list.map(u=>{
+ const nCamps=id=>camps.filter(c=>(c.memberIds||[]).includes(id)).length,byName=(a,b)=>String(a.username).localeCompare(b.username);
+ const S={new:(a,b)=>ms(b.created)-ms(a.created)||byName(a,b),seen:(a,b)=>ms(b.lastSeen)-ms(a.lastSeen)||byName(a,b),name:byName,camps:(a,b)=>nCamps(b.id)-nCamps(a.id)||byName(a,b)};
+ const list=users.filter(u=>!q||String(u.username||'').toLowerCase().includes(q)).sort(S[ui.sort]||S.new);
+ const sortSel='<div class="row admsort" style="gap:8px;align-items:center"><span class="lbl">Sort</span>'+[['new','Newest'],['seen','Last seen'],['name','A\u2013Z'],['camps','Most campaigns']].map(([k,l])=>'<button class="btn sm'+(ui.sort===k?' on':'')+'" data-a="sort" data-s="'+k+'" aria-pressed="'+(ui.sort===k)+'">'+l+'</button>').join('')+'</div>';
+ if(!list.length)return sortSel+'<p class="note">No users match.</p>';
+ return sortSel+'<div class="list adm">'+list.map(u=>{
   const owns=camps.filter(c=>c.ownerUid===u.id).length,inn=camps.filter(c=>c.ownerUid!==u.id&&(c.memberIds||[]).includes(u.id)).length,b=bans[u.id],self=u.id===me.uid;
   let act='';
   if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='ban')act='<span class="note">Suspend '+esc(u.username)+'? They’ll be removed from '+inn+' campaign'+(inn===1?'':'s')+' they joined.</span><button class="btn sm dng" data-a="banyes" data-u="'+esc(u.id)+'">Suspend</button><button class="btn sm" data-a="no">Cancel</button>';
   else if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='del')act='<span class="note">Delete '+esc(u.username)+'\u2019s account for good? Their sign-in, profile and username go'+(owns?', along with the '+owns+' campaign'+(owns===1?'':'s')+' they own':'')+(inn?', and they\u2019re taken out of '+inn+' other'+(inn===1?'':'s')+' (their investigators stay)':'')+'. This can\u2019t be undone.</span><button class="btn sm dng" data-a="delyes" data-u="'+esc(u.id)+'">Delete account</button><button class="btn sm" data-a="no">Cancel</button>';
   else if(ui.rename===u.id)act='<form class="row" data-form="rename" data-u="'+esc(u.id)+'" style="gap:6px"><input class="f" id="rn-'+esc(u.id)+'" value="'+esc(u.username)+'" maxlength="20" style="width:160px" aria-label="New username"><button class="btn sm pri" type="submit">Save</button><button class="btn sm" type="button" data-a="no">Cancel</button></form>';
-  else act=(self?'<span class="chip ok">You</span>':(b?'<button class="btn sm" data-a="unban" data-u="'+esc(u.id)+'">Unsuspend</button>':'<button class="btn sm" data-a="ban" data-u="'+esc(u.id)+'">Suspend</button>'))+'<button class="btn sm" data-a="rename" data-u="'+esc(u.id)+'">Change username</button>'+(self?'':'<button class="btn sm" data-a="del" data-u="'+esc(u.id)+'">Delete account\u2026</button>');
+  else act=(self?'<span class="chip ok">You</span>':(b?'<button class="btn sm" data-a="unban" data-u="'+esc(u.id)+'">Unsuspend</button>':'<button class="btn sm" data-a="ban" data-u="'+esc(u.id)+'">Suspend</button>'))+'<button class="btn sm" data-a="rename" data-u="'+esc(u.id)+'">Change username</button>'+(self?'':'<button class="btn sm dng" data-a="del" data-u="'+esc(u.id)+'">Delete account\u2026</button>');
   return '<div class="item"><div class="grow"><b>'+esc(u.username||'(no username)')+'</b>'+(b?' <span class="chip warn">Suspended</span>':'')+
    '<span class="effect">Joined '+esc(ago(ms(u.created)))+' · last seen '+esc(ago(ms(u.lastSeen)))+' · owns '+owns+' · in '+inn+'</span></div><span class="row" style="gap:6px">'+act+'</span></div>';}).join('')+'</div>';
 }
@@ -140,6 +144,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='reload')load();
  else if(a==='no'){ui.ask=null;ui.rename=null;render();}
  else if(a==='ban'){ui.ask={uid:u,what:'ban'};ui.rename=null;render();}
+ else if(a==='sort'){ui.sort=b.dataset.s;try{localStorage.setItem('apl-adm-sort',ui.sort);}catch(er){}render();}
  else if(a==='del'){ui.ask={uid:u,what:'del'};ui.rename=null;render();}
  else if(a==='delyes')run(()=>deleteUser(u),'Account deleted.');
  else if(a==='banyes')run(()=>ban(u),'Account suspended.');

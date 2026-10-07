@@ -33,7 +33,10 @@ function nextSessionBar(){
 // The campaign's picture across the top of the Party tab; tap it to see the whole picture.
 function partyBanner(){return CAMP&&camp&&imgOk(camp.photo)?'<img class="partybanner" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+'>':'';}
 function renderParty(){
- let h=turnBar()+partyBanner()+nextSessionBar()+'<div class="banner">Tap an investigator to open their sheet. '+(IS_DEMO?'This is a sample campaign, so nothing you change here is saved.':IS_LOCAL?'Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.':'Every change syncs to everyone at the table.')+'</div>'+
+ const tip='<div class="banner">Tap an investigator to open their sheet. '+(IS_DEMO?'This is a sample campaign, so nothing you change here is saved.':IS_LOCAL?'Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.':'Every change syncs to everyone at the table.')+'</div>';
+ // With a campaign picture: the picture on the left, next session and the tip beside it (stacked on phones).
+ const pic=partyBanner();
+ let h=turnBar()+(pic?'<div class="partyhead">'+pic+'<div class="partyside">'+nextSessionBar()+tip+'</div></div>':nextSessionBar()+tip)+
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">You have your investigator. Only the campaign owner can add more.</p>':'')+
   (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?'+ Create my investigator':'+ Add an investigator')+'</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
   '<div class="party">';

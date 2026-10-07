@@ -145,7 +145,7 @@ function introHtml(){
  const inv=(typeof pendingJoin!=='undefined'&&pendingJoin)?'<p class="invited">You’ve been invited to join <b>'+esc(pendingJoin.name||'a campaign')+'</b>. Sign in or create an account and you’ll be asked to join.</p>':'';
  const cta=hasLocal()?'':'<div class="row cta"><button class="btn pri" data-a="trylocal">Start a campaign, no account needed</button><a class="btn narrow-only" href="#signin">Sign in</a></div><p class="note" style="margin:0">It’s saved in this browser until you make an account, then it moves over with you.</p>';
  return '<section class="intro">'+inv+(hasLocal()?localTryHtml():'')+'<h2>Live character sheets for the Arkham Horror Roleplaying Game</h2>'+
-  '<p>Everyone’s investigator stays in sync at the table: spend a die, take an injury or earn XP and the whole group sees it. The GM gets scenes, enemies, clues and session recaps.</p>'+cta+
+  '<p>Everyone’s investigator stays in sync at the table: spend a die, take an injury or earn XP and the whole group sees it. The GM can run scenes and fights, track enemies, reveal clues to players and get an automatic recap of every session.</p>'+cta+
   '<p class="note">Free, no ads. An unofficial fan project, not affiliated with Edge Studio or Fantasy Flight Games. You\u2019ll need the <a href="https://store.asmodee.com/products/arkham-horror-rpg-core-rulebook" target="_blank" rel="noopener">Core Rulebook</a> to play. <a href="help.html">How it works</a></p></section>';
 }
 // The sample party: the real ledger in a frame, running on invented data that isn't saved (js/demo.js).

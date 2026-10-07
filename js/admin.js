@@ -32,7 +32,7 @@ async function load(quiet){
 }
 async function wipe(cid){
  await dropFolder('campaigns/'+cid);
- for(const col of ['characters','players','table','campaign','enemies','clues','gm','gmlog','history','settings']){
+ for(const col of ['characters','players','table','campaign','enemies','clues','gm','gmlog','history','settings','gallery']){
   const qs=await db.collection('campaigns/'+cid+'/'+col).get();await Promise.all(qs.docs.map(d=>d.ref.delete()));}
 }
 async function deleteCampaign(cid){

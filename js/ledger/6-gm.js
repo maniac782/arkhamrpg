@@ -47,6 +47,7 @@ function gmBoot(){
  db.doc('table/state').onSnapshot(s=>{if(s.exists)table={...table,...s.data()};render();saveCache();},()=>{});
  db.doc('campaign/main').onSnapshot(s=>{if(s.exists)campaign={date:'',locations:[],npcs:[],threads:[],...s.data()};render();},()=>{});
  gmSubscribe();
+ galBoot();
 }
 // The Journal's own copy of a finished session's recap (separate from the GM tab's picker).
 let jSession=null,jLog=[];
@@ -195,6 +196,7 @@ function renderJournal(){
    (sm?'<p class="recap-sum">'+esc(sm)+'</p>':'')+
    (jLog.length?'<div class="grid2">'+recapGroups(jLog).map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(x.m)+'</li>').join('')+'</ul></div>').join('')+'</div>':(sm?'':'<p class="note" style="margin:0">Nothing was logged for session '+jSession+'.</p>'))+'</section>';
  }
+ h+=galleryHtml();
  return h;
 }
 // Next session (campaigns): the GM can set the next meetup right here; the owner can also set it in Settings.

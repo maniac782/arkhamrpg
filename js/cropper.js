@@ -1,5 +1,6 @@
 /* Arkham Horror RPG Ledger — the picture positioner used for investigator portraits, profile photos and campaign pictures.
-   openCropper(file, {title, shape:'circle'|'wide', outW, outH, maxLen, button, onSave(dataUrl), onError(msg)})
+   openCropper(file, {title, shape:'circle'|'wide', outW, outH, maxLen, button, full, onSave(dataUrl, fullDataUrl), onError(msg)})
+   With full:{side, maxLen}, onSave also gets the whole picture (uncropped, up to that many px on its longest side).
    Drag (or arrow keys) to move, wheel / pinch / slider to zoom; saves a JPEG of exactly what's in the frame. */
 (function(){
 'use strict';
@@ -10,13 +11,13 @@ window.openCropper=function(file,o){
  const url=URL.createObjectURL(file),img=new Image();
  img.onerror=()=>{URL.revokeObjectURL(url);err('Couldn’t read that image. Try a JPG or PNG.');};
  img.onload=()=>{
-  const wide=o.shape==='wide',VW=wide?320:260,VH=wide?180:260,PX=2; // view size in CSS px, canvas drawn at 2x
+  const wide=o.shape==='wide',VW=wide?Math.max(280,Math.min(560,window.innerWidth-80)):260,VH=wide?Math.round(VW*9/16):260,PX=2; // view size in CSS px, canvas drawn at 2x
   const OUTW=o.outW||(wide?800:320),OUTH=o.outH||(wide?450:320),MAX=o.maxLen||120000;
   const base=Math.max(VW/img.width,VH/img.height);let zoom=1,ox=0,oy=0;
   const bg=document.createElement('div');bg.className='crop-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',o.title||'Position picture');
-  bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||'Position your picture')+'</h2><canvas class="'+(wide?'rect':'')+'" width="'+VW*PX+'" height="'+VH*PX+'" tabindex="0" aria-label="Drag to move the picture. Arrow keys also move it."></canvas>'+
+  bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||'Position your picture')+'</h2><canvas class="'+(wide?'rect':'')+'" width="'+VW*PX+'" height="'+VH*PX+'"'+(wide?' style="width:'+VW+'px;height:'+VH+'px"':'')+' tabindex="0" aria-label="Drag to move the picture. Arrow keys also move it."></canvas>'+
    '<label class="field" style="width:100%"><span class="lbl">Zoom</span><input type="range" class="crop-zoom" min="1" max="4" step="0.01" value="1"></label>'+
-   '<p class="note" style="margin:0;text-align:center">'+(wide?'Drag the picture to choose what shows in the banner.':'Drag the picture to center it in the circle.')+'</p>'+
+   '<p class="note" style="margin:0;text-align:center">'+(wide?'Drag the picture to choose what shows in the banner.'+(o.full?' The whole picture is kept too, for viewing full size.':''):'Drag the picture to center it in the circle.')+'</p>'+
    '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel" type="button">Cancel</button><button class="btn pri" data-c="save" type="button">'+(o.button||'Save picture')+'</button></div></div>';
   document.body.appendChild(bg);
   const cv=bg.querySelector('canvas'),g=cv.getContext('2d'),zr=bg.querySelector('.crop-zoom');
@@ -40,7 +41,11 @@ window.openCropper=function(file,o){
    if(b.dataset.c==='cancel')return close();
    const out=document.createElement('canvas');out.width=OUTW;out.height=OUTH;const og=out.getContext('2d');og.fillStyle='#ffffff';og.fillRect(0,0,OUTW,OUTH);draw(og,OUTW,OUTH);
    let q=0.82,d=out.toDataURL('image/jpeg',q);while(d.length>MAX&&q>0.4){q-=0.08;d=out.toDataURL('image/jpeg',q);}
-   close();if(o.onSave)o.onSave(d);});
+   let full=null;
+   if(o.full){const s=Math.min(1,(o.full.side||2000)/Math.max(img.width,img.height)),fc=document.createElement('canvas');fc.width=Math.round(img.width*s);fc.height=Math.round(img.height*s);
+    const fg=fc.getContext('2d');fg.fillStyle='#ffffff';fg.fillRect(0,0,fc.width,fc.height);fg.drawImage(img,0,0,fc.width,fc.height);
+    let fq=0.85;full=fc.toDataURL('image/jpeg',fq);while(full.length>(o.full.maxLen||900000)&&fq>0.4){fq-=0.08;full=fc.toDataURL('image/jpeg',fq);}}
+   close();if(o.onSave)o.onSave(d,full);});
   cv.focus();
  };
  img.src=url;

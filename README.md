@@ -14,7 +14,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 - **Printable sheets.** Every investigator prints as a proper character sheet in two styles, Classic and Leather, on Letter, A4 or Legal paper.
 - **Step-by-step character creation.** It follows the Core Rulebook's rules, with archetype limits, the gear budget and XP worked out as you go.
 - **Tools for the GM.** A scene and turn tracker with surprise rounds, an encounter builder from the Core Rulebook's enemy profiles, and clues and handouts you reveal to everyone or one player. Also XP awards, session recaps, private notes and a hidden dice roller.
-- **A shared Journal.** Revealed clues, the campaign tracker (threads, people, places) and recaps of past sessions.
+- **A shared Journal.** A picture gallery anyone in the campaign can add to, revealed clues, the campaign tracker (threads, people, places) and recaps of past sessions.
 - **Scheduling.** A countdown to the next session, plus:
   - one-tap Add to calendar (Google, Apple, Outlook);
   - Directions and Food nearby;
@@ -201,7 +201,8 @@ At beta size everything should cost $0 to a few cents a month.
   4. `4-creator.js`: the New investigator creator
   5. `5-events.js`: buttons and form edits
   6. `6-gm.js`: GM tools, activity log, session recaps and opening clues from links
-  7. `7-boot.js`: connecting to Firebase and starting up
+  7. `6b-gallery.js`: the campaign's picture gallery (in the Journal)
+  8. `7-boot.js`: connecting to Firebase and starting up
 - `admin.html` with `js/admin.js` and `css/admin.css`: the admin page.
 - `privacy.html`: the privacy policy. `help.html`: the **How it works** page for players (linked in every footer and from the sign-in screen); keep it in step with new features.
 - `js/config.js`: Firebase settings, the App Check, Places and Web Push keys, the daily-limit banner and the error reporter.

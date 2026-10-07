@@ -263,7 +263,8 @@ service cloud.firestore {
           && (!('nextWhere' in newC()) || (newC().nextWhere is string && newC().nextWhere.size() <= 80))
           && (!('nextHours' in newC()) || (newC().nextHours is number && newC().nextHours >= 1 && newC().nextHours <= 12)))
         || (isOwner() && changedOnly(['art']) && newC().art is int && newC().art >= 0 && newC().art < 100)
-        || (isOwner() && changedOnly(['photo']) && (!('photo' in newC()) || (newC().photo is string && picOk(newC().photo, 150000))))
+        || (isOwner() && changedOnly(['photo', 'photoFull']) && (!('photo' in newC()) || (newC().photo is string && picOk(newC().photo, 150000)))
+          && (!('photoFull' in newC()) || (newC().photoFull is string && picOk(newC().photoFull, 150000))))
         || (isOwner() && changedOnly(['joinCode']) && newC().joinCode is string && newC().joinCode.size() >= 10 && newC().joinCode.size() <= 40)
         || (isOwner() && changedOnly(['deleting']) && newC().deleting == true)
         || ownerManages() || joining() || leaving()
@@ -358,6 +359,16 @@ service cloud.firestore {
           && ((request.resource.data.slot == 'gm' && cGM())
             || (isSlot(request.resource.data.slot) && (cOwner() || cGM() || plays(request.resource.data.slot))));
         allow delete: if (gmSees()) || cleaner();
+      }
+      // Gallery: pictures anyone in the campaign posts. Delete your own; the owner and GM can delete any.
+      match /gallery/{id} {
+        allow read: if member() || cleaner();
+        allow create: if member() && request.resource.data.keys().hasOnly(['id', 'img', 'cap', 'by', 't'])
+          && request.resource.data.by == request.auth.uid
+          && request.resource.data.img is string && picOk(request.resource.data.img, 200000)
+          && request.resource.data.cap is string && request.resource.data.cap.size() <= 140
+          && request.resource.data.t is int;
+        allow delete: if (member() && (resource.data.by == request.auth.uid || cOwner() || cGM())) || cleaner();
       }
       // House rules (on/off plus the campaign's own weapons, equipment and rule changes): the owner decides.
       match /settings/{doc} {

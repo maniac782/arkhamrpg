@@ -64,19 +64,30 @@ window.acctIcon=function(name,prof){
   };
 })();
 
-/* Tap a picture marked data-zoom (campaign picture, portraits, handouts) to see it full size. Esc, ×, or a tap closes it. */
+/* Tap a picture marked data-zoom (campaign picture, portraits, handouts) to see it full size. Esc, ×, or a tap closes it.
+   openLightbox(src, alt, list, index) with a list of {src, alt, cap} adds ‹ › buttons, arrow keys and swiping (the gallery). */
 (function(){
-  window.openLightbox=function(src,alt){
+  window.openLightbox=function(src,alt,list,index){
     if(!src||document.querySelector('.lb-bg'))return;
+    list=list&&list.length?list:[{src:src,alt:alt||''}];var i=Math.max(0,Math.min(list.length-1,index||0));
     var bg=document.createElement('div');bg.className='lb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',alt||'Picture');
-    var im=document.createElement('img');im.src=src;im.alt=alt||'';
+    var fig=document.createElement('figure');fig.className='lb-fig';var im=document.createElement('img');var cap=document.createElement('figcaption');cap.className='lb-cap';fig.appendChild(im);fig.appendChild(cap);
     var x=document.createElement('button');x.type='button';x.className='lb-x';x.setAttribute('aria-label','Close');x.textContent='×';
-    bg.appendChild(im);bg.appendChild(x);document.body.appendChild(bg);x.focus();
+    bg.appendChild(fig);bg.appendChild(x);
+    var many=list.length>1,prev,next,count;
+    if(many){prev=document.createElement('button');prev.type='button';prev.className='lb-nav lb-prev';prev.setAttribute('aria-label','Previous picture');prev.textContent='‹';
+      next=document.createElement('button');next.type='button';next.className='lb-nav lb-next';next.setAttribute('aria-label','Next picture');next.textContent='›';
+      count=document.createElement('span');count.className='lb-count';bg.appendChild(prev);bg.appendChild(next);bg.appendChild(count);}
+    var show=function(){var it=list[i];im.src=it.src;im.alt=it.alt||'';cap.textContent=it.cap||'';cap.hidden=!it.cap;if(many)count.textContent=(i+1)+' / '+list.length;};
+    var go=function(d){if(!many)return;i=(i+d+list.length)%list.length;show();};
+    show();document.body.appendChild(bg);x.focus();
     var close=function(){bg.remove();document.removeEventListener('keydown',k);};
-    var k=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',k);
-    bg.addEventListener('click',close);
+    var k=function(e){if(e.key==='Escape')close();else if(e.key==='ArrowLeft')go(-1);else if(e.key==='ArrowRight')go(1);};document.addEventListener('keydown',k);
+    bg.addEventListener('click',function(e){if(prev&&e.target===prev)return go(-1);if(next&&e.target===next)return go(1);close();});
+    var sx=null;bg.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+    bg.addEventListener('touchend',function(e){if(sx==null)return;var dx=e.changedTouches[0].clientX-sx;sx=null;if(Math.abs(dx)>50){e.preventDefault();go(dx<0?1:-1);}});
   };
-  document.addEventListener('click',function(e){var im=e.target.closest&&e.target.closest('img[data-zoom]');if(!im)return;e.preventDefault();e.stopPropagation();window.openLightbox(im.currentSrc||im.src,im.alt);},true);
+  document.addEventListener('click',function(e){var im=e.target.closest&&e.target.closest('img[data-zoom]');if(!im)return;e.preventDefault();e.stopPropagation();window.openLightbox(im.dataset.full||im.currentSrc||im.src,im.alt);},true);
 })();
 
 /* Contact: a form anyone can use, signed in or not. It saves the message to the database (contact collection) and the

@@ -22,7 +22,7 @@ async function bootCampaign(syncEl){
  const syncLine=()=>{if(IS_DEMO){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">Sample campaign: nothing here is saved</span><a class="btn sm pri" href="./?try=1" target="_top">Start your own</a></span>';return;}if(isLocal){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">Saved on this device only</span><a class="btn sm pri" href="./?savelocal=1">Save to an account</a></span>';return;}const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
  window.addEventListener('acct-signout',()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');});syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
- if(camp){if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom title="See the full picture">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';applyRoles();render();}
+ if(camp){if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+' title="See the full picture">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
  if(!u||u.isAnonymous){location.replace('./');return;}
  authUid=u.uid;
@@ -32,7 +32,7 @@ async function bootCampaign(syncEl){
   if(!snap.exists){halted=isLocal?'There\u2019s no campaign saved on this device yet. Start one from the home page.':'This campaign was deleted.';render();return;}
   camp=snap.data();
   if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
-  if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom title="See the full picture">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';
+  if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+' title="See the full picture">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';
   applyRoles();if(window.__syncLine)window.__syncLine();render();saveCache();
  },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
  gmBoot();

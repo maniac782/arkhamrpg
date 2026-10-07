@@ -64,6 +64,21 @@ window.acctIcon=function(name,prof){
   };
 })();
 
+/* Tap a picture marked data-zoom (campaign picture, portraits, handouts) to see it full size. Esc, ×, or a tap closes it. */
+(function(){
+  window.openLightbox=function(src,alt){
+    if(!src||document.querySelector('.lb-bg'))return;
+    var bg=document.createElement('div');bg.className='lb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',alt||'Picture');
+    var im=document.createElement('img');im.src=src;im.alt=alt||'';
+    var x=document.createElement('button');x.type='button';x.className='lb-x';x.setAttribute('aria-label','Close');x.textContent='×';
+    bg.appendChild(im);bg.appendChild(x);document.body.appendChild(bg);x.focus();
+    var close=function(){bg.remove();document.removeEventListener('keydown',k);};
+    var k=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',k);
+    bg.addEventListener('click',close);
+  };
+  document.addEventListener('click',function(e){var im=e.target.closest&&e.target.closest('img[data-zoom]');if(!im)return;e.preventDefault();e.stopPropagation();window.openLightbox(im.currentSrc||im.src,im.alt);},true);
+})();
+
 /* Contact: a form anyone can use, signed in or not. It saves the message to the database (contact collection) and the
    server function contactEmail emails it to the site owner, with Reply going to the address given here. It uses its own
    Firebase app ("contact") so it works the same on every page, including the no-account campaign. */

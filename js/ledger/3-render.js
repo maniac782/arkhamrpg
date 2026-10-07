@@ -48,13 +48,16 @@ function renderParty(){
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
-function avatarHtml(c,size){const ini=esc(((c.name||'?').trim()[0]||'?').toUpperCase());return c.portrait?'<img class="avatar '+size+'" src="'+esc(c.portrait)+'" alt="Portrait of '+esc(c.name)+'">':'<span class="avatar '+size+'" aria-hidden="true">'+ini+'</span>';}
+function avatarHtml(c,size){const ini=esc(((c.name||'?').trim()[0]||'?').toUpperCase());return c.portrait?'<img class="avatar '+size+'" src="'+esc(c.portrait)+'" alt="Portrait of '+esc(c.name)+'"'+(size==='lg'?' data-zoom title="See the full picture"':'')+'>':'<span class="avatar '+size+'" aria-hidden="true">'+ini+'</span>';}
 function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();const url=URL.createObjectURL(file);
  img.onload=()=>{const side=Math.min(img.width,img.height),S=320;const cv=document.createElement('canvas');cv.width=S;cv.height=S;const g=cv.getContext('2d');
   g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);URL.revokeObjectURL(url);
   let q=0.82,d=cv.toDataURL('image/jpeg',q);while(d.length>120000&&q>0.4){q-=0.1;d=cv.toDataURL('image/jpeg',q);}res(d);};
  img.onerror=()=>{URL.revokeObjectURL(url);rej();};img.src=url;});}
-function openCrop(file,slot){openCropper(file,{title:'Position your portrait',shape:'circle',outW:320,outH:320,maxLen:120000,onError:toast,onSave:d=>{toast('Saving portrait\u2026');storeImage(d,'campaigns/'+CAMP+'/'+authUid).then(u=>save(slot,{portrait:u},'Changed portrait'));}});}
+// Portraits are saved at 800 px (shown small on the sheet, full size when tapped). A campaign kept only in this browser
+// stores them inline, so there they stay small to save room.
+function openCrop(file,slot){const big=!!CAMP&&!IS_LOCAL,S=big?800:320;
+ openCropper(file,{title:'Position your portrait',shape:'circle',outW:S,outH:S,maxLen:big?500000:120000,onError:toast,onSave:d=>{toast('Saving portrait\u2026');storeImage(d,'campaigns/'+CAMP+'/'+authUid).then(u=>{if(big&&!isStoredImage(u))return toast('Couldn\u2019t upload the portrait. Check your connection and try again.');save(slot,{portrait:u},'Changed portrait');});}});}
 function ownerPanel(s){
  const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;

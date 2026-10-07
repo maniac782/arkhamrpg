@@ -136,7 +136,7 @@ function rollDice(){const n=Math.max(1,Math.min(20,Number(gm.rollN)||1)),t=Math.
 function clueHtml(c,master){
  const to=c.to&&c.to!=='all'?(chars[c.to]?chars[c.to].name:'one investigator'):'';
  return '<div class="clue'+(master&&!c.shown?' draft':'')+'"'+(master?'':' data-clue-id="'+esc(c.id||'')+'"')+'>'+(master?'<div class="row" style="justify-content:space-between"><span class="chip'+(c.shown?' ok':'')+'">'+(c.shown?'Revealed':'Not revealed yet')+'</span><div class="row" style="gap:6px"><button class="btn sm'+(c.shown?'':' pri')+'" data-gact="cshow" data-id="'+c.id+'">'+(c.shown?'Hide again':'Reveal')+'</button><button class="btn sm icon" data-gact="cdel" data-id="'+c.id+'" aria-label="Delete clue">×</button></div></div>':'')+
-  '<h3>'+esc(c.title||'Untitled')+'</h3>'+(to?'<div class="note">For '+esc(to)+'</div>':'')+(c.img?'<img src="'+c.img+'" alt="'+esc(c.title||'Handout')+'" class="handout">':'')+(c.body?'<p style="white-space:pre-wrap;margin:6px 0 0">'+esc(c.body)+'</p>':'')+'</div>';
+  '<h3>'+esc(c.title||'Untitled')+'</h3>'+(to?'<div class="note">For '+esc(to)+'</div>':'')+(c.img?'<img src="'+c.img+'" alt="'+esc(c.title||'Handout')+'" class="handout" data-zoom>':'')+(c.body?'<p style="white-space:pre-wrap;margin:6px 0 0">'+esc(c.body)+'</p>':'')+'</div>';
 }
 function pickClueImage(f){if(!f||!/^image\//.test(f.type))return toast('Choose an image file.');const url=URL.createObjectURL(f);const img=new Image();
  img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,1200/Math.max(w,h));const cv=document.createElement('canvas');

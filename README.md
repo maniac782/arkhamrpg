@@ -123,11 +123,12 @@ Knack names and tiers follow each archetype's table in the Core Rulebook. Each k
 `admin.html` lists every user and campaign with search and totals (users, active this week, campaigns, suspended). An admin can:
 - **Suspend** an account: it can still sign in and look, but the database refuses every change it makes, and it's taken out of campaigns it joined. Campaigns it owns stay so their players keep their sheets. **Unsuspend** lifts it (they'll need new invites).
 - **Change username**, for example to replace an offensive one.
+- **Delete account**: removes someone for good, the same as their own **Delete my account**: sign-in, profile, username (freed up), settings, devices, campaigns they own (with everything in them and their pictures), invites they sent or were waiting on, and their place in other campaigns (investigators they played stay). It runs on the server (`adminDeleteUser`), which checks you're an admin and won't delete you or another admin. To keep someone out instead, **Suspend** them.
 - **Delete** any campaign, including its hidden GM material and pictures.
 - **Feedback** tab: messages people send with **Send feedback** (bug, idea or other, with the page, browser and version). Mark each one **Done** to clear it.
 - **Errors** tab: unexpected errors people hit while signed in (message, page, browser, version, who), recorded automatically by `js/config.js` (at most a few per visit). Errors from code the browser injects (crypto wallets, in-app browsers) are ignored. Clear them once dealt with.
 
-Admins are accounts with a document in the `admins` collection in Firestore whose ID is their user ID (Firebase → Authentication → Users → **User UID**); it needs no fields. Email addresses and disabling a sign-in entirely are handled in Firebase → Authentication.
+Admins are accounts with a document in the `admins` collection in Firestore whose ID is their user ID (Firebase → Authentication → Users → **User UID**); it needs no fields. Changing someone's email address is done in Firebase → Authentication.
 
 ### Server functions (`functions/index.js`)
 | Function | What it does |
@@ -137,6 +138,7 @@ Admins are accounts with a document in the `admins` collection in Firestore whos
 | **calendar** | Serves `arkhamrpg.web.app/cal/<campaign id>.ics` (via a Hosting rewrite), the next session as a calendar event, so iPhones and Macs open it straight in Calendar. |
 | **clueAlert** | When the GM reveals a clue, notifies the player it's for, or every player if it's for everyone. The notification opens the clue in the Journal. |
 | **turnAlert** | In a fight, when play passes to the investigators, notifies players who turned that on (off by default). |
+| **adminDeleteUser** | Called from the admin page's **Delete account** button. Checks the caller is an admin, then removes the account and everything that goes with it (see *Admin page*). |
 
 ### Email
 Mail goes out from **arkhamrpgledger@gmail.com** (set in `functions/.env`) through Gmail, using an app password stored in Google Cloud **Secret Manager** as `GMAIL_APP_PASSWORD`; it's never in this repo. To change it, add a new version of that secret and re-run the deploy. New Gmail accounts can land in spam at first; it improves as people mark the mail "Not spam". If it doesn't, the fix is a custom domain with a sending service (see `BACKLOG.md`).

@@ -38,6 +38,15 @@ async function deleteCampaign(cid){
  const iv=await db.collection('invites').where('cid','==',cid).get();await Promise.all(iv.docs.map(d=>d.ref.delete()));
  await wipe(cid);await db.doc('campaigns/'+cid).delete();camps=camps.filter(c=>c.id!==cid);
 }
+// Delete someone's account for good. The server function (adminDeleteUser in functions/index.js) does the work,
+// since only it can remove a sign-in; it checks that you're an admin.
+async function deleteUser(uid){
+ const tok=await auth.currentUser.getIdToken();
+ const r=await fetch('https://us-central1-'+window.FIREBASE_CONFIG.projectId+'.cloudfunctions.net/adminDeleteUser',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({data:{uid}})});
+ const j=await r.json().catch(()=>({}));
+ if(!r.ok||j.error)throw {msg:(j.error&&j.error.message)||'Couldn\u2019t delete that account. Try again.'};
+ await load();
+}
 // Ban: block all their changes (the rules check bans/{uid}) and take them out of campaigns they've joined.
 // Campaigns they own stay, so their players keep their sheets; the owner just can't change anything.
 async function ban(uid){
@@ -90,8 +99,9 @@ function usersHtml(){
   const owns=camps.filter(c=>c.ownerUid===u.id).length,inn=camps.filter(c=>c.ownerUid!==u.id&&(c.memberIds||[]).includes(u.id)).length,b=bans[u.id],self=u.id===me.uid;
   let act='';
   if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='ban')act='<span class="note">Suspend '+esc(u.username)+'? They’ll be removed from '+inn+' campaign'+(inn===1?'':'s')+' they joined.</span><button class="btn sm dng" data-a="banyes" data-u="'+esc(u.id)+'">Suspend</button><button class="btn sm" data-a="no">Cancel</button>';
+  else if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='del')act='<span class="note">Delete '+esc(u.username)+'\u2019s account for good? Their sign-in, profile and username go'+(owns?', along with the '+owns+' campaign'+(owns===1?'':'s')+' they own':'')+(inn?', and they\u2019re taken out of '+inn+' other'+(inn===1?'':'s')+' (their investigators stay)':'')+'. This can\u2019t be undone.</span><button class="btn sm dng" data-a="delyes" data-u="'+esc(u.id)+'">Delete account</button><button class="btn sm" data-a="no">Cancel</button>';
   else if(ui.rename===u.id)act='<form class="row" data-form="rename" data-u="'+esc(u.id)+'" style="gap:6px"><input class="f" id="rn-'+esc(u.id)+'" value="'+esc(u.username)+'" maxlength="20" style="width:160px" aria-label="New username"><button class="btn sm pri" type="submit">Save</button><button class="btn sm" type="button" data-a="no">Cancel</button></form>';
-  else act=(self?'<span class="chip ok">You</span>':(b?'<button class="btn sm" data-a="unban" data-u="'+esc(u.id)+'">Unsuspend</button>':'<button class="btn sm" data-a="ban" data-u="'+esc(u.id)+'">Suspend</button>'))+'<button class="btn sm" data-a="rename" data-u="'+esc(u.id)+'">Change username</button>';
+  else act=(self?'<span class="chip ok">You</span>':(b?'<button class="btn sm" data-a="unban" data-u="'+esc(u.id)+'">Unsuspend</button>':'<button class="btn sm" data-a="ban" data-u="'+esc(u.id)+'">Suspend</button>'))+'<button class="btn sm" data-a="rename" data-u="'+esc(u.id)+'">Change username</button>'+(self?'':'<button class="btn sm" data-a="del" data-u="'+esc(u.id)+'">Delete account\u2026</button>');
   return '<div class="item"><div class="grow"><b>'+esc(u.username||'(no username)')+'</b>'+(b?' <span class="chip warn">Suspended</span>':'')+
    '<span class="effect">Joined '+esc(ago(ms(u.created)))+' · last seen '+esc(ago(ms(u.lastSeen)))+' · owns '+owns+' · in '+inn+'</span></div><span class="row" style="gap:6px">'+act+'</span></div>';}).join('')+'</div>';
 }
@@ -130,6 +140,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='reload')load();
  else if(a==='no'){ui.ask=null;ui.rename=null;render();}
  else if(a==='ban'){ui.ask={uid:u,what:'ban'};ui.rename=null;render();}
+ else if(a==='del'){ui.ask={uid:u,what:'del'};ui.rename=null;render();}
+ else if(a==='delyes')run(()=>deleteUser(u),'Account deleted.');
  else if(a==='banyes')run(()=>ban(u),'Account suspended.');
  else if(a==='unban')run(()=>unban(u),'Suspension lifted. They’ll need new invites to rejoin campaigns.');
  else if(a==='rename'){ui.rename=u;ui.ask=null;render();const el=document.getElementById('rn-'+u);if(el){el.focus();el.select();}}

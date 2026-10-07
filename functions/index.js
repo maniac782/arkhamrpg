@@ -4,7 +4,7 @@
    Mail goes out through Gmail (MAIL_FROM in .env) using the app password kept in Secret Manager. */
 const {onDocumentCreated, onDocumentWritten, onDocumentUpdated} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
-const {onRequest} = require('firebase-functions/v2/https');
+const {onRequest, onCall, HttpsError} = require('firebase-functions/v2/https');
 const {defineSecret, defineString} = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
@@ -252,4 +252,57 @@ exports.turnAlert = onDocumentUpdated('campaigns/{cid}/table/state', async (even
   uids = uids.filter(u => prefs[u].pushTurns === true);
   await pushTo(uids, 'Investigators\u2019 turn' + (a.round ? ' \u00b7 round ' + a.round : ''), (a.scene ? oneLine(a.scene) + ' \u2014 ' : '') + (oneLine(c.name) || ''),
     SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid), 'turn-' + cid);
+});
+
+/* adminDeleteUser: an admin removes someone's account from the admin page, the same as their own "Delete my account":
+   their sign-in, profile, username, settings and devices; campaigns they own (with everything in them and their
+   pictures, and invites to them); their place in other campaigns (investigators they played stay with those campaigns);
+   invites they sent or were waiting on; and their profile pictures. Only accounts in admins/ can call it. */
+const BUCKET = 'arkham-ledger.firebasestorage.app';
+exports.adminDeleteUser = onCall({timeoutSeconds: 300, maxInstances: 2}, async (req) => {
+  const caller = req.auth && req.auth.uid;
+  if (!caller) throw new HttpsError('unauthenticated', 'Sign in first.');
+  if (!(await db.doc('admins/' + caller).get()).exists) throw new HttpsError('permission-denied', 'Only admins can do this.');
+  const uid = String((req.data && req.data.uid) || '');
+  if (!/^[A-Za-z0-9]{10,128}$/.test(uid)) throw new HttpsError('invalid-argument', 'No account given.');
+  if (uid === caller) throw new HttpsError('failed-precondition', 'Use Delete my account for your own account.');
+  if ((await db.doc('admins/' + uid).get()).exists) throw new HttpsError('failed-precondition', 'That account is an admin. Remove it from admins first.');
+
+  const bucket = admin.storage().bucket(BUCKET);
+  const dropPrefix = p => bucket.deleteFiles({prefix: p}).catch(e => logger.warn('deleteFiles', p, e.message));
+  const delQuery = async q => { const qs = await q.get().catch(() => null); if (qs) await Promise.all(qs.docs.map(d => d.ref.delete().catch(() => {}))); };
+  let email = '';
+  try { email = String((await admin.auth().getUser(uid)).email || '').toLowerCase(); } catch (e) { /* sign-in already gone */ }
+
+  // Campaigns they own: everything inside, their pictures and invites to them.
+  const owned = await db.collection('campaigns').where('ownerUid', '==', uid).get();
+  for (const c of owned.docs) {
+    await delQuery(db.collection('invites').where('cid', '==', c.id));
+    await dropPrefix('campaigns/' + c.id + '/');
+    await db.recursiveDelete(c.ref);
+  }
+  // Campaigns they're in: take them out (like leaving).
+  const member = await db.collection('campaigns').where('memberIds', 'array-contains', uid).get();
+  for (const c of member.docs) {
+    const d = c.data(), FV = admin.firestore.FieldValue;
+    const p = {memberIds: FV.arrayRemove(uid), ['roles.' + uid]: FV.delete(), ['names.' + uid]: FV.delete()};
+    if (d.gmUid === uid) p.gmUid = null;
+    await c.ref.update(p).catch(e => logger.warn('leave', c.id, e.message));
+  }
+  // Invites from them or waiting for them, and their devices.
+  await delQuery(db.collection('invites').where('fromUid', '==', uid));
+  if (email) await delQuery(db.collection('invites').where('toEmail', '==', email));
+  await delQuery(db.collection('devices').where('uid', '==', uid));
+  // Profile, username, settings, suspension.
+  const prof = await db.doc('users/' + uid).get();
+  const lower = prof.exists && prof.data().usernameLower;
+  const b = db.batch();
+  if (lower) b.delete(db.doc('usernames/' + lower));
+  ['users/', 'prefs/', 'bans/'].forEach(k => b.delete(db.doc(k + uid)));
+  await b.commit();
+  await dropPrefix('users/' + uid + '/');
+  // Finally the sign-in itself.
+  try { await admin.auth().deleteUser(uid); } catch (e) { if (e.code !== 'auth/user-not-found') throw e; }
+  logger.info('adminDeleteUser', {by: caller, uid, owned: owned.size, member: member.size});
+  return {owned: owned.size, member: member.size};
 });

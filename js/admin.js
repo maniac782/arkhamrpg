@@ -82,7 +82,8 @@ function render(){
  if(state==='denied'){app.innerHTML='<section class="sec auth"><h2>Admin</h2><p class="note" style="margin:0">This page is only for the site’s admins.</p><div class="row"><a class="btn" href="./">Back to the site</a></div></section>';return;}
  if(state==='loading'){app.innerHTML='<p class="note" style="padding:24px 16px">Loading users and campaigns…</p>';return;}
  if(state==='error'){app.innerHTML='<section class="sec"><h2>Couldn’t load</h2><p class="note" style="margin:0">The database refused the request. If you just made yourself an admin, wait a minute for the new rules and try again.</p><div class="row"><button class="btn" data-a="reload">Try again</button></div></section>';return;}
- const keep=document.activeElement&&document.activeElement.id;
+ // Put the cursor back in a text box after redrawing; never refocus a dropdown (on iPhone that reopens its picker).
+ const keep=document.activeElement&&document.activeElement.tagName==='INPUT'&&document.activeElement.id;
  const active=users.filter(u=>ms(u.lastSeen)>Date.now()-7*DAY).length;
  let h='<div class="stats">'+[['Users',users.length],['Active this week',active],['Campaigns',camps.length],['Suspended',Object.keys(bans).length]].map(([k,v])=>'<div class="stat"><span class="lbl">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>';
  h+='<div class="row admbar" style="align-items:flex-end"><div class="tabs" role="tablist" style="flex:1">'+[['users','Users'],['camps','Campaigns'],['fb','Feedback'+(fbs.length?' ('+fbs.length+')':'')],['errs','Errors'+(errs.length?' ('+errs.length+')':'')]].map(([k,l])=>'<button class="tab" role="tab" aria-selected="'+(ui.tab===k)+'" data-a="tab" data-t="'+k+'">'+l+'</button>').join('')+'</div>'+

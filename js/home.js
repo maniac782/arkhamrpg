@@ -15,7 +15,7 @@ function cfgOk(){const c=window.FIREBASE_CONFIG;return c&&c.projectId&&!String(c
 // ---------- rendering ----------
 function render(){
  if(ui.dragging){ui.renderAfterDrag=true;return;}
- const a=document.activeElement,keep=a&&a.id&&app.contains(a)?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;
+ const a=document.activeElement,keep=a&&a.id&&app.contains(a)&&/^(INPUT|TEXTAREA)$/.test(a.tagName)?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null; // not dropdowns: refocusing one reopens it on iPhone
  // keep whatever people have typed when the page redraws
  const vals={};app.querySelectorAll('input[id],textarea[id]').forEach(el=>{if(el.type!=='file')vals[el.id]=el.value;});
  if(!user){whoEl.innerHTML='';welcomeView();}

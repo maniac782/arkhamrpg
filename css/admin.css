@@ -26,3 +26,7 @@
 .list.adm .item>.grow{flex:1 1 0;min-width:0}
 .admacts{flex:none}
 .admmenu hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+.working{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}

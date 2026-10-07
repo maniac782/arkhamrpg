@@ -19,8 +19,8 @@ const photoOk=p=>window.imgOk(p);
 const FV=()=>firebase.firestore.FieldValue;
 
 // ---------- data ----------
-async function load(){
- state='loading';render();
+async function load(quiet){
+ if(!quiet){state='loading';render();}
  try{
   const [us,cs,bs]=await Promise.all([db.collection('users').get(),db.collection('campaigns').get(),db.collection('bans').get()]);
   try{const fs2=await db.collection('feedback').orderBy('t','desc').limit(200).get();fbs=fs2.docs.map(d=>({id:d.id,...d.data()}));}catch(e){fbs=[];}
@@ -46,7 +46,7 @@ async function deleteUser(uid){
  const r=await fetch('https://us-central1-'+window.FIREBASE_CONFIG.projectId+'.cloudfunctions.net/adminDeleteUser',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({data:{uid}})});
  const j=await r.json().catch(()=>({}));
  if(!r.ok||j.error)throw {msg:(j.error&&j.error.message)||'Couldn\u2019t delete that account. Try again.'};
- await load();
+ users=users.filter(x=>x.id!==uid);await load(true);
 }
 // Ban: block all their changes (the rules check bans/{uid}) and take them out of campaigns they've joined.
 // Campaigns they own stay, so their players keep their sheets; the owner just can't change anything.
@@ -105,6 +105,7 @@ function usersHtml(){
  return sortSel+'<div class="list adm">'+list.map(u=>{
   const owns=camps.filter(c=>c.ownerUid===u.id).length,inn=camps.filter(c=>c.ownerUid!==u.id&&(c.memberIds||[]).includes(u.id)).length,b=bans[u.id],self=u.id===me.uid;
   let act='';
+  if(ui.working&&ui.working.uid===u.id)act=workingHtml(ui.working);else
   if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='ban')act='<span class="note">Suspend '+esc(u.username)+'? They’ll be removed from '+inn+' campaign'+(inn===1?'':'s')+' they joined.</span><button class="btn sm dng" data-a="banyes" data-u="'+esc(u.id)+'">Suspend</button><button class="btn sm" data-a="no">Cancel</button>';
   else if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='del')act='<span class="note">Delete '+esc(u.username)+'\u2019s account for good? Their sign-in, profile and username go'+(owns?', along with the '+owns+' campaign'+(owns===1?'':'s')+' they own':'')+(inn?', and they\u2019re taken out of '+inn+' other'+(inn===1?'':'s')+' (their investigators stay)':'')+'. This can\u2019t be undone.</span><button class="btn sm dng" data-a="delyes" data-u="'+esc(u.id)+'">Delete account</button><button class="btn sm" data-a="no">Cancel</button>';
   else if(ui.rename===u.id)act='<form class="row" data-form="rename" data-u="'+esc(u.id)+'" style="gap:6px"><input class="f" id="rn-'+esc(u.id)+'" value="'+esc(u.username)+'" maxlength="20" style="width:160px" aria-label="New username"><button class="btn sm pri" type="submit">Save</button><button class="btn sm" type="button" data-a="no">Cancel</button></form>';
@@ -135,29 +136,31 @@ function campsHtml(){
  if(!list.length)return '<p class="note">No campaigns match.</p>';
  return '<div class="list adm">'+list.map(c=>{
   const n=(c.memberIds||[]).length;
-  const act=ui.ask&&ui.ask.cid===c.id?'<span class="note">Delete “'+esc(c.name)+'” for all '+n+' member'+(n===1?'':'s')+'? This can’t be undone.</span><button class="btn sm dng" data-a="cdelyes" data-c="'+esc(c.id)+'">Delete</button><button class="btn sm" data-a="no">Cancel</button>'
+  const act=ui.working&&ui.working.cid===c.id?workingHtml(ui.working):ui.ask&&ui.ask.cid===c.id?'<span class="note">Delete “'+esc(c.name)+'” for all '+n+' member'+(n===1?'':'s')+'? This can’t be undone.</span><button class="btn sm dng" data-a="cdelyes" data-c="'+esc(c.id)+'">Delete</button><button class="btn sm" data-a="no">Cancel</button>'
    :'';
   return '<div class="item">'+(photoOk(c.photo)?'<img class="admimg" src="'+c.photo+'" alt="">':'<span class="admimg" aria-hidden="true"></span>')+'<div class="grow"><b>'+esc(c.name)+'</b>'+(bans[c.ownerUid]?' <span class="chip warn">Owner suspended</span>':'')+
    '<span class="effect">Owner '+esc(nameOf(c.ownerUid))+' · '+n+' member'+(n===1?'':'s')+(c.gmUid?' · GM '+esc(nameOf(c.gmUid)):'')+' · made '+esc(ago(ms(c.created)))+'</span></div>'+actionsMenu('','<button role="menuitem" class="dng" data-a="cdel" data-c="'+esc(c.id)+'">Delete campaign\u2026</button>','Actions for '+c.name)+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
 }
 
 // ---------- events ----------
-async function run(fn,ok){if(ui.busy)return;ui.busy=true;try{await fn();ui.ask=null;ui.rename=null;if(ok)toast(ok);}catch(e){console.warn(e);if(!(window.quotaHit&&quotaHit(e)))toast(e&&e.msg?e.msg:'That didn’t work. Try again.');}ui.busy=false;render();}
+// Runs an action. With "working", the row shows what's happening (with a spinner) until it's done.
+async function run(fn,ok,working){if(ui.busy)return;ui.busy=true;if(working){ui.working=working;render();}try{await fn();ui.ask=null;ui.rename=null;if(ok)toast(ok);}catch(e){console.warn(e);if(!(window.quotaHit&&quotaHit(e)))toast(e&&e.msg?e.msg:'That didn’t work. Try again.');}ui.busy=false;ui.working=null;render();}
+const workingHtml=w=>'<span class="working" role="status"><span class="spin" aria-hidden="true"></span>'+esc(w.label)+'</span>';
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,u=b.dataset.u,c=b.dataset.c;
  if(a==='tab'){ui.tab=b.dataset.t;ui.ask=null;ui.rename=null;render();}
  else if(a==='reload')load();
  else if(a==='no'){ui.ask=null;ui.rename=null;render();}
  else if(a==='ban'){ui.ask={uid:u,what:'ban'};ui.rename=null;render();}
  else if(a==='del'){ui.ask={uid:u,what:'del'};ui.rename=null;render();}
- else if(a==='delyes')run(()=>deleteUser(u),'Account deleted.');
- else if(a==='banyes')run(()=>ban(u),'Account suspended.');
+ else if(a==='delyes')run(()=>deleteUser(u),'Account deleted.',{uid:u,label:'Deleting the account\u2026 this can take up to a minute.'});
+ else if(a==='banyes')run(()=>ban(u),'Account suspended.',{uid:u,label:'Suspending\u2026'});
  else if(a==='unban')run(()=>unban(u),'Suspension lifted. They’ll need new invites to rejoin campaigns.');
  else if(a==='rename'){ui.rename=u;ui.ask=null;render();const el=document.getElementById('rn-'+u);if(el){el.focus();el.select();}}
  else if(a==='fbdel'){const id=b.dataset.f;run(async()=>{await db.doc('feedback/'+id).delete();fbs=fbs.filter(x=>x.id!==id);},'Marked as done.');}
  else if(a==='errdel'){const id=b.dataset.e;run(async()=>{await db.doc('errors/'+id).delete();errs=errs.filter(x=>x.id!==id);});}
  else if(a==='errclear')run(async()=>{await Promise.all(errs.map(x=>db.doc('errors/'+x.id).delete().catch(()=>{})));errs=[];},'Errors cleared.');
  else if(a==='cdel'){ui.ask={cid:c};render();}
- else if(a==='cdelyes')run(()=>deleteCampaign(c),'Campaign deleted.');
+ else if(a==='cdelyes')run(()=>deleteCampaign(c),'Campaign deleted.',{cid:c,label:'Deleting the campaign\u2026'});
 });
 app.addEventListener('change',e=>{if(e.target.id==='usort'){ui.sort=e.target.value;try{localStorage.setItem('apl-adm-sort',ui.sort);}catch(er){}render();}});
 app.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;render();}});

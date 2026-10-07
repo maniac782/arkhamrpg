@@ -53,7 +53,7 @@ window.addEventListener('unhandledrejection',function(ev){window.quotaHit(ev.rea
       if(/ethereum|web3|solana|__gCrWeb|webkit\.messageHandlers|__firefox__|instantSearchSDKJSBridge/i.test(msg+' '+String(stack||'')))return;
       // Safari on iPhone cuts off browser storage when the page goes into the background, and Firebase's sign-in and
       // App Check caches then report this when you come back. They just read again; nothing is lost (WebKit bug 202705).
-      if(/without an in-progress transaction|Connection to Indexed Database server lost|IDBDatabase|database connection is closing/i.test(msg))return;
+      if(/without an in-progress transaction|Indexed ?Database server|IndexedDB|IDBDatabase|database connection is closing/i.test(msg))return;
       if(seen[msg]||sent>=5)return;seen[msg]=1;
       var fb=window.firebase;if(!fb||!fb.apps||!fb.apps.length)return;
       var app=fb.apps.filter(function(a){return a.name==='beta';})[0]||fb.apps[0];

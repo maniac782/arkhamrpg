@@ -52,10 +52,21 @@ function crBuild(){
  });
  const xp=crXpBudget();
  const b=blank(1);
- return Object.assign(b,{name:cr.name.trim(),player:cr.player,archetype:cr.archetype,personality:cr.trait,positive:t[0],negative:t[1],
+ return Object.assign(b,{name:cr.name.trim(),player:CAMP?(((camp&&camp.names)||{})[keys.master?crPlayerUid():authUid]||''):cr.player,archetype:cr.archetype,personality:cr.trait,positive:t[0],negative:t[1],
   xpTotal:xp,xpUnused:xp-crXpSpent(),skills,insightLimit:cr.bonus==='insight'?2:1,insight:cr.bonus==='insight'?2:1,
   knacks,weapons,items,reloads,habitual,money:Math.round((crMoneyBudget()-crMoneySpent())*100)/100,
   bg:Object.assign(b.bg,cr.bg,vehicles.length?{vehicle:[cr.bg.vehicle,...vehicles].filter(Boolean).join(', ')}:{}),log:[{t:Date.now(),m:'Created in the ledger'}]});
+}
+// Who plays the new investigator. In a campaign it's someone already in it: the owner picks any member or decides later;
+// anyone else makes their own. (The original single-party ledger keeps a free-text name.)
+const crPlayerUid=()=>cr.playerUid===undefined?authUid:cr.playerUid;
+function crPlayerField(cf){
+ if(!CAMP)return cf('player','Player',cr.player);
+ const names=(camp&&camp.names)||{};
+ if(!keys.master||IS_LOCAL)return '<div class="field"><span class="lbl">Player</span><div class="val" style="padding:6px 2px">'+(IS_LOCAL?'You':esc(names[authUid]||'You')+' (you)')+'</div></div>';
+ const ids=(camp&&camp.memberIds)||[],cur=crPlayerUid();
+ return '<label class="field"><span class="lbl">Player</span><select class="f" id="cr-playerUid" data-cf="playerUid"><option value=""'+(cur?'':' selected')+'>Decide later</option>'+
+  ids.map(u=>'<option value="'+esc(u)+'"'+(u===cur?' selected':'')+'>'+esc(names[u]||'Member')+(u===authUid?' (you)':'')+'</option>').join('')+'</select></label>';
 }
 function renderCreator(){
  const kn=A.knacksFor(cr.archetype);const arch=A.ARCH[cr.archetype];
@@ -65,7 +76,7 @@ function renderCreator(){
  let h='<div class="banner">Build a new investigator step by step, following the <a href="https://store.asmodee.com/products/arkham-horror-rpg-core-rulebook" target="_blank" rel="noopener">Core Rulebook</a>’s character creation. Costs come off the gear budget and XP as you choose. When it’s done, put them in a party slot or open a sheet to print.</div>';
  if(crRestored&&(cr.name||cr.archetype))h+='<div class="roll" role="status"><span>Picking up your unfinished investigator'+(cr.name?' <b>'+esc(cr.name)+'</b>':'')+(cr.savedAt?' from '+new Date(cr.savedAt).toLocaleDateString([], {month:'short',day:'numeric'}):'')+'.</span><div class="row"><button class="btn sm" data-cact="reset">Start over</button></div></div>';
  // 1
- h+='<section class="sec"><h2>1 · Background</h2><div class="grid2">'+cf('name','Investigator name',cr.name)+cf('player','Player',cr.player)+cf('bg.origin','Place of origin',cr.bg.origin)+cf('bg.family','Family & friends',cr.bg.family)+cf('bg.employment','Employment',cr.bg.employment)+cf('bg.salary','Weekly salary',cr.bg.salary)+cf('bg.encounter','First supernatural encounter',cr.bg.encounter)+cf('bg.enemies','Notable enemies',cr.bg.enemies)+'</div></section>';
+ h+='<section class="sec"><h2>1 · Background</h2><div class="grid2">'+cf('name','Investigator name',cr.name)+crPlayerField(cf)+cf('bg.origin','Place of origin',cr.bg.origin)+cf('bg.family','Family & friends',cr.bg.family)+cf('bg.employment','Employment',cr.bg.employment)+cf('bg.salary','Weekly salary',cr.bg.salary)+cf('bg.encounter','First supernatural encounter',cr.bg.encounter)+cf('bg.enemies','Notable enemies',cr.bg.enemies)+'</div></section>';
  // 2
  const tr=A.TRAITS[cr.trait];
  h+='<section class="sec"><h2>2 · Personality trait</h2><label class="field"><span class="lbl">Trait</span><select class="f" id="cr-trait" data-cf="trait"><option value="">Choose…</option>'+Object.keys(A.TRAITS).map(t=>'<option'+(t===cr.trait?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'+
@@ -140,7 +151,11 @@ function creatorClick(b){
   case 'addr':{const it=cr.cart[Number(n)];const w=W().find(x=>x.n===it.n);if(crMoneySpent()+w.rc>crMoneyBudget())return toast('Over budget.');cr.cart=[...cr.cart,{type:'reload',n:w.n,c:w.rc}];break;}
   case 'rm':cr.cart=cr.cart.filter((x,i)=>i!==Number(n));break;
   case 'reset':crDone();break;
-  case 'place':{if(cr.slot==='new'){const c=crBuild();addSlot(c).then(id=>{if(!id)return;crDone();toast(c.name+' joined the party.');go(id);});return;}
+  case 'place':{if(cr.slot==='new'){const c=crBuild(),who=CAMP&&keys.master?crPlayerUid():null;addSlot(c).then(async id=>{if(!id)return;
+    // The owner made it for someone else (or for later): hand it over like assigning on the sheet.
+    if(CAMP&&keys.master&&db&&who!==authUid){const u=who||null,b=db.batch();b.update(db.doc('characters/'+id),{ownerUid:u,player:u?(((camp&&camp.names)||{})[u]||''):''});if(u&&u!==camp.ownerUid)b.set(db.doc('players/'+u),{slot:id});
+     try{await b.commit();chars[id].ownerUid=u;chars[id].player=u?((camp.names||{})[u]||''):'';}catch(e){toast('Saved, but couldn\u2019t assign the player. Choose them on the sheet.');}}
+    crDone();toast(c.name+' joined the party.');go(id);});return;}
    if(!canEdit(cr.slot))return toast(chars[cr.slot].name+'\u2019s sheet is locked. Unlock it first.');const c=crBuild();const s=cr.slot;c.locked=!!chars[s].locked;if(CAMP)c.ownerUid=chars[s].ownerUid||authUid;chars[s]=norm(c,slotNum(s));if(db)db.doc('characters/'+s).set(JSON.parse(JSON.stringify(chars[s]))).catch(e=>toast(e&&e.code==='permission-denied'?'That slot is locked. Unlock it first.':'Couldn’t save the new investigator. Try again.'));
    crDone();toast(c.name+' joined the party.');go(s);return;}
   case 'print':downloadSheet(crBuild());return;

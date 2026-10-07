@@ -40,7 +40,7 @@ app.addEventListener('click',e=>{
   case 'traitxp':if(edit.trait&&c.xpUnused>=2)setTrait(s,edit.trait.t,2);break;
   case 'traitfree':if(edit.trait)setTrait(s,edit.trait.t,0);break;
   case 'traitcancel':edit.trait=null;render();break;
-  case 'picdel':save(s,{portrait:''},'Removed portrait');break;
+  case 'picdel':save(s,{portrait:'',portraitFull:''},'Removed portrait');break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast('House rules '+(on?'on':'off')+' for the party.')).catch(()=>toast('Only the '+(CAMP?'campaign owner':'master key')+' can change house rules.'));break;}
   case 'gotogm':e.preventDefault();go('gm');break;
   case 'dellog':if(!keys.master||!ownerEditsOn())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;

@@ -204,7 +204,7 @@ const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt
 const $=v=>'$'+(Number(v)||0).toFixed(2);
 
 // The investigator again inside the sheet (no activity log, no inline picture), so the sheet can rebuild itself in Safari.
-function sheetData(c){const d={...c};delete d.log;if(typeof d.portrait==='string'&&d.portrait.indexOf('data:')===0)delete d.portrait;return JSON.stringify(d).replace(/</g,'\\u003c');}
+function sheetData(c){const d={...c};delete d.log;delete d.portraitFull;if(typeof d.portrait==='string'&&d.portrait.indexOf('data:')===0)delete d.portrait;return JSON.stringify(d).replace(/</g,'\\u003c');}
 // Buttons on the sheet. Back closes the tab, or returns to the ledger when the sheet opened in the same window.
 // Print: in the iPhone/iPad home-screen app printing doesn't work, so the sheet reopens in Safari (iOS 17+), where it does.
 const SHEET_JS='function closeSheet(){try{window.close()}catch(e){}setTimeout(function(){var m=location.hash.match(/back=([^&]+)/);if(m){location.href=decodeURIComponent(m[1]);return;}if(history.length>1)history.back();else location.href="./";},250);}'+

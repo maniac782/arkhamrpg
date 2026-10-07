@@ -21,7 +21,7 @@ window.openCropper=function(file,o){
   bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||'Position your picture')+'</h2><canvas class="'+(wide?'rect':'')+'" width="'+VW*PX+'" height="'+VH*PX+'"'+(wide?' style="width:'+VW+'px;height:'+VH+'px"':'')+' tabindex="0" aria-label="Drag to move the picture. Arrow keys also move it."></canvas>'+
    '<label class="field" style="width:100%"><span class="lbl">Zoom</span><input type="range" class="crop-zoom" min="'+MINZ+'" max="4" step="0.01" value="1"></label>'+
    (MINZ<1?'<button class="btn sm" type="button" data-c="fit">Show the whole picture</button>':'')+
-   '<p class="note" style="margin:0;text-align:center">'+(wide?'Drag the picture to choose what shows in the banner.'+(o.full?' The whole picture is kept too, for viewing full size.':''):'Drag the picture to center it in the circle.')+'</p>'+
+   '<p class="note" style="margin:0;text-align:center">'+(wide?'Drag the picture to choose what shows in the banner.'+(o.full?' The whole picture is kept too, for viewing full size.':''):'Drag the picture to center the face in the circle.'+(o.full?' The whole picture is kept too, for viewing full size.':''))+'</p>'+
    '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel" type="button">Cancel</button><button class="btn pri" data-c="save" type="button">'+(o.button||'Save picture')+'</button></div></div>';
   document.body.appendChild(bg);
   const cv=bg.querySelector('canvas'),g=cv.getContext('2d'),zr=bg.querySelector('.crop-zoom');

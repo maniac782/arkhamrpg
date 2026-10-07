@@ -23,8 +23,9 @@ function galleryHtml(){
  }else h+='<p class="note" style="margin:0">The gallery is full ('+GAL_MAX+' pictures). Delete some to add more.</p>';
  if(gallery.length){
   h+='<div class="galgrid">'+gallery.map((p,i)=>'<figure class="galitem"><img src="'+esc(p.img)+'" alt="'+esc(p.cap||'Gallery picture')+'" data-gali="'+i+'" loading="lazy">'+
-   (galCanDelete(p)?(gal.ask===p.id?'<div class="galask">Delete this picture?<span class="row" style="gap:6px"><button class="btn sm dng" data-galact="delyes" data-id="'+esc(p.id)+'">Delete</button><button class="btn sm" data-galact="delno">Cancel</button></span></div>':'<button class="galdel" data-galact="del" data-id="'+esc(p.id)+'" aria-label="Delete this picture">×</button>'):'')+
-   (p.cap?'<figcaption>'+esc(p.cap)+'</figcaption>':'')+'<span class="galby">'+esc(galWho(p.by))+' · '+esc(new Date(p.t).toLocaleDateString([], {month:'short',day:'numeric'}))+'</span></figure>').join('')+'</div>';
+   (p.cap?'<figcaption>'+esc(p.cap)+'</figcaption>':'')+
+   '<span class="galby"><span>'+esc(galWho(p.by))+' \u00b7 '+esc(new Date(p.t).toLocaleDateString([], {month:'short',day:'numeric'}))+'</span>'+(galCanDelete(p)&&gal.ask!==p.id?'<button class="galdel" data-galact="del" data-id="'+esc(p.id)+'">Delete</button>':'')+'</span>'+
+   (galCanDelete(p)&&gal.ask===p.id?'<span class="galask">Delete this picture? <button class="btn sm dng" data-galact="delyes" data-id="'+esc(p.id)+'">Delete</button><button class="btn sm" data-galact="delno">Cancel</button></span>':'')+'</figure>').join('')+'</div>';
  }else if(!gal.pending.length)h+='<p class="note" style="margin:0">No pictures yet.</p>';
  return h+'</section>';
 }

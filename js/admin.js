@@ -126,7 +126,7 @@ function fbHtml(){
 function errsHtml(){
  const q=ui.q.trim().toLowerCase();
  const list=errs.filter(e=>!q||[e.msg,e.page,nameOf(e.uid)].some(x=>String(x||'').toLowerCase().includes(q)));
- let h='<p class="note" style="margin:0">Unexpected errors people hit on the site (newest first, up to 200). The same error from the same visit is only sent once. '+(errs.length?'<button class="btn sm" data-a="errclear">Clear all</button>':'')+'</p>';
+ let h='<div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:nowrap"><p class="note" style="margin:0;flex:1;min-width:0">Unexpected errors people hit on the site (newest first, up to 200). The same error from the same visit is only sent once.</p>'+(errs.length?'<button class="btn sm" data-a="errclear" style="flex:none">Clear all</button>':'')+'</div>';
  if(!list.length)return h+'<p class="note">'+(errs.length?'No errors match.':'No errors reported. \u{1F389}')+'</p>';
  return h+'<div class="list adm">'+list.map(e=>'<div class="item"><div class="grow"><b class="errmsg">'+esc(e.msg)+'</b><span class="effect">'+esc(ago(ms(e.t)))+' \u00b7 '+esc(nameOf(e.uid))+' \u00b7 '+esc(e.page||'')+' \u00b7 '+esc(browserOf(e.ua))+(e.v?' \u00b7 '+esc(e.v):'')+'</span>'+(e.stack?'<details><summary class="note">Details</summary><pre class="errstack">'+esc(e.stack)+'</pre></details>':'')+'</div><button class="btn sm" data-a="errdel" data-e="'+esc(e.id)+'">Clear</button></div>').join('')+'</div>';
 }

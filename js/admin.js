@@ -92,8 +92,9 @@ function render(){
  app.innerHTML=h;
  if(keep){const el=document.getElementById(keep);if(el){el.focus();if(el.setSelectionRange){const n=el.value.length;el.setSelectionRange(n,n);}}}
 }
-// A name you tap for a small menu of actions (the menu opening and closing is shared code in js/avatar.js).
-function menuName(name,items){return '<span class="placewrap"><button type="button" class="placelink admname" data-placemenu aria-haspopup="true" aria-expanded="false">'+esc(name)+'<span class="placecaret" aria-hidden="true">\u25be</span></button><span class="placemenu admmenu" role="menu" hidden>'+items+'</span></span>';}
+// The row's "Actions" button and its menu (opening and closing is shared code in js/avatar.js).
+// Delete goes last, set apart by a line, in red.
+function actionsMenu(items,danger,label){return '<span class="placewrap admacts"><button type="button" class="btn sm" data-placemenu aria-haspopup="true" aria-expanded="false" aria-label="'+esc(label)+'">Actions<span class="placecaret" aria-hidden="true">\u25be</span></button><span class="placemenu right admmenu" role="menu" hidden>'+items+(danger?(items?'<hr>':'')+danger:'')+'</span></span>';}
 function usersHtml(){
  const q=ui.q.trim().toLowerCase();
  const nCamps=id=>camps.filter(c=>(c.memberIds||[]).includes(id)).length,byName=(a,b)=>String(a.username).localeCompare(b.username);
@@ -108,9 +109,9 @@ function usersHtml(){
   else if(ui.ask&&ui.ask.uid===u.id&&ui.ask.what==='del')act='<span class="note">Delete '+esc(u.username)+'\u2019s account for good? Their sign-in, profile and username go'+(owns?', along with the '+owns+' campaign'+(owns===1?'':'s')+' they own':'')+(inn?', and they\u2019re taken out of '+inn+' other'+(inn===1?'':'s')+' (their investigators stay)':'')+'. This can\u2019t be undone.</span><button class="btn sm dng" data-a="delyes" data-u="'+esc(u.id)+'">Delete account</button><button class="btn sm" data-a="no">Cancel</button>';
   else if(ui.rename===u.id)act='<form class="row" data-form="rename" data-u="'+esc(u.id)+'" style="gap:6px"><input class="f" id="rn-'+esc(u.id)+'" value="'+esc(u.username)+'" maxlength="20" style="width:160px" aria-label="New username"><button class="btn sm pri" type="submit">Save</button><button class="btn sm" type="button" data-a="no">Cancel</button></form>';
   const id=esc(u.id),items=(self?'':b?'<button role="menuitem" data-a="unban" data-u="'+id+'">Unsuspend</button>':'<button role="menuitem" data-a="ban" data-u="'+id+'">Suspend\u2026</button>')+
-   '<button role="menuitem" data-a="rename" data-u="'+id+'">Change username</button>'+(self?'':'<button role="menuitem" class="dng" data-a="del" data-u="'+id+'">Delete account\u2026</button>');
-  return '<div class="item"><div class="grow"><span class="row" style="gap:6px;align-items:center">'+menuName(u.username||'(no username)',items)+(self?'<span class="chip ok">You</span>':'')+(b?'<span class="chip warn">Suspended</span>':'')+'</span>'+
-   '<span class="effect">Joined '+esc(ago(ms(u.created)))+' · last seen '+esc(ago(ms(u.lastSeen)))+' · owns '+owns+' · in '+inn+'</span></div>'+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
+   '<button role="menuitem" data-a="rename" data-u="'+id+'">Change username</button>',danger=self?'':'<button role="menuitem" class="dng" data-a="del" data-u="'+id+'">Delete account\u2026</button>';
+  return '<div class="item"><div class="grow"><span class="row" style="gap:6px;align-items:center"><b>'+esc(u.username||'(no username)')+'</b>'+(self?'<span class="chip ok">You</span>':'')+(b?'<span class="chip warn">Suspended</span>':'')+'</span>'+
+   '<span class="effect">Joined '+esc(ago(ms(u.created)))+' · last seen '+esc(ago(ms(u.lastSeen)))+' · owns '+owns+' · in '+inn+'</span></div>'+actionsMenu(items,danger,'Actions for '+(u.username||'this account'))+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
 }
 // Short browser name from the user agent, enough to spot a pattern.
 function browserOf(ua){ua=String(ua||'');const os=/iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':/Linux/.test(ua)?'Linux':'';
@@ -136,8 +137,8 @@ function campsHtml(){
   const n=(c.memberIds||[]).length;
   const act=ui.ask&&ui.ask.cid===c.id?'<span class="note">Delete “'+esc(c.name)+'” for all '+n+' member'+(n===1?'':'s')+'? This can’t be undone.</span><button class="btn sm dng" data-a="cdelyes" data-c="'+esc(c.id)+'">Delete</button><button class="btn sm" data-a="no">Cancel</button>'
    :'';
-  return '<div class="item">'+(photoOk(c.photo)?'<img class="admimg" src="'+c.photo+'" alt="">':'<span class="admimg" aria-hidden="true"></span>')+'<div class="grow"><span class="row" style="gap:6px;align-items:center">'+menuName(c.name,'<button role="menuitem" class="dng" data-a="cdel" data-c="'+esc(c.id)+'">Delete campaign\u2026</button>')+'</span>'+(bans[c.ownerUid]?' <span class="chip warn">Owner suspended</span>':'')+
-   '<span class="effect">Owner '+esc(nameOf(c.ownerUid))+' · '+n+' member'+(n===1?'':'s')+(c.gmUid?' · GM '+esc(nameOf(c.gmUid)):'')+' · made '+esc(ago(ms(c.created)))+'</span></div>'+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
+  return '<div class="item">'+(photoOk(c.photo)?'<img class="admimg" src="'+c.photo+'" alt="">':'<span class="admimg" aria-hidden="true"></span>')+'<div class="grow"><b>'+esc(c.name)+'</b>'+(bans[c.ownerUid]?' <span class="chip warn">Owner suspended</span>':'')+
+   '<span class="effect">Owner '+esc(nameOf(c.ownerUid))+' · '+n+' member'+(n===1?'':'s')+(c.gmUid?' · GM '+esc(nameOf(c.gmUid)):'')+' · made '+esc(ago(ms(c.created)))+'</span></div>'+actionsMenu('','<button role="menuitem" class="dng" data-a="cdel" data-c="'+esc(c.id)+'">Delete campaign\u2026</button>','Actions for '+c.name)+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
 }
 
 // ---------- events ----------

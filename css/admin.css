@@ -9,20 +9,20 @@
 .errstack{font-family:var(--mono);font-size:11px;white-space:pre-wrap;word-break:break-word;background:var(--surface2);padding:8px;border-radius:4px;margin:6px 0 0;max-height:220px;overflow:auto}
 .fbtext{margin:6px 0 4px;white-space:pre-wrap;line-height:1.5}
 
-/* Phones: tabs get their own full-width row, search and Refresh share the next; each row's buttons sit under its details. */
+/* Phones: tabs get their own full-width row, search and Refresh share the next; */
 @media (max-width:700px){
  .admbar{flex-wrap:wrap}
  .admbar .tabs{flex:1 1 100%!important}
  .admbar .admq{flex:1;min-width:0!important}
- .list.adm .item>.grow:first-child{flex:1 1 100%;min-width:0}
- .list.adm .item>.admimg+.grow{flex:1 1 calc(100% - 70px);min-width:0}
  .stats{grid-template-columns:1fr 1fr;gap:8px}
  .stat{padding:8px 12px}.stat b{font-size:22px}
 }
-/* name menus (Suspend, Change username, Delete…) */
-.admname{font-weight:700;font-size:16px}
+/* each row's Actions menu (Suspend, Change username, then Delete set apart); confirmations go on their own line below */
 .admmenu button{border:0;background:none;text-align:left;padding:8px 10px;border-radius:6px;color:var(--ink);font:inherit;font-size:14px;white-space:nowrap;cursor:pointer}
 .admmenu button:hover,.admmenu button:focus-visible{background:var(--surface2)}
 .admmenu button.dng{color:var(--danger)}
-.admact{flex-wrap:wrap}
-@media (max-width:700px){.list.adm .item>.admact{flex:1 1 100%}}
+.list.adm .item>.admact{flex:1 1 100%;flex-wrap:wrap}
+.list.adm .item{align-items:flex-start}
+.list.adm .item>.grow{flex:1 1 0;min-width:0}
+.admacts{flex:none}
+.admmenu hr{border:0;border-top:1px solid var(--line);margin:4px 2px}

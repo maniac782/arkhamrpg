@@ -159,10 +159,12 @@ window.acctIcon=function(name,prof){
   // Food near the session's place, as a Google Maps search (same rule as Directions: only for real addresses).
   window.foodHref=function(where){if(!window.mapsHref(where))return '';return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent('restaurants near '+String(where).trim());};
   // The session's place as text, or for a real address a tappable link with a small menu: Directions and Food nearby.
+  // The ▾ stays on the same line as the last word, so it never wraps onto a line by itself.
+  function keepCaret(t){var i=t.lastIndexOf(' ');return t.slice(0,i+1)+'<span style="white-space:nowrap">'+t.slice(i+1)+'<span class="placecaret" aria-hidden="true">\u25be</span></span>';}
   window.placeHtml=function(where){
     var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
     var d=window.mapsHref(where);if(!d)return e(where);
-    return '<span class="placewrap"><button type="button" class="placelink" data-placemenu aria-haspopup="true" aria-expanded="false">'+e(where)+'<span class="placecaret" aria-hidden="true">\u25be</span></button>'+
+    return '<span class="placewrap"><button type="button" class="placelink" data-placemenu aria-haspopup="true" aria-expanded="false">'+keepCaret(e(String(where).trim()))+'</button>'+
       '<span class="placemenu" role="menu" hidden><a role="menuitem" href="'+e(d)+'" target="_blank" rel="noopener">Directions</a><a role="menuitem" href="'+e(window.foodHref(where))+'" target="_blank" rel="noopener">Food nearby</a></span></span>';
   };
   document.addEventListener('click',function(ev){

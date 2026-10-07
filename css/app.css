@@ -276,3 +276,5 @@ a.btn{text-decoration:none;color:inherit}
 .embed .brand,.embed .foot{display:none}
 .embed .top{top:0}
 .embed main{padding-bottom:24px}
+.ctrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:520px){.ctrow{grid-template-columns:1fr}}
+.fbform select.f{width:100%}

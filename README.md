@@ -139,6 +139,7 @@ Admins are accounts with a document in the `admins` collection in Firestore whos
 | **clueAlert** | When the GM reveals a clue, notifies the player it's for, or every player if it's for everyone. The notification opens the clue in the Journal. |
 | **turnAlert** | In a fight, when play passes to the investigators, notifies players who turned that on (off by default). |
 | **adminDeleteUser** | Called from the admin page's **Delete account** button. Checks the caller is an admin, then removes the account and everything that goes with it (see *Admin page*). |
+| **contactEmail** | When someone sends the **Contact** form (anyone, signed in or not), emails it to `CONTACT_TO` (in `functions/.env`) with Reply going to their address. Nothing is ever sent to the address they typed. At most 50 a day overall and 5 a day per address are emailed; extras stay in the `contact` collection. |
 
 ### Email
 Mail goes out from **arkhamrpgledger@gmail.com** (set in `functions/.env`) through Gmail, using an app password stored in Google Cloud **Secret Manager** as `GMAIL_APP_PASSWORD`; it's never in this repo. To change it, add a new version of that secret and re-run the deploy. New Gmail accounts can land in spam at first; it improves as people mark the mail "Not spam". If it doesn't, the fix is a custom domain with a sending service (see `BACKLOG.md`).
@@ -179,7 +180,7 @@ At beta size everything should cost $0 to a few cents a month.
 - campaign data and pictures in Cloud Storage, and invites by email;
 - emails from the Gmail account, time zone and reminder settings;
 - notification device addresses, calendar links and Google Places address suggestions;
-- feedback and error reports;
+- feedback, Contact form messages and error reports;
 - the no-account campaign, which stays in the browser;
 - Firebase/Google as the host, and reCAPTCHA.
 

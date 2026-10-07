@@ -128,6 +128,19 @@ service cloud.firestore {
         && request.resource.data.t is int;
       allow read, delete: if isAdmin();
     }
+    // Contact form: anyone (signed in or not) can send a message; contactEmail emails it to the owner. Only admins read or delete.
+    match /contact/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'name', 'topic', 'msg', 'page', 'ua', 'v', 't'])
+        && request.resource.data.email is string && request.resource.data.email.size() <= 120 && request.resource.data.email.matches('[^ @]+@[^ @]+[.][^ @]+')
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.topic in ['general', 'bug', 'content', 'privacy']
+        && request.resource.data.msg is string && request.resource.data.msg.size() > 0 && request.resource.data.msg.size() <= 3000
+        && request.resource.data.page is string && request.resource.data.page.size() <= 300
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 300
+        && request.resource.data.v is string && request.resource.data.v.size() <= 20
+        && request.resource.data.t is int;
+      allow read, delete: if isAdmin();
+    }
     // Error reports from the site (beta): any signed-in visitor can add one about themselves; only admins read or clear them.
     match /errors/{id} {
       allow create: if signedIn()

@@ -64,6 +64,54 @@ window.acctIcon=function(name,prof){
   };
 })();
 
+/* Contact: a form anyone can use, signed in or not. It saves the message to the database (contact collection) and the
+   server function contactEmail emails it to the site owner, with Reply going to the address given here. It uses its own
+   Firebase app ("contact") so it works the same on every page, including the no-account campaign. */
+(function(){
+  var TOPICS=[['general','General'],['bug','Something’s broken'],['content','Game content / publisher'],['privacy','Privacy or my data']];
+  function note(m){var t=document.getElementById('toast');if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(note.t);note.t=setTimeout(function(){t.hidden=true;},3600);}
+  function store(){
+    var fb=window.firebase,cfg=window.FIREBASE_CONFIG;if(!fb||!fb.initializeApp||!cfg||!fb.firestore)return null;
+    var a=null;try{a=(fb.apps||[]).filter(function(x){return x.name==='contact';})[0];}catch(e){}
+    if(!a){var c={};for(var k in cfg)c[k]=cfg[k];a=fb.initializeApp(c,'contact');if(window.armAppCheck)window.armAppCheck(a);}
+    return a.firestore();
+  }
+  function me(){try{var b=JSON.parse(localStorage.getItem('apl-beta-cache')||'null');return b&&b.uid?{email:b.email||'',name:(b.profile&&b.profile.username)||''}:{};}catch(e){return {};}}
+  window.openContact=function(topic){
+    if(document.querySelector('.fb-bg'))return;
+    var who=me(),e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+    var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Contact');
+    bg.innerHTML='<form class="crop fbform" novalidate>'+
+      '<div class="fbhead"><div><h2>Contact</h2><p class="note">Questions, problems, or anything else. It goes straight to the person who runs the site, and replies come to your email.</p></div><button class="fbx" type="button" data-f="cancel" aria-label="Close">×</button></div>'+
+      '<div class="ctrow"><label class="field"><span class="lbl">Your email</span><input class="f" id="ctemail" type="email" maxlength="120" autocomplete="email" required value="'+e(who.email)+'"></label>'+
+      '<label class="field"><span class="lbl">Name (optional)</span><input class="f" id="ctname" maxlength="60" autocomplete="name" value="'+e(who.name)+'"></label></div>'+
+      '<label class="field"><span class="lbl">About</span><select class="f" id="cttopic">'+TOPICS.map(function(t){return '<option value="'+t[0]+'"'+(t[0]===topic?' selected':'')+'>'+t[1]+'</option>';}).join('')+'</select></label>'+
+      '<div class="fbbox"><textarea id="ctmsg" rows="6" maxlength="3000" aria-label="Message" placeholder="Your message"></textarea><span class="fbcount" id="ctcount">0 / 3000</span></div>'+
+      '<p class="err" id="cterr" hidden></p>'+
+      '<div class="fbfoot"><span class="note">Your email is only used to reply.</span><div class="row"><button class="btn" type="button" data-f="cancel">Cancel</button><button class="btn pri" type="submit">Send</button></div></div></form>';
+    document.body.appendChild(bg);
+    var form=bg.querySelector('form'),ta=bg.querySelector('#ctmsg'),em=bg.querySelector('#ctemail'),er=bg.querySelector('#cterr'),cnt=bg.querySelector('#ctcount');
+    (em.value?ta:em).focus();
+    ta.addEventListener('input',function(){er.hidden=true;cnt.textContent=ta.value.length+' / 3000';});
+    var close=function(){bg.remove();document.removeEventListener('keydown',escK);};
+    var escK=function(ev){if(ev.key==='Escape')close();};document.addEventListener('keydown',escK);
+    bg.addEventListener('click',function(ev){if(ev.target===bg||ev.target.closest('[data-f=cancel]'))close();});
+    form.addEventListener('submit',function(ev){ev.preventDefault();
+      var email=em.value.trim(),msg=ta.value.trim(),name=bg.querySelector('#ctname').value.trim(),tp=bg.querySelector('#cttopic').value;
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){er.textContent='Enter your email so we can reply.';er.hidden=false;em.focus();return;}
+      if(!msg){er.textContent='Write a message first.';er.hidden=false;ta.focus();return;}
+      var db=store();if(!db){er.textContent='Couldn’t connect. Check your connection and try again.';er.hidden=false;return;}
+      var v=document.getElementById('ver'),btn=form.querySelector('[type=submit]');btn.disabled=true;btn.textContent='Sending…';
+      db.collection('contact').add({email:email.slice(0,120),name:name.slice(0,60),topic:tp,msg:msg.slice(0,3000),page:location.pathname.slice(0,300),
+        ua:String(navigator.userAgent||'').slice(0,300),v:v?v.textContent.slice(0,20):'',t:Date.now()})
+       .then(function(){close();note('Thanks! Your message was sent. Replies come to '+email+'.');},
+        function(){btn.disabled=false;btn.textContent='Send';er.textContent='Couldn’t send that. Try again in a moment.';er.hidden=false;});
+    });
+  };
+  // Contact links: open the form here when this page can, otherwise go to the home page, which opens it.
+  document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('a[data-contact]');if(!a||!window.firebase||!window.FIREBASE_CONFIG)return;ev.preventDefault();window.openContact();});
+})();
+
 /* Next session: countdown text, a live-updating label, and an "Add to calendar" (.ics) link. */
 (function(){
   var HOUR=3600000,DAY=24*HOUR,LIVE=5*HOUR;

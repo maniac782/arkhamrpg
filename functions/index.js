@@ -16,6 +16,7 @@ const db = admin.firestore();
 const GMAIL_APP_PASSWORD = defineSecret('GMAIL_APP_PASSWORD');
 const MAIL_FROM = defineString('MAIL_FROM');
 const SITE_URL = defineString('SITE_URL', {default: 'https://arkhamrpg.web.app'});
+const CONTACT_TO = defineString('CONTACT_TO');
 
 const INVITES_PER_DAY = 30;   // per inviter, so one account can't use the site to spam
 const HOUR = 3600 * 1000;
@@ -305,4 +306,28 @@ exports.adminDeleteUser = onCall({timeoutSeconds: 300, maxInstances: 2}, async (
   try { await admin.auth().deleteUser(uid); } catch (e) { if (e.code !== 'auth/user-not-found') throw e; }
   logger.info('adminDeleteUser', {by: caller, uid, owned: owned.size, member: member.size});
   return {owned: owned.size, member: member.size};
+});
+
+/* contactEmail: emails each Contact form message to the site owner (CONTACT_TO in .env), with Reply going to the sender.
+   Nothing is sent to the address the person typed, so the form can't be used to email strangers. At most 50 messages a day
+   overall and 5 a day from one address get emailed; the rest stay in the database for the admin to read. */
+const CONTACT_TOPICS = {general: 'General', bug: 'Something\'s broken', content: 'Game content / publisher', privacy: 'Privacy or my data'};
+exports.contactEmail = onDocumentCreated({document: 'contact/{id}', secrets: [GMAIL_APP_PASSWORD]}, async (event) => {
+  const snap = event.data; if (!snap) return;
+  const m = snap.data(), since = Date.now() - 24 * HOUR;
+  const all = (await db.collection('contact').where('t', '>', since).count().get()).data().count;
+  const mine = (await db.collection('contact').where('email', '==', m.email).get()).docs.filter(d => d.data().t > since).length;
+  if (all > 50 || mine > 5) { await snap.ref.update({held: 'daily limit'}).catch(() => {}); logger.warn('contact held', {all, mine}); return; }
+  const topic = CONTACT_TOPICS[m.topic] || 'General';
+  const who = (m.name ? oneLine(m.name) + ' ' : '') + '<' + oneLine(m.email) + '>';
+  const html = '<div style="font-family:Helvetica,Arial,sans-serif;max-width:620px;color:#1b2230">' +
+    '<p style="margin:0 0 12px"><b>From:</b> ' + esc(who) + '<br><b>About:</b> ' + esc(topic) + '</p>' +
+    '<div style="white-space:pre-wrap;line-height:1.5;border-left:3px solid #b8bcae;padding:4px 12px;margin:0 0 16px">' + esc(m.msg) + '</div>' +
+    '<p style="color:#4f5664;font-size:12px;margin:0">Page ' + esc(m.page) + ' · ' + esc(m.v) + ' · ' + esc(m.ua) + '<br>Reply to this email to answer them.</p></div>';
+  await mailer().sendMail({
+    from: '"Arkham Horror RPG Ledger" <' + MAIL_FROM.value() + '>', to: CONTACT_TO.value(), replyTo: {name: oneLine(m.name || ''), address: m.email},
+    subject: '[Ledger contact] ' + topic + ': ' + oneLine(m.msg).slice(0, 60),
+    text: 'From: ' + who + '\nAbout: ' + topic + '\n\n' + m.msg + '\n\nPage ' + m.page + ' · ' + m.v + ' · ' + m.ua, html,
+  });
+  await snap.ref.update({sent: Date.now()}).catch(() => {});
 });

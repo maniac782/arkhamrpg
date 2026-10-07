@@ -595,6 +595,8 @@ try{const q=new URLSearchParams(location.search).get('join');const n=new URLSear
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}
  if(q)history.replaceState(null,'',location.pathname);
  if(!pendingJoin){const sj=JSON.parse(sessionStorage.getItem('apl-join')||'null');if(sj&&sj.cid&&sj.code)pendingJoin=sj;}}catch(e){}
+// Contact links from pages without the form (help, privacy) come here with ?contact=1[&topic=…].
+try{const sp=new URLSearchParams(location.search);if(sp.has('contact')){const tp=sp.get('topic')||'';history.replaceState(null,'',location.pathname);setTimeout(()=>window.openContact&&openContact(tp),300);}}catch(e){}
 // "Start your own" from the sample party.
 try{if(new URLSearchParams(location.search).has('try')){if(!hasLocal())LocalFB.create('My campaign');location.replace('play.html?c='+LOCAL_CAMP);return;}}catch(e){}
 // Came from "Save to an account" in a device-only campaign: remember it through sign-in, then copy it over.

@@ -1,11 +1,14 @@
 /* Arkham Horror RPG Ledger — Game Master tools: scene and turns, enemies, dice roller, clues, campaign tracker, wrap-up, recap, Journal and GM pages.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- game master: table state, enemies, clues, campaign, notes, history ----------
-const NPCS=window.APL_NPCS||[],NPC_TRAUMAS=window.APL_NPC_TRAUMAS||[];
+// The Core Rulebook's enemy profiles are only offered to a signed-in GM of a real campaign, not in the sample on the
+// welcome page or the no-account campaign; players never see the profiles.
+const BOOK_NPCS=!IS_LOCAL;
+const NPCS=BOOK_NPCS?(window.APL_NPCS||[]):[],NPC_TRAUMAS=window.APL_NPC_TRAUMAS||[];
 let table={scene:'',fight:false,phase:'',round:0,first:'investigators',session:1,auto:true};
 try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(k&&k.table)table={...table,...k.table};}catch(e){}
 let enemies={},clues={},campaign={date:'',locations:[],npcs:[],threads:[]},gmNotes='',histLog=[],historySession=null;
-const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:'',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
+const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:BOOK_NPCS?'':'__custom',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
 let gmUnsubs=[],gmMasterState=null;
 const isGM=()=>localMode||(!!keys.gm&&gmClaimed);
 let keysReady=false,gmFlagReady=false;
@@ -110,8 +113,8 @@ function enemyHtml(e){
    '<select class="maxsel" data-getra="'+e.id+'" aria-label="Add a trauma to '+esc(e.n)+'" style="flex:1;min-width:0"><option value="">NPC trauma…</option>'+NPC_TRAUMAS.map(t=>'<option value="'+esc(t[1])+'">'+t[0]+' · '+esc(t[1])+'</option>').join('')+'</select>'+
    ((e.injuries.length||e.traumas.length)?'<button class="btn sm" data-gact="eclear" data-id="'+e.id+'">Clear injuries &amp; traumas</button>':'')+'</div>';
  }
- if(p)h+='<button class="btn sm linkish" data-gact="eopen" data-id="'+e.id+'" aria-expanded="'+open+'">'+(open?'Hide':'Show')+' profile</button>';
- if(p&&open)h+=npcProfileHtml(p,e);
+ if(p&&master)h+='<button class="btn sm linkish" data-gact="eopen" data-id="'+e.id+'" aria-expanded="'+open+'">'+(open?'Hide':'Show')+' profile</button>';
+ if(p&&open&&master)h+=npcProfileHtml(p,e);
  return h+'</div>';
 }
 function npcProfileHtml(p,e){
@@ -224,10 +227,11 @@ function renderGM(){
  h+='<label class="row note" style="gap:6px"><input type="checkbox" data-gt="auto"'+(table.auto?' checked':'')+'> Refill each side’s pools automatically when their turn starts (surprise round: the side that isn’t surprised adds 1 die)</label></section>';
  // encounter
  h+='<section class="sec"><div class="sec-head"><h2>Encounter</h2><span class="note">Enemies are hidden from players unless you show them.</span></div>'+
-  '<div class="row"><label class="field" style="flex:2;min-width:200px"><span class="lbl">Add from the book</span><select class="f" id="gm-add" data-gs="addN"><option value="">Choose an enemy…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+NPCS.filter(x=>x.cat===ct).map(x=>'<option value="'+esc(x.n)+'"'+(gm.addN===x.n?' selected':'')+'>'+esc(x.n)+'</option>').join('')+'</optgroup>').join('')+'<option value="__custom"'+(gm.addN==='__custom'?' selected':'')+'>Custom enemy</option></select></label>'+
+  '<div class="row"><label class="field" style="flex:2;min-width:200px"><span class="lbl">'+(BOOK_NPCS?'Add from the book':'Add an enemy')+'</span><select class="f" id="gm-add" data-gs="addN">'+(BOOK_NPCS?'<option value="">Choose an enemy…</option>':'')+cats.map(ct=>'<optgroup label="'+ct+'">'+NPCS.filter(x=>x.cat===ct).map(x=>'<option value="'+esc(x.n)+'"'+(gm.addN===x.n?' selected':'')+'>'+esc(x.n)+'</option>').join('')+'</optgroup>').join('')+'<option value="__custom"'+(gm.addN==='__custom'?' selected':'')+'>Custom enemy</option></select></label>'+
   '<label class="field" style="width:80px"><span class="lbl">How many</span><input class="f" type="number" min="1" max="12" id="gm-count" data-gs="addCount" value="'+gm.addCount+'"></label>'+
   '<button class="btn" data-gact="eadd" '+(gm.addN?'':'disabled')+'>Add</button></div>'+
   (gm.addN?'<label class="row note" style="gap:6px"><input type="checkbox" data-gs="addScale"'+(gm.addScale?' checked':'')+'> Scale to the party: +1 die per investigator (max 8)'+(p?', so '+Math.min(8,p.pool+SLOTS.length)+' instead of '+p.pool:'')+'</label>':'')+
+  (BOOK_NPCS?'':'<p class="note" style="margin:0">Add enemies and set their pools yourself. Campaigns saved to an account can also add enemies from the Core Rulebook\u2019s profiles.</p>')+
   (p?'<p class="note" style="margin:0">'+esc(p.type==='Named'?'Named character':p.type+' NPC')+(p.size?' · '+p.size:'')+'. Starting pool '+p.pool+' is a suggestion: the book prints each pool in the profile art, so check it and adjust with Max.</p>':'')+
   (en.length?'<div class="row"><button class="btn sm" data-gact="erefillall">Refill all enemies</button><button class="btn sm dng" data-gact="eclearall">Remove all</button></div>'+en.map(enemyHtml).join(''):'<p class="note" style="margin:0">No enemies in this scene.</p>')+'</section>';
  // roller

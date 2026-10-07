@@ -213,7 +213,7 @@ At beta size everything should cost $0 to a few cents a month.
 - `js/localdb.js`: the no-account campaign. A small stand-in for Firebase (sign-in and Firestore) that keeps everything in the browser's `localStorage` (`apl-local-v1`), so the ledger runs unchanged at `play.html?c=onthisdevice`. `js/home.js` (`migrateLocal`) copies it into a real campaign when the person signs in.
 - `js/demo.js`: the sample party shown on the welcome page (`play.html?c=samplecampaign&embed=1` in a frame). It runs on the same in-browser store but is never saved, and its times are moved forward on load so it always looks current.
 - `js/upload.js`: picture uploads to Cloud Storage. `js/cropper.js`: the drag-and-zoom picture positioner for portraits, profile photos and campaign pictures.
-- `js/catalog.js`: archetypes, knacks, weapons and gear from the Core Rulebook. `js/npcs.js`: enemy profiles. `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
+- `js/catalog.js`: archetypes, knacks, weapons and gear from the Core Rulebook. `js/npcs.js`: enemy profiles (offered only to the GM of a campaign saved to an account; not in the sample or no-account campaign, and players never see them). `js/house-rules.js`: the suggested house rules. `js/picker.js`: searchable dropdowns.
 - `css/app.css`: shared styles. `css/home.css`: home and Settings extras.
 - `firestore.rules`: who can read and write what in the database. `storage.rules`: who can add or delete pictures. The pages hide things people can't do, but these rules are what actually enforce it.
 - `functions/`: the server functions (`index.js`, `package.json`, `.env`).

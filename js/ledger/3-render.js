@@ -63,7 +63,7 @@ function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();
 // stores them inline, so there they stay small to save room.
 function openCrop(file,slot){const big=!!CAMP&&!IS_LOCAL,S=big?800:320;
  openCropper(file,{title:'Position the face in the circle',shape:'circle',outW:S,outH:S,maxLen:big?500000:120000,full:big?{side:2000,maxLen:1000000}:null,onError:toast,onSave:(d,full)=>{toast('Saving portrait\u2026');const at='campaigns/'+CAMP+'/'+authUid;
-  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(big&&!isStoredImage(u))return toast('Couldn\u2019t upload the portrait. Check your connection and try again.');save(slot,{portrait:u,portraitFull:isStoredImage(fu)?fu:''},'Changed portrait');});}});}
+  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(big&&!isStoredImage(u))return toast('Couldn\u2019t upload the portrait. Check your connection and try again.');save(slot,{portrait:u,portraitFull:isStoredImage(fu)?fu:''},'Changed portrait');if(full&&!isStoredImage(fu))setTimeout(()=>toast('The head shot saved, but the full picture didn\u2019t upload. Try adding it again.'),2700);});}});}
 function ownerPanel(s){
  const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;
@@ -126,7 +126,7 @@ async function removeSlot(s){
 }
 function renderCharBody(s){
  const c=chars[s];const [cls,lab]=sheetStatus(c);const rl=lastRoll[s];
- let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div></div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+'</section>';
+ let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+(canEdit(s)?'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div>':'')+'</div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+'</section>';
  if(c.insightChance)h+='<section class="sec">'+(c.insightChance?'<div class="roll" role="status"><span><b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>Raise it · 1 XP</button><button class="btn sm" data-act="skipins">Not this time</button></div></div>':'')+'</section>';
 
  // condition

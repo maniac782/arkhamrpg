@@ -91,6 +91,8 @@ input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--brass);outline:
 .skill .nm{flex:1;font-weight:600}
 .rate{width:42px;height:42px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px}
 .maxsel{width:58px;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:4px}
+/* the small boxed dropdowns get the same arrow as the others */
+select.maxsel{appearance:none;-webkit-appearance:none;padding-right:22px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 12px) 55%,calc(100% - 7px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;cursor:pointer}
 /* lists */
 .list{display:flex;flex-direction:column}
 .item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}

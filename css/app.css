@@ -312,3 +312,5 @@ img[data-zoom]{cursor:zoom-in}
 .partyside>*{margin:0}
 .partybanner{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--surface2)}
 @media (max-width:760px){.partyhead{grid-template-columns:1fr}.partybanner{width:min(100%,340px);margin:0 auto}}
+/* a knack's effect shown as its definition (not a help note) */
+.kdef{color:var(--ink);background:var(--surface2);border-left:3px solid var(--muted);border-radius:0 6px 6px 0;padding:10px 14px;line-height:1.5;font-size:15px}

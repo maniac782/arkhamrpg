@@ -1,7 +1,7 @@
 /* Dropdowns.
    On a computer every <select> opens the site's own list instead of the browser's menu, so they all look the same;
-   lists with more than 10 choices also get a search box. On phones and tablets short lists keep the phone's own
-   picker (it's what people expect there); only the long, searchable lists use ours.
+   lists with more than 10 choices also get a search box. On phones and tablets every list keeps the phone's own picker
+   (it's what people expect there).
    Picking an item sets the select's value and fires a normal "change" event, so the page code doesn't need to know.
    Add data-nosearch to a select to keep the plain browser menu. */
 (function(){
@@ -27,7 +27,7 @@
 
   let open = null; // {sel, box, back, items, hi}
   const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const searchable = s => s && s.tagName === 'SELECT' && !s.disabled && !s.multiple && !s.hasAttribute('data-nosearch') && s.options.length >= (touch ? SEARCH_MIN : 1);
+  const searchable = s => s && s.tagName === 'SELECT' && !s.disabled && !s.multiple && !s.hasAttribute('data-nosearch') && !touch && s.options.length > 0;
 
   function close(focusBack){
     if(!open) return;

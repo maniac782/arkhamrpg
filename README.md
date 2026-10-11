@@ -93,7 +93,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 
 ### Your account
 Click your icon at the top right:
-- **Your account:** upload a profile photo or pick a colour for your initial; **Reminders & notifications**; and **Delete my account** (removes your username, profile and sign-in, deletes campaigns you own and takes you out of the rest).
+- **Your account:** upload a profile photo, or pick a color for your initial when there isn't one; **Reminders & notifications**; and **Delete my account** (removes your username, profile and sign-in, deletes campaigns you own and takes you out of the rest).
 - **Reminders & notifications:** turn the day-before reminder on or off, turn on notifications for the device you're using (with a **Send a test** button), and choose whether to be notified when the GM reveals a clue to you or when it's the investigators' turn in a fight. On iPhone and iPad, notifications work in the installed app (iOS 16.4 or later). Tapping a clue notification opens that clue in the Journal.
 - **Install app**, **Send feedback** (bug, idea or other, straight to the site owner) and **Sign out**.
 
@@ -176,7 +176,7 @@ At beta size everything should cost $0 to a few cents a month.
 
 ### Privacy
 `privacy.html` is linked from every page's footer and the sign-in screen. Update its date and text whenever what the site stores changes. It currently covers:
-- account and username, profile photo or colour, and roughly when people last visited;
+- account and username, profile photo or color, and roughly when people last visited;
 - campaign data and pictures in Cloud Storage, and invites by email;
 - emails from the Gmail account, time zone and reminder settings;
 - notification device addresses, calendar links and Google Places address suggestions;

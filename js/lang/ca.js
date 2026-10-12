@@ -457,7 +457,7 @@ I18N.add('ca',[
 [`They’re taken out of {n} other campaigns (their investigators stay).`,{one:`Surt d'{n} campanya més (els seus investigadors s'hi queden).`,other:`Surt d'altres {n} campanyes (els seus investigadors s'hi queden).`}],
 [`Delete “{name}” for all {n} members? This can’t be undone.`,{one:`Vols suprimir «{name}» per al seu {n} membre? Això no es pot desfer.`,other:`Vols suprimir «{name}» per als seus {n} membres? Això no es pot desfer.`}],
 [`today {time}`,`avui {time}`],
-[`Yesterday`,`Ahir`],
+[`yesterday {time}`,`ahir {time}`],
 [`(deleted account)`,`(compte suprimit)`],
 [`Couldn’t delete that account. Try again.`,`No s'ha pogut suprimir aquest compte. Torna-ho a provar.`],
 [`3–20 letters, numbers or underscores.`,`De 3 a 20 lletres, números o guions baixos.`],

@@ -457,7 +457,7 @@ I18N.add('pl',[
 [`They’re taken out of {n} other campaigns (their investigators stay).`,{one:`Zostanie usunięta z {n} innej kampanii (jej badacze zostaną).`,few:`Zostanie usunięta z {n} innych kampanii (jej badacze zostaną).`,many:`Zostanie usunięta z {n} innych kampanii (jej badacze zostaną).`,other:`Zostanie usunięta z {n} innych kampanii (jej badacze zostaną).`}],
 [`Delete “{name}” for all {n} members? This can’t be undone.`,{one:`Usunąć „{name}” dla {n} członka? Tego nie można cofnąć.`,few:`Usunąć „{name}” dla wszystkich {n} członków? Tego nie można cofnąć.`,many:`Usunąć „{name}” dla wszystkich {n} członków? Tego nie można cofnąć.`,other:`Usunąć „{name}” dla wszystkich {n} członków? Tego nie można cofnąć.`}],
 [`today {time}`,`dziś {time}`],
-[`Yesterday`,`Wczoraj`],
+[`yesterday {time}`,`wczoraj {time}`],
 [`(deleted account)`,`(usunięte konto)`],
 [`Couldn’t delete that account. Try again.`,`Nie udało się usunąć tego konta. Spróbuj ponownie.`],
 [`3–20 letters, numbers or underscores.`,`Od 3 do 20 liter, cyfr lub podkreśleń.`],

@@ -13,7 +13,12 @@ try{const s=localStorage.getItem('apl-adm-sort');if(s)ui.sort=s;}catch(e){}
 
 // ---------- helpers ----------
 const ms=v=>v==null?0:typeof v==='number'?v:v.toMillis?v.toMillis():v.seconds?v.seconds*1000:0;
-const ago=x=>{if(!x)return '—';const d=Math.floor((Date.now()-x)/DAY);return d<=0&&new Date(x).toDateString()===new Date().toDateString()?t('today {time}',{time:new Date(x).toLocaleTimeString(I18N.locale, {hour:'numeric',minute:'2-digit'})}):d<=1?t('Yesterday'):d<30?tn('{n} day ago','{n} days ago',d):new Date(x).toLocaleDateString(I18N.locale, {year:'numeric',month:'short',day:'numeric'});};
+// "today 9:14 AM", "yesterday 8:02 PM", "4 days ago", then the date; agoHtml adds the exact date and time as a tooltip
+const ago=x=>{if(!x)return '—';const dt=new Date(x),tm=dt.toLocaleTimeString(I18N.locale,{hour:'numeric',minute:'2-digit'});
+ if(dt.toDateString()===new Date().toDateString())return t('today {time}',{time:tm});
+ if(dt.toDateString()===new Date(Date.now()-DAY).toDateString())return t('yesterday {time}',{time:tm});
+ const d=Math.floor((Date.now()-x)/DAY);return d<30?tn('{n} day ago','{n} days ago',d):dt.toLocaleDateString(I18N.locale,{year:'numeric',month:'short',day:'numeric'});};
+const agoHtml=x=>x?'<span title="'+esc(new Date(x).toLocaleString(I18N.locale,{weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))+'">'+esc(ago(x))+'</span>':'—';
 const nameOf=uid=>{const u=users.find(x=>x.id===uid);return u?u.username:t('(deleted account)');};
 const photoOk=p=>window.imgOk(p);
 const FV=()=>firebase.firestore.FieldValue;
@@ -113,7 +118,7 @@ function usersHtml(){
   const id=esc(u.id),items=(self?'':b?'<button role="menuitem" data-a="unban" data-u="'+id+'">'+t('Unsuspend')+'</button>':'<button role="menuitem" data-a="ban" data-u="'+id+'">'+t('Suspend…')+'</button>')+
    '<button role="menuitem" data-a="rename" data-u="'+id+'">'+t('Change username')+'</button>',danger=self?'':'<button role="menuitem" class="dng" data-a="del" data-u="'+id+'">'+t('Delete account…')+'</button>';
   return '<div class="item"><div class="grow"><span class="row" style="gap:6px;align-items:center"><b>'+esc(u.username||t('(no username)'))+'</b>'+(self?'<span class="chip ok">'+t('You')+'</span>':'')+(b?'<span class="chip warn">'+t('Suspended')+'</span>':'')+'</span>'+
-   '<span class="effect">'+t('Joined {when} · last seen {seen} · owns {owns} · in {inn}',{when:esc(ago(ms(u.created))),seen:esc(ago(ms(u.lastSeen))),owns,inn})+'</span></div>'+actionsMenu(items,danger,t('Actions for {name}',{name:u.username||t('this account')}))+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
+   '<span class="effect">'+t('Joined {when} · last seen {seen} · owns {owns} · in {inn}',{when:agoHtml(ms(u.created)),seen:agoHtml(ms(u.lastSeen)),owns,inn})+'</span></div>'+actionsMenu(items,danger,t('Actions for {name}',{name:u.username||t('this account')}))+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
 }
 // Short browser name from the user agent, enough to spot a pattern.
 function browserOf(ua){ua=String(ua||'');const os=/iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':/Linux/.test(ua)?'Linux':'';
@@ -122,14 +127,14 @@ function fbHtml(){
  const q=ui.q.trim().toLowerCase(),K={bug:t('Something’s broken'),idea:t('Idea'),other:t('Other')};
  const list=fbs.filter(f=>!q||[f.msg,f.page,nameOf(f.uid)].some(x=>String(x||'').toLowerCase().includes(q)));
  if(!list.length)return '<p class="note">'+(fbs.length?t('No feedback matches.'):t('No feedback yet.'))+'</p>';
- return '<div class="list adm">'+list.map(f=>'<div class="item"><div class="grow"><span class="row" style="gap:6px;align-items:center"><span class="chip'+(f.kind==='bug'?' warn':'')+'">'+esc(K[f.kind]||t('Other'))+'</span><b>'+esc(nameOf(f.uid))+'</b><span class="note">'+esc(ago(ms(f.t)))+'</span></span><p class="fbtext">'+esc(f.msg)+'</p><span class="effect">'+esc(f.page||'')+' · '+esc(browserOf(f.ua))+(f.v?' · '+esc(f.v):'')+'</span></div><button class="btn sm" data-a="fbdel" data-f="'+esc(f.id)+'">'+t('Done')+'</button></div>').join('')+'</div>';
+ return '<div class="list adm">'+list.map(f=>'<div class="item"><div class="grow"><span class="row" style="gap:6px;align-items:center"><span class="chip'+(f.kind==='bug'?' warn':'')+'">'+esc(K[f.kind]||t('Other'))+'</span><b>'+esc(nameOf(f.uid))+'</b><span class="note">'+agoHtml(ms(f.t))+'</span></span><p class="fbtext">'+esc(f.msg)+'</p><span class="effect">'+esc(f.page||'')+' · '+esc(browserOf(f.ua))+(f.v?' · '+esc(f.v):'')+'</span></div><button class="btn sm" data-a="fbdel" data-f="'+esc(f.id)+'">'+t('Done')+'</button></div>').join('')+'</div>';
 }
 function errsHtml(){
  const q=ui.q.trim().toLowerCase();
  const list=errs.filter(e=>!q||[e.msg,e.page,nameOf(e.uid)].some(x=>String(x||'').toLowerCase().includes(q)));
  let h='<div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:nowrap"><p class="note" style="margin:0;flex:1;min-width:0">'+t('Unexpected errors people hit on the site (newest first, up to 200). The same error from the same visit is only sent once.')+'</p>'+(errs.length?'<button class="btn sm" data-a="errclear" style="flex:none">'+t('Clear all')+'</button>':'')+'</div>';
  if(!list.length)return h+'<p class="note">'+(errs.length?t('No errors match.'):t('No errors reported.')+' \u{1F389}')+'</p>';
- return h+'<div class="list adm">'+list.map(e=>'<div class="item"><div class="grow"><b class="errmsg">'+esc(e.msg)+'</b><span class="effect">'+esc(ago(ms(e.t)))+' · '+esc(nameOf(e.uid))+' · '+esc(e.page||'')+' · '+esc(browserOf(e.ua))+(e.v?' · '+esc(e.v):'')+'</span>'+(e.stack?'<details><summary class="note">'+t('Details')+'</summary><pre class="errstack">'+esc(e.stack)+'</pre></details>':'')+'</div><button class="btn sm" data-a="errdel" data-e="'+esc(e.id)+'">'+t('Clear')+'</button></div>').join('')+'</div>';
+ return h+'<div class="list adm">'+list.map(e=>'<div class="item"><div class="grow"><b class="errmsg">'+esc(e.msg)+'</b><span class="effect">'+agoHtml(ms(e.t))+' · '+esc(nameOf(e.uid))+' · '+esc(e.page||'')+' · '+esc(browserOf(e.ua))+(e.v?' · '+esc(e.v):'')+'</span>'+(e.stack?'<details><summary class="note">'+t('Details')+'</summary><pre class="errstack">'+esc(e.stack)+'</pre></details>':'')+'</div><button class="btn sm" data-a="errdel" data-e="'+esc(e.id)+'">'+t('Clear')+'</button></div>').join('')+'</div>';
 }
 function campsHtml(){
  const q=ui.q.trim().toLowerCase();
@@ -140,7 +145,7 @@ function campsHtml(){
   const act=ui.working&&ui.working.cid===c.id?workingHtml(ui.working):ui.ask&&ui.ask.cid===c.id?'<span class="note">'+tn('Delete “{name}” for its {n} member? This can’t be undone.','Delete “{name}” for all {n} members? This can’t be undone.',n,{name:esc(c.name)})+'</span><button class="btn sm dng" data-a="cdelyes" data-c="'+esc(c.id)+'">'+t('Delete')+'</button><button class="btn sm" data-a="no">'+t('Cancel')+'</button>'
    :'';
   return '<div class="item">'+(photoOk(c.photo)?'<img class="admimg" src="'+c.photo+'" alt="">':'<span class="admimg" aria-hidden="true"></span>')+'<div class="grow"><b>'+esc(c.name)+'</b>'+(bans[c.ownerUid]?' <span class="chip warn">'+t('Owner suspended')+'</span>':'')+
-   '<span class="effect">'+t('Owner {name}',{name:esc(nameOf(c.ownerUid))})+' · '+tn('{n} member','{n} members',n)+(c.gmUid?' · '+t('GM {name}',{name:esc(nameOf(c.gmUid))}):'')+' · '+t('made {when}',{when:esc(ago(ms(c.created)))})+'</span></div>'+actionsMenu('','<button role="menuitem" class="dng" data-a="cdel" data-c="'+esc(c.id)+'">'+t('Delete campaign…')+'</button>',t('Actions for {name}',{name:c.name}))+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
+   '<span class="effect">'+t('Owner {name}',{name:esc(nameOf(c.ownerUid))})+' · '+tn('{n} member','{n} members',n)+(c.gmUid?' · '+t('GM {name}',{name:esc(nameOf(c.gmUid))}):'')+' · '+t('made {when}',{when:agoHtml(ms(c.created))})+'</span></div>'+actionsMenu('','<button role="menuitem" class="dng" data-a="cdel" data-c="'+esc(c.id)+'">'+t('Delete campaign…')+'</button>',t('Actions for {name}',{name:c.name}))+(act?'<span class="row admact" style="gap:6px">'+act+'</span>':'')+'</div>';}).join('')+'</div>';
 }
 
 // ---------- events ----------

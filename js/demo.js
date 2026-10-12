@@ -10,7 +10,51 @@
     if((k==='t'||k==='nextSession')&&typeof v==='number')return v+shift;
     return v;
   }
+  // The invented text, shown in the visitor's language (names of people stay as they are).
+  var TX=[
+  tk('The Lantern of Kingsport'),
+  tk('You'),
+  tk('Mara\'s place'),
+  tk('Field journal'),
+  tk('Magnifying glass'),
+  tk('Electric torch'),
+  tk('Spent 2 dice on Knowledge'),
+  tk('Took 1 horror'),
+  tk('Gained 1 insight'),
+  tk('Bought Electric torch for $2.50'),
+  tk('Precise, stubborn, kind to strays'),
+  tk('Deck of marked cards'),
+  tk('Picked a lock'),
+  tk('Charming, never pays full price'),
+  tk('Rosary'),
+  tk('First aid kit'),
+  tk('Calm in a crisis, terrible liar'),
+  tk('Rope (50 ft)'),
+  tk('Tin of matches'),
+  tk('Quiet, watches the exits'),
+  tk('The attic of the Witch House'),
+  tk('A letter sealed with green wax'),
+  tk('The handwriting matches the ledger from the harbourmaster\'s office. It names a meeting "beneath the lantern, when the tide is lowest."'),
+  tk('Torn page from a hymnal'),
+  tk('Someone has underlined every third word in red ink.'),
+  tk('Thursday, October 13, 1927'),
+  tk('Who keeps lighting the lantern on Kingsport Head?'),
+  tk('What did the harbourmaster sell to the Order?'),
+  tk('Find Agnes\'s missing brother'),
+  tk('Hostile'),
+  tk('Harbourmaster. Lies about the night of the storm.'),
+  tk('Friendly'),
+  tk('Runs the boarding house on Water Street.'),
+  tk('The Witch House'),
+  tk('Something lives in the walls.'),
+  tk('Kingsport harbour'),
+  tk('Green lights on the water at low tide.'),
+  tk('Added 2 × Cultist'),
+  tk('Added 1 × Ghoul'),
+  tk('Cultist 1 took 1 damage')];
+  var tr=function(v){return typeof v==='string'&&TX.indexOf(v)>=0?t(v):v;};
   var d=walk(docs),c=d['campaigns/samplecampaign'];
+  (function deep(o){Object.keys(o).forEach(function(k){var v=o[k];if(v&&typeof v==='object')deep(v);else o[k]=tr(v);});})(d);
   // next session: three days from now at 7pm
   var n=new Date();n.setDate(n.getDate()+3);n.setHours(19,0,0,0);c.nextSession=n.getTime();
   window.DEMO_DOCS=d;

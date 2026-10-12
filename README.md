@@ -19,6 +19,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
   - one-tap Add to calendar (Google, Apple, Outlook);
   - Directions and Food nearby;
   - a reminder the day before, by email and push notification.
+- **Six languages.** English, Spanish, Catalan, French, Polish and Portuguese (Brazil), picked in the footer or under **Your account**. Everyone at the table can use their own language in the same campaign, and emails and notifications follow each person's choice. A few strings of game content (some gear, enemy profiles and house-rule text) are still in English in the other languages.
 - **Works anywhere.** Phones, tablets and computers. It can be installed like an app, and it's free with no ads.
 
 <table>
@@ -95,6 +96,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
 Click your icon at the top right:
 - **Your account:** upload a profile photo, or pick a color for your initial when there isn't one; **Reminders & notifications**; and **Delete my account** (removes your username, profile and sign-in, deletes campaigns you own and takes you out of the rest).
 - **Reminders & notifications:** turn the day-before reminder on or off, turn on notifications for the device you're using (with a **Send a test** button), and choose whether to be notified when the GM reveals a clue to you or when it's the investigators' turn in a fight. On iPhone and iPad, notifications work in the installed app (iOS 16.4 or later). Tapping a clue notification opens that clue in the Journal.
+- **Language:** choose the site's language. It's saved to your account so it follows you to other devices, and emails and notifications use it too.
 - **Install app**, **Send feedback** (bug, idea or other, straight to the site owner) and **Sign out**.
 
 Knack names and tiers follow each archetype's table in the Core Rulebook. Each knack's effect is a short summary of the book's rules in our own words, and can be edited on the sheet.
@@ -106,7 +108,8 @@ Knack names and tiers follow each archetype's table in the Core Rulebook. Each k
 ### How it's hosted
 - **Firebase Hosting** serves the site at arkhamrpg.web.app. **Firestore** holds the data, **Cloud Storage** holds pictures, **Firebase Authentication** handles sign-in (Google and email/password), **Cloud Functions** send email and notifications, and **App Check** with reCAPTCHA Enterprise blocks bots.
 - The project is on Firebase's **Blaze** (pay-as-you-go) plan: the free allowances still apply and only use above them is charged (see *Costs and limits*). It started with a $300, 90-day Google Cloud free trial; confirm the paid account when Google emails about the trial ending, or billing stops and the free limits apply again.
-- **Every push to `main` deploys automatically** through `.github/workflows/deploy-firebase.yml`, in three jobs:
+- **Every push to `main` deploys automatically** through `.github/workflows/deploy-firebase.yml`, in four jobs:
+  - **test:** `node test/i18n.test.js` checks every translation keeps the English string's {placeholders}, HTML and plural forms. Strings not yet translated are counted, not failed. **deploy** waits for it.
   - **deploy:** the site to Firebase Hosting.
   - **rules:** `firestore.rules`.
   - **backend:** `storage.rules` and the server functions in `functions/`. If it fails, the end of its log appears in the run's annotations.
@@ -117,6 +120,7 @@ Knack names and tiers follow each archetype's table in the Core Rulebook. Each k
   - the Pub/Sub service agent: **Service Account Token Creator**;
   - the default compute account: **Cloud Run Invoker** and **Eventarc Event Receiver**.
 - Pages and scripts are served with `Cache-Control: no-cache` (see `firebase.json`), so players get changes on their next reload.
+- **Translations** live in `js/i18n.js` (`t()`, `tn()` for counts) and one file per language in `js/lang/`. Saved data stays in English and is translated when shown, so mixed-language groups share one campaign; Recent entries written before translation show in English. `scripts/i18n-keys.js` lists every string the site uses. Emails and notifications are in `functions/i18n.js`. Spanish and French game terms follow the publisher's editions; Catalan, Polish and Portuguese terms are our own.
 - The version number (bumped with every change) is in each page's footer and at the bottom of the account menu.
 
 ### Admin page
@@ -148,7 +152,7 @@ Mail goes out from **arkhamrpgledger@gmail.com** (set in `functions/.env`) throu
 - Devices that turn on notifications save their push token in `devices/<token>` (with the owner's uid). The functions above send to those tokens with Firebase Cloud Messaging and delete tokens that no longer work.
 - `firebase-messaging-sw.js` (served at the site root) shows each notification and opens its link when tapped. It doesn't cache pages. It has its own copy of the Firebase settings because workers can't load `js/config.js`.
 - The Web Push public key is `window.PUSH_KEY` in `js/config.js` (Firebase → Project settings → Cloud Messaging → Web Push certificates). With it empty, the notification switch is hidden.
-- What each person wants is in their private `prefs/<uid>` document: `noRemind`, `noCluePush`, `pushTurns`, their time zone `tz`, and `campOrder` (their order of campaign cards).
+- What each person wants is in their private `prefs/<uid>` document: `noRemind`, `noCluePush`, `pushTurns`, their time zone `tz`, `campOrder` (their order of campaign cards) and `lang` (their language, also kept in the browser as `apl-lang`).
 
 ### Pictures
 Portraits, profile and campaign photos, and handouts are uploaded to Cloud Storage by `js/upload.js`, and the database stores their links. Files go under `users/<uid>/` or `campaigns/<cid>/<uid>/`; `storage.rules` decides who may add or delete them. If an upload fails, the picture is saved inline in the database instead, so older inline pictures keep working too. Deleting a campaign or an account removes its pictures.

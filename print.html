@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=880">
 <title>Printable sheet</title>
+<script src="js/i18n.js"></script>
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
 </head>
 <body style="margin:0;font:16px Georgia,serif;background:#dcd6c8;color:#1f1a14">
-<p id="msg" style="padding:24px">Loading the sheet…</p>
+<p id="msg" style="padding:24px" data-t>Loading the sheet…</p>
 <script>
 (function(){
   var hash=(location.hash||'').slice(1),id=hash.split('&')[0],html=null;
@@ -22,12 +23,12 @@
       if(q.go){try{history.replaceState(null,'',location.pathname+'#'+id+(q.t?'&t='+q.t:'')+(q.p?'&p='+q.p:''));}catch(e){}
         var go=function(){setTimeout(function(){window.print();},500);};
         if(document.readyState==='complete')(document.fonts&&document.fonts.ready?document.fonts.ready.then(go,go):go());else window.addEventListener('load',function(){(document.fonts&&document.fonts.ready?document.fonts.ready.then(go,go):go());});}}
-      catch(e){document.getElementById('msg').textContent='This sheet link is damaged. Go back to the ledger and tap \u201cOpen printable sheet\u201d again.';}};
+      catch(e){document.getElementById('msg').textContent=t('This sheet link is damaged. Go back to the ledger and tap “Open printable sheet” again.');}};
     document.head.appendChild(s);return;
   }
   try{ if(id) html=localStorage.getItem('apl-print:'+id); }catch(e){}
   if(!html){
-    document.getElementById('msg').textContent='This sheet is no longer available here. Go back to the ledger and tap “Open printable sheet” again.';
+    document.getElementById('msg').textContent=t('This sheet is no longer available here. Go back to the ledger and tap “Open printable sheet” again.');
     return;
   }
   window.addEventListener('load',function(){ document.open(); document.write(html); document.close(); });

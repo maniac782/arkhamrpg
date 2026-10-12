@@ -9,6 +9,7 @@ const {defineSecret, defineString} = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const {msg, locale} = require('./i18n');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -37,8 +38,8 @@ function esc(s) {
 }
 const oneLine = s => String(s == null ? '' : s).replace(/[\r\n]+/g, ' ').trim().slice(0, 120);
 
-function page(title, paras, button, footer) {
-  return '<div style="font-family:Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1b2230">' +
+function page(title, paras, button, footer, lang) {
+  return '<div lang="' + esc(lang || 'en') + '" style="font-family:Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1b2230">' +
     '<div style="font-family:Georgia,serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280">Arkham Horror RPG Ledger</div>' +
     '<h1 style="font-family:Georgia,serif;font-size:22px;margin:8px 0 16px">' + esc(title) + '</h1>' +
     paras.map(p => '<p style="font-size:15px;line-height:1.5;margin:0 0 12px">' + p + '</p>').join('') +
@@ -83,6 +84,12 @@ async function pushTo(uids, title, body, link, tag) {
     }));
   }
 }
+// One notification per language: each person gets it in the language they chose on the site.
+async function pushEach(uids, prefs, make, link, tag) {
+  const byLang = {};
+  uids.forEach(u => { const l = (prefs[u] || {}).lang || 'en'; (byLang[l] = byLang[l] || []).push(u); });
+  for (const l of Object.keys(byLang)) { const m = make(l); await pushTo(byLang[l], m.title, m.body, link, tag).catch(() => {}); }
+}
 async function prefsFor(uids) {
   const out = {};
   await Promise.all(uids.map(uid => db.doc('prefs/' + uid).get().then(s => { out[uid] = s.exists ? s.data() : {}; }, () => { out[uid] = {}; })));
@@ -112,28 +119,30 @@ exports.inviteEmail = onDocumentCreated({document: 'invites/{id}', secrets: [GMA
   if (!camp.exists || camp.get('ownerUid') !== inv.fromUid) return;
 
   const site = SITE_URL.value();
-  const from = oneLine(inv.fromName) || 'Someone';
-  const name = oneLine(camp.get('name') || inv.campaignName) || 'a campaign';
-  const subject = from + ' invited you to “' + name + '” on Arkham Horror RPG Ledger';
-  const text = from + ' invited you to join their campaign "' + name + '" on Arkham Horror RPG Ledger.\n\n' +
-    'Sign in at ' + site + ' with this email address (' + inv.toEmail + ') and the invite will be waiting on your My campaigns page.\n\n' +
-    'If you weren\'t expecting this, you can ignore it. Nothing happens unless you sign in and accept.';
-  const html = page(from + ' invited you to “' + name + '”', [
-    esc(from) + ' wants you in their campaign <b>' + esc(name) + '</b> on Arkham Horror RPG Ledger, where your group keeps its investigators in sync at the table.',
-    'Sign in with this email address (<b>' + esc(inv.toEmail) + '</b>) and the invite will be waiting on your <b>My campaigns</b> page.',
-  ], {href: site, label: 'Open Arkham Horror RPG Ledger'},
-  'If you weren\'t expecting this, you can ignore it. Nothing happens unless you sign in and accept.');
+  // In the language the person invited chose on the site if they have an account, else in the inviter's.
+  const toUid = await admin.auth().getUserByEmail(inv.toEmail).then(u => u.uid, () => null);
+  const langs = await prefsFor(toUid ? [toUid, inv.fromUid] : [inv.fromUid]);
+  const lang = (toUid && (langs[toUid] || {}).lang) || (langs[inv.fromUid] || {}).lang || 'en';
+  const L = (k, v) => msg(lang, k, v);
+  const from = oneLine(inv.fromName) || L('someone');
+  const name = oneLine(camp.get('name') || inv.campaignName) || L('aCampaign');
+  const subject = L('invSubject', {from, name});
+  const text = L('invText1', {from, name}) + '\n\n' + L('invText2', {site, email: inv.toEmail}) + '\n\n' + L('invIgnore');
+  const html = page(L('invTitle', {from, name}), [
+    L('invP1', {from: esc(from), name: '<b>' + esc(name) + '</b>'}),
+    L('invP2', {email: '<b>' + esc(inv.toEmail) + '</b>', mine: '<b>' + esc(L('myCampaigns')) + '</b>'}),
+  ], {href: site, label: L('openSite')}, esc(L('invIgnore')), lang);
 
   try { await send(inv.toEmail, subject, text, html); }
   catch (e) { logger.error('Invite email failed', {err: String(e && e.message || e)}); }
 });
 
 /* ---------- Session reminders ---------- */
-function whenText(ms, tz) {
+function whenText(ms, tz, lang) {
   try {
-    return new Intl.DateTimeFormat('en-US', {weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: tz, timeZoneName: 'short'}).format(new Date(ms));
+    return new Intl.DateTimeFormat(locale(lang), {weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: tz, timeZoneName: 'short'}).format(new Date(ms));
   } catch (e) {
-    return whenText(ms, 'America/New_York');
+    return tz === 'America/New_York' ? new Date(ms).toISOString() : whenText(ms, 'America/New_York', lang);
   }
 }
 
@@ -159,26 +168,26 @@ exports.sessionReminders = onSchedule({schedule: 'every 60 minutes', secrets: [G
     const banned = await Promise.all(uids.map(uid => db.doc('bans/' + uid).get().then(s => s.exists, () => false)));
     const bannedSet = new Set(uids.filter((u, i) => banned[i]));
 
-    const name = oneLine(c.name) || 'Your campaign';
     const where = oneLine(c.nextWhere);
     const link = site + '/play.html?c=' + encodeURIComponent(doc.id);
     const pushUids = uids.filter(uid => !bannedSet.has(uid) && (prefOf[uid] || {}).noRemind !== true);
     for (const uid of pushUids) {
+      const lang = (prefOf[uid] || {}).lang || 'en', name = oneLine(c.name) || msg(lang, 'yourCampaign');
       const tz = typeof (prefOf[uid] || {}).tz === 'string' && prefOf[uid].tz ? prefOf[uid].tz : 'America/New_York';
-      await pushTo([uid], name + ' is coming up', whenText(c.nextSession, tz) + (where ? ' \u00b7 ' + where : ''), link, 'remind-' + doc.id).catch(() => {});
+      await pushTo([uid], msg(lang, 'comingUp', {name}), whenText(c.nextSession, tz, lang) + (where ? ' · ' + where : ''), link, 'remind-' + doc.id).catch(() => {});
     }
     for (const u of users.users || []) {
       const p = prefOf[u.uid] || {};
       if (!u.email || u.disabled || p.noRemind === true || bannedSet.has(u.uid)) continue;
-      const when = whenText(c.nextSession, typeof p.tz === 'string' && p.tz ? p.tz : 'America/New_York');
-      const subject = 'Reminder: ' + name + ' – ' + when;
-      const text = 'The next session of "' + name + '" is ' + when + (where ? ' at ' + where : '') + '.\n\n' +
-        'Open the ledger: ' + link + '\n\n' +
-        'Don\'t want these? Turn off session reminders under Your account at ' + site + '.';
-      const html = page(name + ' is coming up', [
-        'The next session is <b>' + esc(when) + '</b>' + (where ? ' at <b>' + esc(where) + '</b>' : '') + '.',
-      ], {href: link, label: 'Open the ledger'},
-      'Don\'t want these? Turn off session reminders under <b>Your account</b> at <a href="' + esc(site) + '" style="color:#6b7280">' + esc(site.replace(/^https?:\/\//, '')) + '</a>.');
+      const lang = p.lang || 'en', L = (k, v) => msg(lang, k, v), name = oneLine(c.name) || L('yourCampaign');
+      const when = whenText(c.nextSession, typeof p.tz === 'string' && p.tz ? p.tz : 'America/New_York', lang);
+      const subject = L('remSubject', {name, when});
+      const text = (where ? L('remTextAt', {name, when, where}) : L('remText', {name, when})) + '\n\n' +
+        L('openLedgerAt', {link}) + '\n\n' + L('unsubText', {site});
+      const html = page(L('comingUp', {name}), [
+        where ? L('remPAt', {when: '<b>' + esc(when) + '</b>', where: '<b>' + esc(where) + '</b>'}) : L('remP', {when: '<b>' + esc(when) + '</b>'}),
+      ], {href: link, label: L('openLedger')},
+      L('unsubHtml', {account: '<b>' + esc(L('yourAccount')) + '</b>', site: '<a href="' + esc(site) + '" style="color:#6b7280">' + esc(site.replace(/^https?:\/\//, '')) + '</a>'}), lang);
       try { await send(u.email, subject, text, html); }
       catch (e) { logger.error('Reminder email failed', {cid: doc.id, err: String(e && e.message || e)}); }
     }
@@ -204,7 +213,7 @@ exports.calendar = onRequest({cors: false, maxInstances: 5}, async (req, res) =>
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Arkham Horror RPG Ledger//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + m[1] + '-' + c.nextSession + '@arkhamrpg.web.app', 'DTSTAMP:' + icsTime(Date.now()),
     'DTSTART:' + icsTime(c.nextSession), 'DTEND:' + icsTime(c.nextSession + (c.nextHours >= 1 && c.nextHours <= 12 ? c.nextHours : 4) * HOUR),
-    'SUMMARY:' + icsText(oneLine(c.name) + ' \u2014 Arkham Horror RPG'),
+    'SUMMARY:' + icsText(oneLine(c.name) + ' — Arkham Horror RPG'),
     c.nextWhere ? 'LOCATION:' + icsText(oneLine(c.nextWhere)) : '',
     'DESCRIPTION:' + icsText('Open the ledger: ' + site + '/play.html?c=' + m[1]),
     'URL:' + site + '/play.html?c=' + m[1],
@@ -234,9 +243,10 @@ exports.clueAlert = onDocumentWritten('campaigns/{cid}/clues/{id}', async (event
   if (!uids.length) return;
   const prefs = await prefsFor(uids);
   uids = uids.filter(u => prefs[u].noCluePush !== true);
-  const title = oneLine(after.title) || 'A new clue';
-  await pushTo(uids, 'New clue in ' + (oneLine(c.name) || 'your campaign'), after.to === 'all' ? title : title + ' (just for you)',
-    SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid) + '#clue-' + encodeURIComponent(event.params.id), 'clue-' + event.params.id);
+  await pushEach(uids, prefs, lang => {
+    const title = oneLine(after.title) || msg(lang, 'newClue');
+    return {title: msg(lang, 'clueIn', {name: oneLine(c.name) || msg(lang, 'yourCampaignLc')}), body: after.to === 'all' ? title : msg(lang, 'justYou', {title})};
+  }, SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid) + '#clue-' + encodeURIComponent(event.params.id), 'clue-' + event.params.id);
 });
 
 /* ---------- Investigators' turn ----------
@@ -251,7 +261,7 @@ exports.turnAlert = onDocumentUpdated('campaigns/{cid}/table/state', async (even
   let uids = (c.memberIds || []).filter(u => u !== c.gmUid);
   const prefs = await prefsFor(uids);
   uids = uids.filter(u => prefs[u].pushTurns === true);
-  await pushTo(uids, 'Investigators\u2019 turn' + (a.round ? ' \u00b7 round ' + a.round : ''), (a.scene ? oneLine(a.scene) + ' \u2014 ' : '') + (oneLine(c.name) || ''),
+  await pushEach(uids, prefs, lang => ({title: a.round ? msg(lang, 'turnRound', {n: a.round}) : msg(lang, 'turn'), body: (a.scene ? oneLine(a.scene) + ' — ' : '') + (oneLine(c.name) || '')}),
     SITE_URL.value() + '/play.html?c=' + encodeURIComponent(cid), 'turn-' + cid);
 });
 

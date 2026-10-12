@@ -1,40 +1,41 @@
 /* Arkham Horror RPG Ledger — Starting up: connect to Firebase (campaign mode or the original single-party mode) and start listening for changes.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- campaign boot (beta) ----------
-// The account icon (colour/symbol) as the home page last saw it on this device.
+// The account icon (color/symbol) as the home page last saw it on this device.
 function myBC(){try{const b=JSON.parse(localStorage.getItem('apl-beta-cache')||'null');return b&&b.uid===authUid?b:{};}catch(e){return {};}}
 function myProf(){return myBC().profile||{};}
 // Connection problems show as a small warning in the top-right corner; when all is well it stays empty.
-function setStatus(m,more){if(IS_LOCAL&&m==='Offline')return;const lv=document.getElementById('live');if(lv)lv.innerHTML=m?'<span class="netwarn" title="'+esc(m+(more||''))+'">'+esc(m)+(more?'<span class="wide-only">'+esc(more)+'</span>':'')+'</span>':'';}
-window.addEventListener('offline',()=>setStatus('Offline',' \u2014 changes will sync when you\u2019re back online'));
+function setStatus(m,more){if(IS_LOCAL&&m==='Offline')return;const lv=document.getElementById('live');m=m?t(m):'';more=more?' — '+t(more):'';
+ if(lv)lv.innerHTML=m?'<span class="netwarn" title="'+esc(m+more)+'">'+esc(m)+(more?'<span class="wide-only">'+esc(more)+'</span>':'')+'</span>':'';}
+window.addEventListener('offline',()=>setStatus(tk('Offline'),tk('changes will sync when you’re back online')));
 window.addEventListener('online',()=>setStatus(''));
-if(navigator.onLine===false)setTimeout(()=>setStatus('Offline',' \u2014 changes will sync when you\u2019re back online'),0);
+if(navigator.onLine===false)setTimeout(()=>setStatus(tk('Offline'),tk('changes will sync when you’re back online')),0);
 async function bootCampaign(syncEl){
  const cfg0=window.FIREBASE_CONFIG;
- if(!IS_LOCAL&&(!cfg0||!cfg0.projectId||!window.firebase)){localMode=true;render();setStatus('Not connected');return;}
+ if(!IS_LOCAL&&(!cfg0||!cfg0.projectId||!window.firebase)){localMode=true;render();setStatus(tk('Not connected'));return;}
  const cfg=Object.assign({},cfg0);if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
  // The device-only campaign (no account) runs on an in-browser store instead of Firebase (js/localdb.js).
  const isLocal=IS_LOCAL;if(IS_DEMO){LocalFB.demo(window.DEMO_DOCS);window.PLACES_KEY='';}if(isLocal)LocalFB.activate();
- if(isLocal){const cr=document.querySelector('.crumb');if(cr)cr.textContent='\u2039 Home';}
- if(isLocal)window.addEventListener('local-full',()=>toast('This browser is out of room, so that change wasn\u2019t saved. Save the campaign to an account to keep going.'));
+ if(isLocal){const cr=document.querySelector('.crumb');if(cr)cr.textContent=t('‹ Home');}
+ if(isLocal)window.addEventListener('local-full',()=>toast(t('This browser is out of room, so that change wasn’t saved. Save the campaign to an account to keep going.')));
  const fb=isLocal?LocalFB.app():firebase.initializeApp(cfg,'beta');if(!isLocal&&window.armAppCheck)armAppCheck(fb);const raw=fb.firestore();window.__campAuth=fb.auth();const pre='campaigns/'+CAMP+'/';
  const brand=document.querySelector('.brand h1');
- const syncLine=()=>{if(IS_DEMO){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">Sample campaign: nothing here is saved</span><a class="btn sm pri" href="./?try=1" target="_top">Start your own</a></span>';return;}if(isLocal){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">Saved on this device only</span><a class="btn sm pri" href="./?savelocal=1">Save to an account</a></span>';return;}const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?'Settings':'Members')+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
+ const syncLine=()=>{if(IS_DEMO){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">'+t('Sample campaign: nothing here is saved')+'</span><a class="btn sm pri" href="./?try=1" target="_top">'+t('Start your own')+'</a></span>';return;}if(isLocal){syncEl.innerHTML='<span class="nav"><span class="note localnote wide-only">'+t('Saved on this device only')+'</span><a class="btn sm pri" href="./?savelocal=1">'+t('Save to an account')+'</a></span>';return;}const me=(camp&&camp.names&&camp.names[authUid])||'';syncEl.innerHTML='<span class="nav"><a class="nav-l" href="./?settings='+encodeURIComponent(CAMP)+'">'+(camp&&camp.ownerUid===authUid?t('Settings'):t('Members'))+'</a>'+(me?acctMenuHtml(me,myProf(),{admin:!!myBC().adm,email:(window.__campAuth&&window.__campAuth.currentUser&&window.__campAuth.currentUser.email)||''}):'')+'</span>';};
  window.addEventListener('acct-signout',()=>{try{localStorage.removeItem('apl-beta-cache');}catch(e){}window.__campAuth.signOut().then(()=>location.href='./');});syncLine();window.__syncLine=syncLine;
  // Show the last-seen campaign right away (from this device) while sign-in and the database catch up.
- if(camp){if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+' title="See the full picture">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';applyRoles();render();}
+ if(camp){if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+' title="'+t('See the full picture')+'">':'')+esc(camp.name);document.title=camp.name+' — Arkham Horror RPG Ledger';applyRoles();render();}
  const u=await new Promise(res=>{const off=fb.auth().onAuthStateChanged(x=>{off();res(x);});});
  if(!u||u.isAnonymous){location.replace('./');return;}
  authUid=u.uid;
- raw.doc('bans/'+u.uid).get().then(b=>{if(b.exists){halted='This account has been suspended, so it can\u2019t open campaigns. If you think this is a mistake, use Contact at the bottom of the page.';render();}}).catch(()=>{});
+ raw.doc('bans/'+u.uid).get().then(b=>{if(b.exists){halted=t('This account has been suspended, so it can’t open campaigns. If you think this is a mistake, use Contact at the bottom of the page.');render();}}).catch(()=>{});
  db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch()};
  raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
-  if(!snap.exists){halted=isLocal?'There\u2019s no campaign saved on this device yet. Start one from the home page.':'This campaign was deleted.';render();return;}
+  if(!snap.exists){halted=isLocal?t('There’s no campaign saved on this device yet. Start one from the home page.'):t('This campaign was deleted.');render();return;}
   camp=snap.data();
-  if(!(camp.memberIds||[]).includes(authUid)){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();return;}
-  if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+' title="See the full picture">':'')+esc(camp.name);document.title=camp.name+' \u2014 Arkham Horror RPG Ledger';
+  if(!(camp.memberIds||[]).includes(authUid)){halted=t('You’re not in this campaign. Ask its owner for an invite link.');render();return;}
+  if(brand)brand.innerHTML=(imgOk(camp.photo)?'<img class="brandimg" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+' title="'+t('See the full picture')+'">':'')+esc(camp.name);document.title=camp.name+' — Arkham Horror RPG Ledger';
   applyRoles();if(window.__syncLine)window.__syncLine();render();saveCache();
- },()=>{halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();});
+ },()=>{halted=t('You’re not in this campaign. Ask its owner for an invite link.');render();});
  gmBoot();
  db.doc('settings/house').onSnapshot(snap=>{const d=snap.exists?snap.data():{};house={on:!!d.on,weapons:Array.isArray(d.weapons)?d.weapons:[],gear:Array.isArray(d.gear)?d.gear:[],rules:Array.isArray(d.rules)?d.rules:[]};render();},()=>{});
  db.collection('characters').onSnapshot(qs=>{
@@ -46,7 +47,7 @@ async function bootCampaign(syncEl){
   if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   applyRoles();render();saveCache();
- },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied'){halted='You\u2019re not in this campaign. Ask its owner for an invite link.';render();}else setStatus('Sync paused \u2014 reload the page to reconnect');});
+ },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied'){halted=t('You’re not in this campaign. Ask its owner for an invite link.');render();}else setStatus(tk('Sync paused — reload the page to reconnect'));});
 }
 
 // ---------- boot ----------
@@ -56,20 +57,20 @@ if(!STOP)render();
  const syncEl=document.getElementById('sync');
  if(CAMP){await bootCampaign(syncEl);return;}
  const cfg=window.FIREBASE_CONFIG;
- if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){localMode=true;render();syncEl.textContent='Not connected — add your Firebase settings (see README)';return;}
- try{window.armAppCheck&&armAppCheck(firebase.initializeApp(cfg));db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent='Couldn’t connect to Firebase — check the settings';return;}
- try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent='Sign-in failed — turn on Anonymous sign-in in Firebase (see README)';db=null;localMode=true;render();return;}
+ if(!cfg||!cfg.projectId||cfg.projectId.startsWith('PASTE')||!window.firebase){localMode=true;render();syncEl.textContent=t('Not connected — add your Firebase settings (see README)');return;}
+ try{window.armAppCheck&&armAppCheck(firebase.initializeApp(cfg));db=firebase.firestore();}catch(e){db=null;localMode=true;render();syncEl.textContent=t('Couldn’t connect to Firebase — check the settings');return;}
+ try{const cred=await firebase.auth().signInAnonymously();authUid=cred.user.uid;}catch(e){syncEl.textContent=t('Sign-in failed — turn on Anonymous sign-in in Firebase (see README)');db=null;localMode=true;render();return;}
  watchKeys();
  gmBoot();
  db.doc('settings/gm').onSnapshot(snap=>{gmClaimed=!!(snap.exists&&snap.data().set);gmFlagReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},()=>{gmFlagReady=true;render();});
  db.doc('settings/house').onSnapshot(snap=>{house={on:!!(snap.exists&&snap.data().on)};render();},()=>{});
- syncEl.textContent='Live · synced for the party ';
+ syncEl.textContent=t('Live · synced for the party');
  const legacy=()=>{rosterLocked=true;SLOTS=['p1','p2','p3','p4'];SLOTS.forEach((s,i)=>{
   const ref=db.doc('characters/'+s);let created=false;
   ref.onSnapshot(snap=>{
    if(!snap.exists){ if(!created&&!snap.metadata.fromCache){created=true;ref.set(SEED[s]||blank(i+1)).catch(()=>{});} return; }
    chars[s]=norm(JSON.parse(JSON.stringify(snap.data())),i+1);render();saveCache();
-  },err=>{if(window.quotaHit&&quotaHit(err))return;syncEl.textContent='Sync paused — reload to reconnect';});
+  },err=>{if(window.quotaHit&&quotaHit(err))return;syncEl.textContent=t('Sync paused — reload to reconnect');});
  });render();};
  let seeded=false;
  db.collection('characters').onSnapshot(qs=>{
@@ -82,5 +83,5 @@ if(!STOP)render();
   if(pendingTab&&SLOTS.includes(pendingTab)){active=pendingTab;pendingTab=null;}
   if(isSlotId(active)&&!SLOTS.includes(active)){active='party';edit.rm=null;}
   render();saveCache();
- },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied')legacy();else syncEl.textContent='Sync paused — reload to reconnect';});
+ },err=>{if(window.quotaHit&&quotaHit(err))return;if(err&&err.code==='permission-denied')legacy();else syncEl.textContent=t('Sync paused — reload to reconnect');});
 })();

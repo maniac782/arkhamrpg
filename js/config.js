@@ -31,10 +31,10 @@ window.quotaHit = function(e){
   try{
     var p={};new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour12:false,hour:'numeric',minute:'numeric',second:'numeric'}).formatToParts(new Date()).forEach(function(x){p[x.type]=+x.value;});
     var left=((24-(p.hour%24))*3600-p.minute*60-p.second)*1000;
-    at=new Date(Date.now()+left).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+    at=new Date(Date.now()+left).toLocaleTimeString(window.I18N&&I18N.locale, {hour:'numeric',minute:'2-digit'});
   }catch(_){}
   var d=document.createElement('div');d.id='quota';d.className='quota';d.setAttribute('role','alert');
-  d.innerHTML='<b>The ledger has hit its daily limit.</b> Changes won’t save or sync until it resets'+(at?' at about '+at:' at midnight Pacific time')+'. What you see now may be out of date, so keep track on paper until then. Nothing already saved is lost.';
+  d.innerHTML='<b>'+t('The ledger has hit its daily limit.')+'</b> '+(at?t('Changes won’t save or sync until it resets at about {time}.',{time:at}):t('Changes won’t save or sync until it resets at midnight Pacific time.'))+' '+t('What you see now may be out of date, so keep track on paper until then. Nothing already saved is lost.');
   var top=document.querySelector('.top');if(top)top.insertBefore(d,top.firstChild);else document.body.insertBefore(d,document.body.firstChild);
   return true;
 };

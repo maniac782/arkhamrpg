@@ -158,6 +158,11 @@ ul.recap{margin:4px 0 0;padding-left:18px}
 .foot{max-width:980px;margin:0 auto;padding:8px 16px 28px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;justify-content:center;gap:4px 0}
 .foot>*{opacity:.8}.foot>*+*::before{content:'\00b7';margin:0 8px;opacity:.7;display:inline-block;text-decoration:none}
 .foot a{color:var(--muted);text-decoration:none;opacity:.8}.foot a:hover{opacity:1;text-decoration:underline}
+/* the language picker in the footer */
+.foot .langpick{opacity:1}
+.langpick select{font:inherit;font-size:12px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:6px;padding:1px 4px;cursor:pointer}
+.langpick select:hover{color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .grecaptcha-badge{visibility:hidden!important}
 
 /* Top bar navigation: quiet text links, an account chip and a live dot. */

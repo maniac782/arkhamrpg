@@ -2,58 +2,58 @@
    Part of the ledger; these files load in order and share their variables. */
 // ---------- render ----------
 function sheetStatus(c){
- if(c.injuries.some(j=>j.name==='Dead'))return['bad','Dead'];
- if(c.traumas.some(j=>j.name==='Lost Forever'))return['bad','Lost forever'];
- if(c.injuries.some(j=>j.name==='Dire'))return['bad','Dire'];
- if(c.poolLimit===0)return['bad','Wounded'];
- if(c.horrorLimit>=Math.max(3,c.poolMax/2))return['warn','Shaken'];
- if(c.poolLimit<c.poolMax||c.injuries.length)return['warn','Hurt'];
- return['ok','Healthy'];
+ if(c.injuries.some(j=>j.name==='Dead'))return['bad',t('Dead')];
+ if(c.traumas.some(j=>j.name==='Lost Forever'))return['bad',t('Lost forever')];
+ if(c.injuries.some(j=>j.name==='Dire'))return['bad',t('Dire')];
+ if(c.poolLimit===0)return['bad',t('Wounded')];
+ if(c.horrorLimit>=Math.max(3,c.poolMax/2))return['warn',t('Shaken')];
+ if(c.poolLimit<c.poolMax||c.injuries.length)return['warn',t('Hurt')];
+ return['ok',t('Healthy')];
 }
 function poolHtml(c,mini){
  let h='',k=0;const pend=()=>k++<c.horrorLimit;
- for(let i=0;i<c.horror;i++){k++;h+='<span class="die hor" title="Horror die"></span>';}
- for(let i=0;i<c.regular;i++)h+=pend()?'<span class="die reg pend" title="Regular die \u2014 becomes a horror die on the next refill"></span>':'<span class="die reg" title="Regular die"></span>';
- for(let i=c.regular+c.horror;i<c.poolLimit;i++)h+=pend()?'<span class="die empty pend" title="Spent \u2014 refills as a horror die"></span>':'<span class="die empty" title="Spent"></span>';
- for(let i=c.poolLimit;i<c.poolMax;i++)h+='<span class="die lost" title="Lost to damage"></span>';
- return '<div class="pool'+(mini?' mini':'')+'" aria-label="'+(c.regular+c.horror)+' dice in pool">'+h+'</div>';
+ for(let i=0;i<c.horror;i++){k++;h+='<span class="die hor" title="'+t('Horror die')+'"></span>';}
+ for(let i=0;i<c.regular;i++)h+=pend()?'<span class="die reg pend" title="'+t('Regular die — becomes a horror die on the next refill')+'"></span>':'<span class="die reg" title="'+t('Regular die')+'"></span>';
+ for(let i=c.regular+c.horror;i<c.poolLimit;i++)h+=pend()?'<span class="die empty pend" title="'+t('Spent — refills as a horror die')+'"></span>':'<span class="die empty" title="'+t('Spent')+'"></span>';
+ for(let i=c.poolLimit;i<c.poolMax;i++)h+='<span class="die lost" title="'+t('Lost to damage')+'"></span>';
+ return '<div class="pool'+(mini?' mini':'')+'" aria-label="'+tn('{n} die in pool','{n} dice in pool',c.regular+c.horror)+'">'+h+'</div>';
 }
 function renderTabs(){
- const t=document.getElementById('tabs');
- t.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?'Party':s==='create'?'+ New investigator':s==='journal'?'Journal':s==='gm'?'GM':(chars[s].name||'Investigator'))+'</button>').join('');
+ const tb=document.getElementById('tabs');
+ tb.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?t('Party'):s==='create'?t('+ New investigator'):s==='journal'?t('Journal'):s==='gm'?t('GM'):(chars[s].name||t('Investigator')))+'</button>').join('');
 }
 // The next meetup, set by the owner or GM in the campaign's Settings.
 function nextSessionBar(){
  if(!CAMP||!camp||!window.sessionShown)return '';
- const t=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe||IS_LOCAL?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
- if(!sessionShown(t))return '';
- return '<div class="nextsess"><div class="grow"><span class="lbl">Next session \u00b7 <span data-cd="'+t+'">'+esc(sessionRel(t))+'</span></span><span><b>'+esc(sessionSpan(t,camp.nextHours))+'</b>'+(camp.nextWhere?'<span class="note"> \u00b7 '+placeHtml(camp.nextWhere)+'</span>':'')+'</span></div>'+
-  calMenuHtml(camp.name,t,camp.nextWhere,IS_LOCAL?null:CAMP,camp.nextHours)+(can?'<a class="btn sm" href="'+set+'"'+go+'>Change</a>':'')+'</div>';
+ const ts=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe||IS_LOCAL?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
+ if(!sessionShown(ts))return '';
+ return '<div class="nextsess"><div class="grow"><span class="lbl">'+t('Next session')+' · <span data-cd="'+ts+'">'+esc(sessionRel(ts))+'</span></span><span><b>'+esc(sessionSpan(ts,camp.nextHours))+'</b>'+(camp.nextWhere?'<span class="note"> · '+placeHtml(camp.nextWhere)+'</span>':'')+'</span></div>'+
+  calMenuHtml(camp.name,ts,camp.nextWhere,IS_LOCAL?null:CAMP,camp.nextHours)+(can?'<a class="btn sm" href="'+set+'"'+go+'>'+t('Change')+'</a>':'')+'</div>';
 }
 // The campaign's picture across the top of the Party tab; tap it to see the whole picture.
 function partyBanner(){return CAMP&&camp&&imgOk(camp.photo)?'<img class="partybanner" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+'>':'';}
 function renderParty(){
- const tip='<div class="banner">Tap an investigator to open their sheet. '+(IS_DEMO?'This is a sample campaign, so nothing you change here is saved.':IS_LOCAL?'Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.':'Every change syncs to everyone at the table.')+'</div>';
+ const tip='<div class="banner">'+t('Tap an investigator to open their sheet.')+' '+(IS_DEMO?t('This is a sample campaign, so nothing you change here is saved.'):IS_LOCAL?t('Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.'):t('Every change syncs to everyone at the table.'))+'</div>';
  // With a campaign picture: the picture on the left, next session and the tip beside it (stacked on phones).
  const pic=partyBanner();
  let h=turnBar()+(pic?'<div class="partyhead">'+pic+'<div class="partyside">'+nextSessionBar()+tip+'</div></div>':nextSessionBar()+tip)+
-  (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">You have your investigator. Only the campaign owner can add more.</p>':'')+
-  (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?'+ Create my investigator':'+ Add an investigator')+'</button><span class="note">'+(rosterLocked?'Publish the updated Firestore rules (see README) to add or remove investigators.':'Adds a blank sheet. Use the New investigator tab to build one step by step.')+'</span></div>':'')+
+  (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">'+t('You have your investigator. Only the campaign owner can add more.')+'</p>':'')+
+  (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?t('+ Create my investigator'):t('+ Add an investigator'))+'</button><span class="note">'+(rosterLocked?t('Publish the updated Firestore rules (see README) to add or remove investigators.'):t('Adds a blank sheet. Use the New investigator tab to build one step by step.'))+'</span></div>':'')+
   '<div class="party">';
  SLOTS.forEach(s=>{const c=chars[s];const [cls,lab]=sheetStatus(c);const lr=(c.log||[])[0];
-  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype,c.player&&('played by '+c.player)].filter(Boolean).join(' · ')||'Unassigned')+'</div></div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
+  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype&&t(c.archetype),c.player&&t('played by {name}',{name:c.player==='You'?t('You'):c.player})].filter(Boolean).join(' · ')||t('Unassigned'))+'</div></div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
   poolHtml(c,true)+
-  '<div class="kv"><div><span class="lbl">Pool</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">Horror</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">Insight</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">Injuries</span><b>'+c.injuries.length+'</b></div></div>'+
-  (lr?'<div class="log">Latest: '+esc(lr.m)+'</div>':'')+'</button>';});
+  '<div class="kv"><div><span class="lbl">'+t('Pool')+'</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">'+t('Horror')+'</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">'+t('Insight')+'</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">'+t('Injuries')+'</span><b>'+c.injuries.length+'</b></div></div>'+
+  (lr?'<div class="log">'+t('Latest: {text}',{text:esc(logText(lr))})+'</div>':'')+'</button>';});
  h+='</div>';
  // In a campaign, players who aren't the GM only see the house rules here (and nothing at all if there are none).
- const gmBody=houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">Start new session for everyone</button><button class="btn" data-act="refillAll">Refill every pool</button></div><p class="note" style="margin:0">A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties. '+(CAMP?'This covers every investigator in the campaign.':'With the master key or the GM PIN this covers every sheet.')+'</p>':(CAMP?'':'<p class="note" style="margin:0">Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.</p>'))+(!localMode&&!CAMP?(keys.master?'<div class="row"><span class="chip ok">Master key active</span><span class="note">This device can edit every sheet.</span><button class="btn sm" data-act="mforget">Remove master key from this device</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Master key" aria-label="Master key"><button class="btn sm" data-act="munlock">Use master key</button></div>'):'');
- const gmTitle=!CAMP||isGMView()?'Game Master':'House rules';
+ const gmBody=houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">'+t('Start new session for everyone')+'</button><button class="btn" data-act="refillAll">'+t('Refill every pool')+'</button></div><p class="note" style="margin:0">'+t('A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties.')+' '+(CAMP?t('This covers every investigator in the campaign.'):t('With the master key or the GM PIN this covers every sheet.'))+'</p>':(CAMP?'':'<p class="note" style="margin:0">'+t('Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.')+'</p>'))+(!localMode&&!CAMP?(keys.master?'<div class="row"><span class="chip ok">'+t('Master key active')+'</span><span class="note">'+t('This device can edit every sheet.')+'</span><button class="btn sm" data-act="mforget">'+t('Remove master key from this device')+'</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+t('Master key')+'" aria-label="'+t('Master key')+'"><button class="btn sm" data-act="munlock">'+t('Use master key')+'</button></div>'):'');
+ const gmTitle=!CAMP||isGMView()?t('Game Master'):t('House rules');
  if(gmBody)h+='<section class="sec gmsec"><div class="sec-head"><h2>'+gmTitle+'</h2></div>'+gmBody+'</section>';
  return h;
 }
 function fld(path,label,val,type,extra){return '<label class="field"><span class="lbl">'+label+'</span><input class="f" id="'+path.replace(/\./g,'-')+'" data-f="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" '+(extra||'')+'></label>';}
-function avatarHtml(c,size){const ini=esc(((c.name||'?').trim()[0]||'?').toUpperCase());return c.portrait?'<img class="avatar '+size+'" src="'+esc(c.portrait)+'" alt="Portrait of '+esc(c.name)+'"'+(size==='lg'?' data-zoom'+(imgOk(c.portraitFull)?' data-full="'+esc(c.portraitFull)+'"':'')+' title="See the full picture"':'')+'>':'<span class="avatar '+size+'" aria-hidden="true">'+ini+'</span>';}
+function avatarHtml(c,size){const ini=esc(((c.name||'?').trim()[0]||'?').toUpperCase());return c.portrait?'<img class="avatar '+size+'" src="'+esc(c.portrait)+'" alt="'+t('Portrait of {name}',{name:esc(c.name)})+'"'+(size==='lg'?' data-zoom'+(imgOk(c.portraitFull)?' data-full="'+esc(c.portraitFull)+'"':'')+' title="'+t('See the full picture')+'"':'')+'>':'<span class="avatar '+size+'" aria-hidden="true">'+ini+'</span>';}
 function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();const url=URL.createObjectURL(file);
  img.onload=()=>{const side=Math.min(img.width,img.height),S=320;const cv=document.createElement('canvas');cv.width=S;cv.height=S;const g=cv.getContext('2d');
   g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);URL.revokeObjectURL(url);
@@ -62,20 +62,20 @@ function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image();
 // Portraits are saved at 800 px (shown small on the sheet, full size when tapped). A campaign kept only in this browser
 // stores them inline, so there they stay small to save room.
 function openCrop(file,slot){const big=!!CAMP&&!IS_LOCAL,S=big?800:320;
- openCropper(file,{title:'Position the face in the circle',shape:'circle',outW:S,outH:S,maxLen:big?500000:120000,full:big?{side:2000,maxLen:1000000}:null,onError:toast,onSave:(d,full)=>{toast('Saving portrait\u2026');const at='campaigns/'+CAMP+'/'+authUid;
-  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(big&&!isStoredImage(u))return toast('Couldn\u2019t upload the portrait. Check your connection and try again.');save(slot,{portrait:u,portraitFull:isStoredImage(fu)?fu:''},'Changed portrait');if(full&&!isStoredImage(fu))setTimeout(()=>toast('The head shot saved, but the full picture didn\u2019t upload. Try adding it again.'),2700);});}});}
+ openCropper(file,{title:t('Position the face in the circle'),shape:'circle',outW:S,outH:S,maxLen:big?500000:120000,full:big?{side:2000,maxLen:1000000}:null,onError:toast,onSave:(d,full)=>{toast(t('Saving portrait…'));const at='campaigns/'+CAMP+'/'+authUid;
+  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(big&&!isStoredImage(u))return toast(t('Couldn’t upload the portrait. Check your connection and try again.'));save(slot,{portrait:u,portraitFull:isStoredImage(fu)?fu:''},logm('Changed portrait'));if(full&&!isStoredImage(fu))setTimeout(()=>toast(t('The head shot saved, but the full picture didn’t upload. Try adding it again.')),2700);});}});}
 function ownerPanel(s){
  const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;
  // The owner picks the player right in the header; everyone else just sees who plays it.
- const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">Played by</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" aria-label="Who plays this investigator" style="width:auto;font-weight:600"><option value="">Nobody yet</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||'Member')+(u===authUid?' (you)':'')+'</option>').join('')+'</select></label>'
-  :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?'Your investigator':who?'Played by '+esc(who):'Unclaimed')+'</span>';
+ const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">'+t('Played by')+'</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" aria-label="'+t('Who plays this investigator')+'" style="width:auto;font-weight:600"><option value="">'+t('Nobody yet')+'</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||t('Member'))+(u===authUid?' '+t('(you)'):'')+'</option>').join('')+'</select></label>'
+  :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?t('Your investigator'):who?t('Played by {name}',{name:esc(who)}):t('Unclaimed'))+'</span>';
  const oe=!!(camp&&camp.ownerEdits===true);
- const note=mine?(oe?'Only you, the campaign owner and the GM can change it.':'Only you and the GM can change it.'):boss?(oe?'You can edit any investigator as the campaign owner.':'Locked to its player. You can change this in Settings.'):who?'Only its player can change it.':'Nobody plays this investigator yet.';
- let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row" style="align-items:center">'+head+'<span class="note">'+note+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
+ const note=mine?(oe?t('Only you, the campaign owner and the GM can change it.'):t('Only you and the GM can change it.')):boss?(oe?t('You can edit any investigator as the campaign owner.'):t('Locked to its player. You can change this in Settings.')):who?t('Only its player can change it.'):t('Nobody plays this investigator yet.');
+ let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row" style="align-items:center">'+head+'<span class="note">'+note+'</span></div><button class="btn sm" data-act="printc">'+t('Open printable sheet')+'</button></div>';
  let row='';
- if(!boss&&(!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">This is my investigator</button>';
- if(mine&&!boss)row+='<button class="btn sm" data-act="release">Give up this investigator</button>';
+ if(!boss&&(!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">'+t('This is my investigator')+'</button>';
+ if(mine&&!boss)row+='<button class="btn sm" data-act="release">'+t('Give up this investigator')+'</button>';
  if(row)h+='<div class="row">'+row+'</div>';
  return h+'</section>';
 }
@@ -90,122 +90,122 @@ function applyRoles(){
 }
 function lockPanel(s){
  if(CAMP)return ownerPanel(s);
- const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'Master key':'Unlocked on this device'):'Locked'):'No passcode')+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?'You\u2019re editing with the master key.':'Others need the passcode to edit it.'):'Enter the passcode to edit. Anyone can still view it.'):'Anyone with the link can edit this sheet.')+'</span></div><button class="btn sm" data-act="printc">Open printable sheet</button></div>';
+ const c=chars[s];let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+(c.locked?(canEdit(s)?'ok':'warn'):'ok')+'">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?t('Master key'):t('Unlocked on this device')):t('Locked')):t('No passcode'))+'</span><span class="note">'+(c.locked?(canEdit(s)?(keys.master&&!keys[s]?t('You’re editing with the master key.'):t('Others need the passcode to edit it.')):t('Enter the passcode to edit. Anyone can still view it.')):t('Anyone with the link can edit this sheet.'))+'</span></div><button class="btn sm" data-act="printc">'+t('Open printable sheet')+'</button></div>';
  if(localMode)return h+'</section>';
  const inp=(id,ph)=>'<input class="maxsel" style="width:150px" type="password" id="'+id+'-'+s+'" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
- if(!c.locked)h+='<div class="row">'+inp('lockset','New passcode')+'<button class="btn sm" data-act="lockset">Lock with passcode</button></div>';
- else if(!canEdit(s))h+='<div class="row">'+inp('unlock','Passcode')+'<button class="btn sm pri" data-act="unlock">Unlock</button></div>';
- else h+='<div class="row"><button class="btn sm" data-act="lockoff">Remove passcode</button>'+(keys[s]?'<button class="btn sm" data-act="forget">Lock this device</button>':'')+'</div>';
+ if(!c.locked)h+='<div class="row">'+inp('lockset',t('New passcode'))+'<button class="btn sm" data-act="lockset">'+t('Lock with passcode')+'</button></div>';
+ else if(!canEdit(s))h+='<div class="row">'+inp('unlock',t('Passcode'))+'<button class="btn sm pri" data-act="unlock">'+t('Unlock')+'</button></div>';
+ else h+='<div class="row"><button class="btn sm" data-act="lockoff">'+t('Remove passcode')+'</button>'+(keys[s]?'<button class="btn sm" data-act="forget">'+t('Lock this device')+'</button>':'')+'</div>';
  return h+'</section>';
 }
 function renderChar(s){ const body=renderCharBody(s); return turnBar()+lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>')+removePanel(s); }
 function removePanel(s){
  const can=(!db&&localMode)||!!keys.master;const c=chars[s];
- if(!can)return '<p class="note" style="margin:0">'+(CAMP?'Only the campaign owner':'Only the master key')+' can remove an investigator from the party.</p>';
- if(edit.rm===s)return '<section class="sec"><div class="roll" role="status"><span>Remove <b>'+esc(c.name||'this investigator')+'</b> from the party? Their sheet is deleted for everyone. This can\u2019t be undone.</span><div class="row"><button class="btn sm dng" data-act="rmyes">Remove '+esc(c.name||'investigator')+'</button><button class="btn sm" data-act="rmno">Cancel</button></div></div></section>';
- return '<div class="row"><button class="btn sm dng" data-act="rmslot">Remove this investigator from the party…</button></div>';
+ if(!can)return '<p class="note" style="margin:0">'+(CAMP?t('Only the campaign owner can remove an investigator from the party.'):t('Only the master key can remove an investigator from the party.'))+'</p>';
+ if(edit.rm===s)return '<section class="sec"><div class="roll" role="status"><span>'+t('Remove {name} from the party? Their sheet is deleted for everyone. This can’t be undone.',{name:'<b>'+esc(c.name||t('this investigator'))+'</b>'})+'</span><div class="row"><button class="btn sm dng" data-act="rmyes">'+t('Remove {name}',{name:esc(c.name||t('investigator'))})+'</button><button class="btn sm" data-act="rmno">'+t('Cancel')+'</button></div></div></section>';
+ return '<div class="row"><button class="btn sm dng" data-act="rmslot">'+t('Remove this investigator from the party…')+'</button></div>';
 }
 const ownsSheet=()=>SLOTS.some(x=>chars[x]&&chars[x].ownerUid===authUid);
 // In a campaign the owner can add any number of investigators; everyone else gets one of their own.
 const canAddSheet=()=>!CAMP||!!keys.master||!ownsSheet();
 function freeSlot(){for(let i=1;i<=MAX_SLOTS;i++){const id='p'+i;if(!SLOTS.includes(id))return id;}return null;}
 async function addSlot(data){
- if(rosterLocked)return toast('Publish the updated Firestore rules first (see README).'),null;
- if(!canAddSheet())return toast('You already have your investigator. Only the campaign owner can add more.'),null;
- const id=freeSlot();if(!id)return toast('The party is full ('+MAX_SLOTS+' investigators).'),null;
+ if(rosterLocked)return toast(t('Publish the updated Firestore rules first (see README).')),null;
+ if(!canAddSheet())return toast(t('You already have your investigator. Only the campaign owner can add more.')),null;
+ const id=freeSlot();if(!id)return toast(t('The party is full ({n} investigators).',{n:MAX_SLOTS})),null;
  const c=norm(data||blank(slotNum(id)),slotNum(id));c.locked=false;if(CAMP){c.ownerUid=authUid;if(camp&&camp.names&&camp.names[authUid]&&!data)c.player=camp.names[authUid];}
  chars[id]=c;SLOTS=[...SLOTS,id].sort((a,b)=>slotNum(a)-slotNum(b));
- if(db){try{if(CAMP&&!keys.master){const b=db.batch();b.set(db.doc('characters/'+id),JSON.parse(JSON.stringify(c)));b.set(db.doc('players/'+authUid),{slot:id});await b.commit();}else await db.doc('characters/'+id).set(JSON.parse(JSON.stringify(c)));}catch(e){toast(e&&e.code==='permission-denied'?'Firebase refused that. Publish the updated rules (see README).':'Couldn\u2019t add the investigator. Try again.');SLOTS=SLOTS.filter(x=>x!==id);delete chars[id];render();return null;}}
+ if(db){try{if(CAMP&&!keys.master){const b=db.batch();b.set(db.doc('characters/'+id),JSON.parse(JSON.stringify(c)));b.set(db.doc('players/'+authUid),{slot:id});await b.commit();}else await db.doc('characters/'+id).set(JSON.parse(JSON.stringify(c)));}catch(e){toast(e&&e.code==='permission-denied'?t('Firebase refused that. Publish the updated rules (see README).'):t('Couldn’t add the investigator. Try again.'));SLOTS=SLOTS.filter(x=>x!==id);delete chars[id];render();return null;}}
  return id;
 }
 async function removeSlot(s){
  const name=chars[s]&&chars[s].name;
  const pu=CAMP&&chars[s]&&chars[s].ownerUid;
- if(db){try{await db.doc('characters/'+s).delete();if(CAMP){if(pu)await db.doc('players/'+pu).delete().catch(()=>{});}else await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?'Only the campaign owner can remove investigators.':'Only the master key can remove investigators (and the updated rules must be published).'):'Couldn\u2019t remove that investigator. Try again.');return;}}
- SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast((name||'Investigator')+' was removed from the party.');
+ if(db){try{await db.doc('characters/'+s).delete();if(CAMP){if(pu)await db.doc('players/'+pu).delete().catch(()=>{});}else await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?t('Only the campaign owner can remove investigators.'):t('Only the master key can remove investigators (and the updated rules must be published).')):t('Couldn’t remove that investigator. Try again.'));return;}}
+ SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast(t('{name} was removed from the party.',{name:name||t('Investigator')}));
 }
 function renderCharBody(s){
  const c=chars[s];const [cls,lab]=sheetStatus(c);const rl=lastRoll[s];
- let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+(canEdit(s)?'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?'Change picture':'Add picture')+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">Remove</button>':'')+'</div>':'')+'</div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="Investigator name"></div><span class="chip '+cls+'">'+lab+'</span></div>'+'</section>';
- if(c.insightChance)h+='<section class="sec">'+(c.insightChance?'<div class="roll" role="status"><span><b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>Raise it · 1 XP</button><button class="btn sm" data-act="skipins">Not this time</button></div></div>':'')+'</section>';
+ let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+(canEdit(s)?'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?t('Change picture'):t('Add picture'))+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">'+t('Remove')+'</button>':'')+'</div>':'')+'</div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="'+t('Investigator name')+'"></div><span class="chip '+cls+'">'+lab+'</span></div>'+'</section>';
+ if(c.insightChance)h+='<section class="sec">'+(c.insightChance?'<div class="roll" role="status"><span>'+t('<b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).')+'</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>'+t('Raise it · 1 XP')+'</button><button class="btn sm" data-act="skipins">'+t('Not this time')+'</button></div></div>':'')+'</section>';
 
  // condition
- h+='<section class="sec"><div class="sec-head"><h2>Dice pool</h2><span class="note num">'+(c.regular+c.horror)+' in pool · limit '+c.poolLimit+' of '+c.poolMax+'</span></div>'+poolHtml(c)+
- '<div class="legend"><span>■ regular</span><span style="color:var(--horror)">■ horror</span><span>□ spent</span><span style="color:var(--danger)">▨ lost to damage</span><span style="color:var(--horror)">▢ green ring = becomes horror on refill</span></div>'+
- '<div class="row"><button class="btn" data-act="spend" data-k="reg" '+(c.regular?'':'disabled')+'>Spend regular die</button><button class="btn hor" data-act="spend" data-k="hor" '+(c.horror?'':'disabled')+'>Spend horror die</button><button class="btn pri" data-act="refill">Refill pool</button></div>'+
- '<div class="row"><button class="btn dng" data-act="dmg" data-n="1" title="Lowers the pool limit by 1. Tap once per point of damage." '+(c.poolLimit>0?'':'disabled')+'>Take damage</button><button class="btn" data-act="heal" data-n="1" title="Raises the pool limit by 1." '+(c.poolLimit<c.poolMax?'':'disabled')+'>Heal</button><button class="btn" data-act="rest" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Full rest</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>Strain</button></div>'+
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Dice pool')+'</h2><span class="note num">'+t('{n} in pool · limit {limit} of {max}',{n:c.regular+c.horror,limit:c.poolLimit,max:c.poolMax})+'</span></div>'+poolHtml(c)+
+ '<div class="legend"><span>'+t('■ regular')+'</span><span style="color:var(--horror)">'+t('■ horror')+'</span><span>'+t('□ spent')+'</span><span style="color:var(--danger)">'+t('▨ lost to damage')+'</span><span style="color:var(--horror)">'+t('▢ green ring = becomes horror on refill')+'</span></div>'+
+ '<div class="row"><button class="btn" data-act="spend" data-k="reg" '+(c.regular?'':'disabled')+'>'+t('Spend regular die')+'</button><button class="btn hor" data-act="spend" data-k="hor" '+(c.horror?'':'disabled')+'>'+t('Spend horror die')+'</button><button class="btn pri" data-act="refill">'+t('Refill pool')+'</button></div>'+
+ '<div class="row"><button class="btn dng" data-act="dmg" data-n="1" title="'+t('Lowers the pool limit by 1. Tap once per point of damage.')+'" '+(c.poolLimit>0?'':'disabled')+'>'+t('Take damage')+'</button><button class="btn" data-act="heal" data-n="1" title="'+t('Raises the pool limit by 1.')+'" '+(c.poolLimit<c.poolMax?'':'disabled')+'>'+t('Heal')+'</button><button class="btn" data-act="rest" '+(c.poolLimit<c.poolMax?'':'disabled')+'>'+t('Full rest')+'</button><button class="btn" data-act="strain" '+(c.poolLimit<c.poolMax?'':'disabled')+'>'+t('Strain')+'</button></div>'+
  activeEffects(c)+
- '<p class="note" style="margin:0">Damage lowers the pool limit. At 0 you’re wounded. Straining restores the limit, then you roll an injury at the end of your turn.</p></section>';
+ '<p class="note" style="margin:0">'+t('Damage lowers the pool limit. At 0 you’re wounded. Straining restores the limit, then you roll an injury at the end of your turn.')+'</p></section>';
 
  // skills
- h+='<section class="sec"><div class="sec-head"><h2>Skills</h2><span class="note">Success on a roll at or above the rating. Lower is better. <span class="chip">'+c.xpUnused+' unused XP</span></span></div><div class="skills">'+
- SKILLS.map(([k,n])=>{const sk=c.skills[k];const cost=SKILL_COST[sk.r];return '<div class="skill"><span class="nm">'+n+'</span><label class="note" for="mx-'+k+'-'+s+'">max</label><select class="maxsel" id="mx-'+k+'-'+s+'" data-skmax="'+k+'"><option value="">–</option>'+[4,3,2].map(v=>'<option value="'+v+'"'+(String(sk.max)===String(v)?' selected':'')+'>'+v+'+</option>').join('')+'</select><span class="rate">'+sk.r+'+</span><button class="btn sm" data-act="imp" data-k="'+k+'" '+(cost?'':'disabled')+' aria-label="Improve '+n+'">'+(cost?'↑ '+cost+' XP':'Best')+'</button></div>';}).join('')+
- '</div><details><summary class="note" style="cursor:pointer">Set ratings by hand</summary><div class="wgrid" style="margin-top:8px">'+SKILLS.map(([k,n])=>'<label class="field"><span class="lbl">'+n+'</span><select class="f" id="sr-'+k+'-'+s+'" data-skr="'+k+'">'+[6,5,4,3,2].map(v=>'<option value="'+v+'"'+(c.skills[k].r===v?' selected':'')+'>'+v+'+</option>').join('')+'</select></label>').join('')+'</div></details></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Skills')+'</h2><span class="note">'+t('Success on a roll at or above the rating. Lower is better.')+' <span class="chip">'+t('{n} unused XP',{n:c.xpUnused})+'</span></span></div><div class="skills">'+
+ SKILLS.map(([k,n])=>{const sk=c.skills[k];const cost=SKILL_COST[sk.r];return '<div class="skill"><span class="nm">'+t(n)+'</span><label class="note" for="mx-'+k+'-'+s+'">'+t('max')+'</label><select class="maxsel" id="mx-'+k+'-'+s+'" data-skmax="'+k+'"><option value="">–</option>'+[4,3,2].map(v=>'<option value="'+v+'"'+(String(sk.max)===String(v)?' selected':'')+'>'+v+'+</option>').join('')+'</select><span class="rate">'+sk.r+'+</span><button class="btn sm" data-act="imp" data-k="'+k+'" '+(cost?'':'disabled')+' aria-label="'+t('Improve {skill}',{skill:t(n)})+'">'+(cost?t('↑ {n} XP',{n:cost}):t('Best'))+'</button></div>';}).join('')+
+ '</div><details><summary class="note" style="cursor:pointer">'+t('Set ratings by hand')+'</summary><div class="wgrid" style="margin-top:8px">'+SKILLS.map(([k,n])=>'<label class="field"><span class="lbl">'+t(n)+'</span><select class="f" id="sr-'+k+'-'+s+'" data-skr="'+k+'">'+[6,5,4,3,2].map(v=>'<option value="'+v+'"'+(c.skills[k].r===v?' selected':'')+'>'+v+'+</option>').join('')+'</select></label>').join('')+'</div></details></section>';
 
  // weapons
  const shared=sharedAmmo(),totRel=c.weapons.reduce((a,w)=>a+(w.fr?0:(w.reloads||0)),0);
- h+='<section class="sec"><div class="sec-head"><h2>Weapons</h2><span class="chip">'+money(c.money)+' left</span>'+(shared?'<span class="chip ok" title="House rule">Universal ammo · '+totRel+' reload'+(totRel===1?'':'s')+' shared</span>':'')+'</div>'+
- weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">Add a custom weapon</button></div>'+
- '<p class="note" style="margin:0">Mark off ammo only when an attack rolls one or more 1s. Reloading is a simple action, or complex (Ranged Combat) under pressure.</p><div class="list">'+
- (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="Ammo '+(i+1)+(i<w.ammo?' loaded':' spent')+'"></button>';
-  return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(w.name)+'" placeholder="Weapon" style="font-weight:600">'+
-  '<div class="wgrid">'+[['skill','Skill'],['range','Range'],['dmg','Damage'],['inj','Injury rating'],['ammoMax','Ammo'],['special','Special']].map(([k,l])=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="w'+k+'-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="'+k+'" value="'+esc(w[k])+'" '+(k==='ammoMax'?'type="number" min="0" max="12"':'')+'></label>').join('')+'</div>'+
-  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(gunPool(c.weapons,w)>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?'Reload (free)':'Reload')+'</button>'+
-   (w.fr?'':'<span class="note">Extra reloads'+(sameGuns(c.weapons,w).length>1?' (shared by your '+sameGuns(c.weapons,w).length+' '+esc(w.name)+'s)':'')+'</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="One fewer reload for '+esc(w.name||'this gun')+'">−</button><b class="num">'+gunPool(c.weapons,w)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="One more reload for '+esc(w.name||'this gun')+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">Buy one · '+money(w.rc)+'</button>':''))+'</div>':'')+
-  '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="Remove weapon">×</button></div>';}).join(''):'<p class="note">No weapons.</p>')+
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Weapons')+'</h2><span class="chip">'+t('{amount} left',{amount:money(c.money)})+'</span>'+(shared?'<span class="chip ok" title="'+t('House rule')+'">'+t('Universal ammo')+' · '+tn('{n} reload shared','{n} reloads shared',totRel)+'</span>':'')+'</div>'+
+ weaponPicker(s)+'<div class="row"><button class="btn sm" data-act="addw">'+t('Add a custom weapon')+'</button></div>'+
+ '<p class="note" style="margin:0">'+t('Mark off ammo only when an attack rolls one or more 1s. Reloading is a simple action, or complex (Ranged Combat) under pressure.')+'</p><div class="list">'+
+ (c.weapons.length?c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-id="'+w.id+'" data-n="'+i+'" aria-label="'+(i<w.ammo?t('Ammo {n} loaded',{n:i+1}):t('Ammo {n} spent',{n:i+1}))+'"></button>';
+  return '<div class="item"><div class="grow"><input class="f" id="wn-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="name" value="'+esc(t(w.name||''))+'" placeholder="'+t('Weapon')+'" style="font-weight:600">'+
+  '<div class="wgrid">'+[['skill',t('Skill')],['range',t('Range')],['dmg',t('Damage')],['inj',t('Injury rating')],['ammoMax',t('Ammo')],['special',t('Special')]].map(([k,l])=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="w'+k+'-'+w.id+'" data-list="weapons" data-id="'+w.id+'" data-key="'+k+'" value="'+esc(k==='skill'||k==='range'||k==='special'?t(w[k]||''):w[k])+'" '+(k==='ammoMax'?'type="number" min="0" max="12"':'')+'></label>').join('')+'</div>'+
+  (w.ammoMax>0?'<div class="ammo">'+pips+'<button class="btn sm" data-act="reload" data-id="'+w.id+'" '+(w.ammo>=w.ammoMax||(!w.fr&&!(gunPool(c.weapons,w)>0)&&!(shared&&totRel>0))?'disabled':'')+'>'+(w.fr?t('Reload (free)'):t('Reload'))+'</button>'+
+   (w.fr?'':'<span class="note">'+t('Extra reloads')+(sameGuns(c.weapons,w).length>1?' '+t('(shared by your {n} × {weapon})',{n:sameGuns(c.weapons,w).length,weapon:esc(t(w.name))}):'')+'</span><div class="stepper"><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="-1" aria-label="'+t('One fewer reload for {weapon}',{weapon:esc(w.name?t(w.name):t('this gun'))})+'">−</button><b class="num">'+gunPool(c.weapons,w)+'</b><button class="btn sm icon" data-act="wrel" data-id="'+w.id+'" data-n="1" aria-label="'+t('One more reload for {weapon}',{weapon:esc(w.name?t(w.name):t('this gun'))})+'">+</button></div>'+(w.rc?'<button class="btn sm" data-act="buyrel" data-id="'+w.id+'">'+t('Buy one · {price}',{price:money(w.rc)})+'</button>':''))+'</div>':'')+
+  '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="'+t('Remove weapon')+'">×</button></div>';}).join(''):'<p class="note">'+t('No weapons.')+'</p>')+
  '</div></section>';
 
  // horror & insight
- h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>Horror</h2><div class="row"><div class="stat"><span class="lbl">Horror dice limit</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">Suffer 1</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>Remove 1</button></div>'+
- '<div class="row">'+fld('habitual.name','Habitual item',c.habitual.name,'text','placeholder="e.g. Stick of gum"')+'<span class="num" title="How many you have" style="white-space:nowrap">\u00d7 '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?'Used this session':c.habitual.uses<=0?'None left':'Use one (\u22121 horror)')+'</button><button class="btn sm" data-act="buyhabit">Buy another $1</button><span class="note">'+money(c.money)+' left</span></div>'+
- '<p class="note" style="margin:0">Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.</p></div>'+
- '<div style="display:flex;flex-direction:column;gap:10px"><h2>Insight</h2><div class="row"><div class="stat"><span class="lbl">Insight</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>Spend 1</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>Regain 1</button></div>'+
- '<p class="note" style="margin:0">Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.</p>'+
- '<div class="row">'+fld('lucky.name','Lucky item',c.lucky.name,'text','placeholder="e.g. Grandpa\u2019s silver dollar"')+'<button class="btn" data-act="lucky" '+(c.lucky.used||!c.lucky.name||c.insight>=c.insightLimit?'disabled':'')+'>'+(c.lucky.used?'Used this session':'Use it (+1 insight)')+'</button></div>'+
+ h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>'+t('Horror')+'</h2><div class="row"><div class="stat"><span class="lbl">'+t('Horror dice limit')+'</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">'+t('Suffer 1')+'</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>'+t('Remove 1')+'</button></div>'+
+ '<div class="row">'+fld('habitual.name',t('Habitual item'),t(c.habitual.name||''),'text','placeholder="'+t('e.g. Stick of gum')+'"')+'<span class="num" title="'+t('How many you have')+'" style="white-space:nowrap">× '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?t('Used this session'):c.habitual.uses<=0?t('None left'):t('Use one (−1 horror)'))+'</button><button class="btn sm" data-act="buyhabit">'+t('Buy another $1')+'</button><span class="note">'+t('{amount} left',{amount:money(c.money)})+'</span></div>'+
+ '<p class="note" style="margin:0">'+t('Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.')+'</p></div>'+
+ '<div style="display:flex;flex-direction:column;gap:10px"><h2>'+t('Insight')+'</h2><div class="row"><div class="stat"><span class="lbl">'+t('Insight')+'</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>'+t('Spend 1')+'</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>'+t('Regain 1')+'</button></div>'+
+ '<p class="note" style="margin:0">'+t('Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.')+'</p>'+
+ '<div class="row">'+fld('lucky.name',t('Lucky item'),t(c.lucky.name||''),'text','placeholder="'+t('e.g. Grandpa’s silver dollar')+'"')+'<button class="btn" data-act="lucky" '+(c.lucky.used||!c.lucky.name||c.insight>=c.insightLimit?'disabled':'')+'>'+(c.lucky.used?t('Used this session'):t('Use it (+1 insight)'))+'</button></div>'+
  traitField(s,c)+'</div></div></section>';
 
  // knacks
- h+='<section class="sec"><div class="sec-head"><h2>Knacks</h2><span class="chip">'+c.xpUnused+' unused XP</span></div>'+knackPicker(c)+
- '<div class="list">'+(c.knacks.length?c.knacks.map(k=>'<div class="item"><span class="tier">T'+k.tier+'</span><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="name" value="'+esc(k.name)+'" placeholder="Knack name" style="font-weight:600"><textarea class="f" id="kt-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="text" placeholder="What it does">'+esc(k.text)+'</textarea></div><button class="btn sm icon" data-act="del" data-list="knacks" data-id="'+k.id+'" aria-label="Remove knack">×</button></div>').join(''):'<p class="note">No knacks yet.</p>')+'</div>'+'</section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Knacks')+'</h2><span class="chip">'+t('{n} unused XP',{n:c.xpUnused})+'</span></div>'+knackPicker(c)+
+ '<div class="list">'+(c.knacks.length?c.knacks.map(k=>'<div class="item"><span class="tier">T'+k.tier+'</span><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="name" value="'+esc(t(k.name||''))+'" placeholder="'+t('Knack name')+'" style="font-weight:600"><textarea class="f" id="kt-'+k.id+'" data-list="knacks" data-id="'+k.id+'" data-key="text" placeholder="'+t('What it does')+'">'+esc(A.knackShown(k))+'</textarea></div><button class="btn sm icon" data-act="del" data-list="knacks" data-id="'+k.id+'" aria-label="'+t('Remove knack')+'">×</button></div>').join(''):'<p class="note">'+t('No knacks yet.')+'</p>')+'</div>'+'</section>';
 
  // injuries & trauma
- h+='<section class="sec"><div class="sec-head"><h2>Injuries &amp; traumas</h2></div>'+
- '<div class="grid2"><div><span class="lbl">Injuries</span>'+
- '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="Add an injury" style="flex:1;min-width:0"><option value="">Add an injury…</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(x[0])+'</option>').join('')+'</select></div>'+
- '<p class="note" style="margin:6px 0">Roll 1d6'+(c.injuries.length?' + '+c.injuries.length:'')+' at the table'+(c.injuries.length?' (+1 for each injury you already have)':'')+', then pick the result.</p>'+
- '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(j.name)+'</b>'+(e?'<span class="effect">'+esc(e[1])+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">Healed</button></div>';}).join(''):'<p class="note">None.</p>')+'</div></div>'+
- '<div><span class="lbl">Traumas'+(c.traumaMod?' · +'+c.traumaMod+' to trauma rolls this session':'')+'</span>'+
- '<div class="row"><select class="maxsel" id="trasel-'+s+'" data-addtra="1" aria-label="Add a trauma" style="flex:1;min-width:0"><option value="">Add a trauma…</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(k)+'</option>').join('')+'</select></div>'+
- '<p class="note" style="margin:6px 0">Roll 1d6 + the number of 1s on your horror dice'+(c.traumaMod?' + '+c.traumaMod:'')+' at the table, then pick the result.</p>'+
- '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(j.name)+'</b><span class="effect">'+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">Clear</button></div>').join(''):'<p class="note">None.</p>')+'</div></div></div></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Injuries &amp; traumas')+'</h2></div>'+
+ '<div class="grid2"><div><span class="lbl">'+t('Injuries')+'</span>'+
+ '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="'+t('Add an injury')+'" style="flex:1;min-width:0"><option value="">'+t('Add an injury…')+'</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(t(x[0]))+'</option>').join('')+'</select></div>'+
+ '<p class="note" style="margin:6px 0">'+(c.injuries.length?t('Roll 1d6 + {n} at the table (+1 for each injury you already have), then pick the result.',{n:c.injuries.length}):t('Roll 1d6 at the table, then pick the result.'))+'</p>'+
+ '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(t(j.name))+'</b>'+(e?'<span class="effect">'+esc(t(e[1]))+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">'+t('Healed')+'</button></div>';}).join(''):'<p class="note">'+t('None.')+'</p>')+'</div></div>'+
+ '<div><span class="lbl">'+t('Traumas')+(c.traumaMod?' · '+t('+{n} to trauma rolls this session',{n:c.traumaMod}):'')+'</span>'+
+ '<div class="row"><select class="maxsel" id="trasel-'+s+'" data-addtra="1" aria-label="'+t('Add a trauma')+'" style="flex:1;min-width:0"><option value="">'+t('Add a trauma…')+'</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(t(k))+'</option>').join('')+'</select></div>'+
+ '<p class="note" style="margin:6px 0">'+(c.traumaMod?t('Roll 1d6 + the number of 1s on your horror dice + {n} at the table, then pick the result.',{n:c.traumaMod}):t('Roll 1d6 + the number of 1s on your horror dice at the table, then pick the result.'))+'</p>'+
+ '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(t(j.name))+'</b><span class="effect">'+esc(t(traumaFor(TRAUMA_AT[j.name]||1)[1]))+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">'+t('Clear')+'</button></div>').join(''):'<p class="note">'+t('None.')+'</p>')+'</div></div></div></section>';
 
  // resources
- h+='<section class="sec"><div class="sec-head"><h2>Money &amp; equipment</h2></div><div class="row"><div class="stat"><span class="lbl">Money</span><b class="num">'+money(c.money)+'</b></div>'+
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Money &amp; equipment')+'</h2></div><div class="row"><div class="stat"><span class="lbl">'+t('Money')+'</span><b class="num">'+money(c.money)+'</b></div>'+
  [-1,-0.25,0.25,1,5].map(d=>'<button class="btn sm" data-act="cash" data-n="'+d+'">'+(d<0?'−':'+')+money(Math.abs(d))+'</button>').join('')+
- '</div>'+gearPicker(s)+'<div class="row"><label class="row note" for="cash-'+s+'">Amount <input id="cash-'+s+'" class="maxsel" style="width:80px" type="number" step="0.01" min="0" placeholder="0.00"></label><button class="btn sm" data-act="cashin">Add</button><button class="btn sm" data-act="cashout">Spend</button><button class="btn sm" data-act="cashset" title="Replace the current money with this amount">Set to this</button></div>'+
- '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(it.name)+'" placeholder="Item" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(it.note)+'" placeholder="Notes or rules"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="Remove item">×</button></div>').join(''):'<p class="note">No equipment.</p>')+
- '</div><div class="row"><button class="btn sm" data-act="addi">Add item</button></div>'+vehiclePicker(s)+'<div class="grid2">'+fld('bg.vehicle','Vehicle',c.bg.vehicle)+fld('bg.lodging','Lodging',c.bg.lodging)+'</div></section>';
+ '</div>'+gearPicker(s)+'<div class="row"><label class="row note" for="cash-'+s+'">'+t('Amount')+' <input id="cash-'+s+'" class="maxsel" style="width:80px" type="number" step="0.01" min="0" placeholder="0.00"></label><button class="btn sm" data-act="cashin">'+t('Add')+'</button><button class="btn sm" data-act="cashout">'+t('Spend')+'</button><button class="btn sm" data-act="cashset" title="'+t('Replace the current money with this amount')+'">'+t('Set to this')+'</button></div>'+
+ '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(t(it.name||''))+'" placeholder="'+t('Item')+'" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(t(it.note||''))+'" placeholder="'+t('Notes or rules')+'"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="'+t('Remove item')+'">×</button></div>').join(''):'<p class="note">'+t('No equipment.')+'</p>')+
+ '</div><div class="row"><button class="btn sm" data-act="addi">'+t('Add item')+'</button></div>'+vehiclePicker(s)+'<div class="grid2">'+fld('bg.vehicle',t('Vehicle'),c.bg.vehicle)+fld('bg.lodging',t('Lodging'),c.bg.lodging)+'</div></section>';
 
- h+='<details class="sec"><summary><h2>Tomes, relics &amp; debts</h2></summary><div class="grid2"><label class="field"><span class="lbl">Tomes</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">Relics</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">Eldritch debts or favors</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
+ h+='<details class="sec"><summary><h2>'+t('Tomes, relics &amp; debts')+'</h2></summary><div class="grid2"><label class="field"><span class="lbl">'+t('Tomes')+'</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">'+t('Relics')+'</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">'+t('Eldritch debts or favors')+'</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
 
  // player, archetype & experience
- h+='<section class="sec"><div class="sec-head"><h2>Player, archetype &amp; XP</h2></div>'+
- '<div class="grid2">'+fld('player','Player',c.player)+'<label class="field"><span class="lbl">Archetype</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">Choose…</option>'+ARCH.map(a=>'<option'+(a===c.archetype?' selected':'')+'>'+a+'</option>').join('')+'</select></label></div>'+
- '<div class="row"><div class="stat"><span class="lbl">Total XP</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">Unused XP</span><b class="num">'+c.xpUnused+'</b></div><div class="row" style="gap:6px;align-items:center"><span class="note">Award XP</span><div class="stepper"><button class="btn sm icon" data-act="xpamt" data-n="-1" aria-label="One less XP">−</button><input id="xpamt-'+s+'" data-xpamt="1" class="maxsel num" type="number" inputmode="numeric" min="1" max="30" value="'+(xpAmt[s]||1)+'" aria-label="XP to award" style="width:56px;text-align:center"><button class="btn sm icon" data-act="xpamt" data-n="1" aria-label="One more XP">+</button></div><button class="btn sm pri" data-act="xpaward">Add</button><button class="btn sm" data-act="xpfix">Fix XP…</button></div></div>'+'<p class="note" style="margin:4px 0 0">The book suggests 1 XP per hour played, plus 1–3 for big moments.</p>'+
- (edit.xp?'<div class="row">'+fld('xpTotal','Total XP',c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused','Unused XP',c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
- '<div class="costs"><span>Skill 6+ → 5+</span><span>2 XP</span><span>Skill 5+ → 4+</span><span>4 XP</span><span>Skill 4+ → 3+ (archetype skills)</span><span>7 XP</span><span>Skill 3+ → 2+ (archetype skills)</span><span>12 XP</span><span>+1 insight limit (after a momentous session)</span><span>1 XP</span></div>'+
- '<div class="row"><button class="btn sm" data-act="buyins">Raise insight limit · 1 XP</button></div></section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Player, archetype &amp; XP')+'</h2></div>'+
+ '<div class="grid2">'+fld('player',t('Player'),c.player)+'<label class="field"><span class="lbl">'+t('Archetype')+'</span><select class="f" id="arch-'+s+'" data-f="archetype"><option value="">'+t('Choose…')+'</option>'+ARCH.map(a=>'<option value="'+a+'"'+(a===c.archetype?' selected':'')+'>'+t(a)+'</option>').join('')+'</select></label></div>'+
+ '<div class="row"><div class="stat"><span class="lbl">'+t('Total XP')+'</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">'+t('Unused XP')+'</span><b class="num">'+c.xpUnused+'</b></div><div class="row" style="gap:6px;align-items:center"><span class="note">'+t('Award XP')+'</span><div class="stepper"><button class="btn sm icon" data-act="xpamt" data-n="-1" aria-label="'+t('One less XP')+'">−</button><input id="xpamt-'+s+'" data-xpamt="1" class="maxsel num" type="number" inputmode="numeric" min="1" max="30" value="'+(xpAmt[s]||1)+'" aria-label="'+t('XP to award')+'" style="width:56px;text-align:center"><button class="btn sm icon" data-act="xpamt" data-n="1" aria-label="'+t('One more XP')+'">+</button></div><button class="btn sm pri" data-act="xpaward">'+t('Add')+'</button><button class="btn sm" data-act="xpfix">'+t('Fix XP…')+'</button></div></div>'+'<p class="note" style="margin:4px 0 0">'+t('The book suggests 1 XP per hour played, plus 1–3 for big moments.')+'</p>'+
+ (edit.xp?'<div class="row">'+fld('xpTotal',t('Total XP'),c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused',t('Unused XP'),c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
+ '<div class="costs"><span>'+t('Skill 6+ → 5+')+'</span><span>'+t('2 XP')+'</span><span>'+t('Skill 5+ → 4+')+'</span><span>'+t('4 XP')+'</span><span>'+t('Skill 4+ → 3+ (archetype skills)')+'</span><span>'+t('7 XP')+'</span><span>'+t('Skill 3+ → 2+ (archetype skills)')+'</span><span>'+t('12 XP')+'</span><span>'+t('+1 insight limit (after a momentous session)')+'</span><span>'+t('1 XP')+'</span></div>'+
+ '<div class="row"><button class="btn sm" data-act="buyins">'+t('Raise insight limit · 1 XP')+'</button></div></section>';
 
- h+='<details class="sec"><summary><h2>Background</h2></summary><div class="grid2">'+fld('bg.origin','Place of origin',c.bg.origin)+fld('bg.family','Family & friends',c.bg.family)+fld('bg.employment','Employment',c.bg.employment)+fld('bg.salary','Weekly salary',c.bg.salary)+fld('bg.encounter','First supernatural encounter',c.bg.encounter)+fld('bg.enemies','Notable enemies',c.bg.enemies)+'</div></details>';
+ h+='<details class="sec"><summary><h2>'+t('Background')+'</h2></summary><div class="grid2">'+fld('bg.origin',t('Place of origin'),c.bg.origin)+fld('bg.family',t('Family & friends'),c.bg.family)+fld('bg.employment',t('Employment'),c.bg.employment)+fld('bg.salary',t('Weekly salary'),c.bg.salary)+fld('bg.encounter',t('First supernatural encounter'),c.bg.encounter)+fld('bg.enemies',t('Notable enemies'),c.bg.enemies)+'</div></details>';
 
  const gm=!!keys.master&&ownerEditsOn()&&!localMode;
- h+='<section class="sec"><div class="sec-head"><h2>Recent</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">Clear all</button>':'')+'<button class="btn sm" data-act="session">New session</button></div></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="Remove this entry">\u00d7</button>':'')+'<span>'+new Date(l.t).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})+' \u2014 '+esc(l.m)+'</span></span>').join(''):'Nothing yet.')+'</div>'+(gm?'<p class="note" style="margin:0">'+(CAMP?'As the campaign owner, you can remove entries.':'Master key: you can remove entries.')+'</p>':'')+'</section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Recent')+'</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">'+t('Clear all')+'</button>':'')+'<button class="btn sm" data-act="session">'+t('New session')+'</button></div></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="'+t('Remove this entry')+'">×</button>':'')+'<span>'+new Date(l.t).toLocaleString(I18N.locale, {weekday:'short',hour:'numeric',minute:'2-digit'})+' — '+esc(logText(l))+'</span></span>').join(''):t('Nothing yet.'))+'</div>'+(gm?'<p class="note" style="margin:0">'+(CAMP?t('As the campaign owner, you can remove entries.'):t('Master key: you can remove entries.'))+'</p>':'')+'</section>';
  return h;
 }
 function activeEffects(c){
- const a=c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(j.name)+'</b>'+(e?' \u2014 '+esc(e[1]):'')+'</div>';})
-  .concat(c.traumas.map(j=>'<div class="note"><b style="color:var(--horror)">'+esc(j.name)+'</b> \u2014 '+esc(traumaFor(TRAUMA_AT[j.name]||1)[1])+'</div>'));
- return a.length?'<div style="display:flex;flex-direction:column;gap:4px"><span class="lbl">Affecting you now</span>'+a.join('')+'</div>':'';
+ const a=c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(t(j.name))+'</b>'+(e?' — '+esc(t(e[1])):'')+'</div>';})
+  .concat(c.traumas.map(j=>'<div class="note"><b style="color:var(--horror)">'+esc(t(j.name))+'</b> — '+esc(t(traumaFor(TRAUMA_AT[j.name]||1)[1]))+'</div>'));
+ return a.length?'<div style="display:flex;flex-direction:column;gap:4px"><span class="lbl">'+t('Affecting you now')+'</span>'+a.join('')+'</div>':'';
 }
 const edit={xp:false};
 let house={on:false};
@@ -221,60 +221,60 @@ function GR(){return house.on?[...A.GEAR,...(HR().gear||[]).map(g=>({...g,house:
 function gmPinHtml(){
  if(localMode||CAMP)return '';
  const gmk=isGM(),mk=!!keys.master;
- const [cls,lab,note]=!gmClaimed?['warn','No GM PIN','Whoever runs the game sets a PIN here. After that only devices with the PIN can run these tools.']
-  :gmk?['ok','Unlocked on this device','Others need the GM PIN to run these tools.']
-  :mk?['ok','Master key','You can view the GM tools. Only the GM PIN can change them.']
-  :['warn','Locked','Enter the GM PIN to run the GM tools.'];
+ const [cls,lab,note]=!gmClaimed?['warn',t('No GM PIN'),t('Whoever runs the game sets a PIN here. After that only devices with the PIN can run these tools.')]
+  :gmk?['ok',t('Unlocked on this device'),t('Others need the GM PIN to run these tools.')]
+  :mk?['ok',t('Master key'),t('You can view the GM tools. Only the GM PIN can change them.')]
+  :['warn',t('Locked'),t('Enter the GM PIN to run the GM tools.')];
  const inp=ph=>'<input class="maxsel" style="width:150px" type="password" id="gmpin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+ph+'" aria-label="'+ph+'">';
  let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row"><span class="chip '+cls+'">'+lab+'</span><span class="note">'+note+'</span></div></div>';
- if(!gmClaimed)h+='<div class="row">'+inp('New GM PIN')+'<button class="btn sm pri" data-act="gmset">Set GM PIN</button></div>';
- else if(gmk)h+=edit.gmclear?'<div class="row"><span class="note">Remove the GM PIN? Anyone can then set a new one and take over the GM tools. Your enemies, clues, notes and log stay.</span><button class="btn sm dng" data-act="gmclear">Yes, remove it</button><button class="btn sm" data-act="gmclearno">Cancel</button></div>'
-  :'<div class="row">'+inp('New GM PIN')+'<button class="btn sm" data-act="gmset">Change GM PIN</button><button class="btn sm" data-act="gmforget">Lock this device</button><button class="btn sm" data-act="gmclearask">Remove GM PIN</button></div>';
- else h+='<div class="row">'+inp('GM PIN')+'<button class="btn sm pri" data-act="gmunlock">Unlock</button>'+(mk?'<button class="btn sm" data-act="gmreset">Reset GM PIN</button>':'')+'</div>';
+ if(!gmClaimed)h+='<div class="row">'+inp(t('New GM PIN'))+'<button class="btn sm pri" data-act="gmset">'+t('Set GM PIN')+'</button></div>';
+ else if(gmk)h+=edit.gmclear?'<div class="row"><span class="note">'+t('Remove the GM PIN? Anyone can then set a new one and take over the GM tools. Your enemies, clues, notes and log stay.')+'</span><button class="btn sm dng" data-act="gmclear">'+t('Yes, remove it')+'</button><button class="btn sm" data-act="gmclearno">'+t('Cancel')+'</button></div>'
+  :'<div class="row">'+inp(t('New GM PIN'))+'<button class="btn sm" data-act="gmset">'+t('Change GM PIN')+'</button><button class="btn sm" data-act="gmforget">'+t('Lock this device')+'</button><button class="btn sm" data-act="gmclearask">'+t('Remove GM PIN')+'</button></div>';
+ else h+='<div class="row">'+inp(t('GM PIN'))+'<button class="btn sm pri" data-act="gmunlock">'+t('Unlock')+'</button>'+(mk?'<button class="btn sm" data-act="gmreset">'+t('Reset GM PIN')+'</button>':'')+'</div>';
  return h+'</section>';
 }
 function houseToggle(){
  const hr=HR();const names=[...(hr.rules||[]),...(hr.weapons||[]),...(hr.gear||[])].map(x=>x.n).filter(Boolean);
- if(!names.length)return CAMP&&keys.master&&!IS_LOCAL?'<p class="note" style="margin:0 0 8px">No house rules yet. Add custom weapons, gear or rule changes in <a href="./?settings='+encodeURIComponent(CAMP)+'">Settings</a>.</p>':'';
+ if(!names.length)return CAMP&&keys.master&&!IS_LOCAL?'<p class="note" style="margin:0 0 8px">'+t('No house rules yet. Add custom weapons, gear or rule changes in {settings}.',{settings:'<a href="./?settings='+encodeURIComponent(CAMP)+'">'+t('Settings')+'</a>'})+'</p>':'';
  const can=(!db&&localMode)||!!keys.master;
- return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>'+(CAMP&&!isGMView()?'':'House rules ')+(house.on?'<span class="chip ok">On</span>':'<span class="chip warn">Off</span>')+'</b><span class="effect">Adds: '+esc(names.join(', '))+'.'+(can?'':' '+(CAMP?'Only the campaign owner can change this.':'Only the master key can change this.')+'')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?'Turn off':'Turn on')+'</button>':'')+'</div>';
+ return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>'+(CAMP&&!isGMView()?'':t('House rules')+' ')+(house.on?'<span class="chip ok">'+t('On')+'</span>':'<span class="chip warn">'+t('Off')+'</span>')+'</b><span class="effect">'+t('Adds: {list}.',{list:esc(names.map(n=>t(n)).join(', '))})+(can?'':' '+(CAMP?t('Only the campaign owner can change this.'):t('Only the master key can change this.'))+'')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?t('Turn off'):t('Turn on'))+'</button>':'')+'</div>';
 }
 function traitField(s,c){
  const names=Object.keys(A.TRAITS);const cur=c.personality||'';const custom=cur&&!names.includes(cur);
- let h='<label class="field"><span class="lbl">Personality trait</span><select class="f" id="trait-'+s+'" data-trait="1"><option value="">Choose\u2026</option>'+names.map(n=>'<option'+(n===cur?' selected':'')+'>'+n+'</option>').join('')+(custom?'<option selected>'+esc(cur)+'</option>':'')+'</select></label>';
+ let h='<label class="field"><span class="lbl">'+t('Personality trait')+'</span><select class="f" id="trait-'+s+'" data-trait="1"><option value="">'+t('Choose…')+'</option>'+names.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+t(n)+'</option>').join('')+(custom?'<option selected>'+esc(cur)+'</option>':'')+'</select></label>';
  const pend=edit.trait&&edit.trait.s===s?edit.trait.t:null;
- if(pend)h+='<div class="roll" role="status"><span>Changing from <b>'+esc(cur)+'</b> to <b>'+esc(pend)+'</b>. The book allows this with GM permission after a traumatic experience, for 2 XP.</span><div class="row"><button class="btn sm pri" data-act="traitxp" '+(c.xpUnused>=2?'':'disabled')+'>Change for 2 XP</button><button class="btn sm" data-act="traitfree">Just fixing a mistake (free)</button><button class="btn sm" data-act="traitcancel">Cancel</button></div></div>';
- h+=c.positive||c.negative?'<div class="grid2"><div><span class="lbl">Positive</span><p class="effect" style="margin:4px 0 0">'+esc(c.positive)+'</p></div><div><span class="lbl">Negative (when triggered)</span><p class="effect" style="margin:4px 0 0">'+esc(c.negative)+'</p></div></div>':'';
+ if(pend)h+='<div class="roll" role="status"><span>'+t('Changing from {from} to {to}. The book allows this with GM permission after a traumatic experience, for 2 XP.',{from:'<b>'+esc(t(cur))+'</b>',to:'<b>'+esc(t(pend))+'</b>'})+'</span><div class="row"><button class="btn sm pri" data-act="traitxp" '+(c.xpUnused>=2?'':'disabled')+'>'+t('Change for 2 XP')+'</button><button class="btn sm" data-act="traitfree">'+t('Just fixing a mistake (free)')+'</button><button class="btn sm" data-act="traitcancel">'+t('Cancel')+'</button></div></div>';
+ h+=c.positive||c.negative?'<div class="grid2"><div><span class="lbl">'+t('Positive')+'</span><p class="effect" style="margin:4px 0 0">'+esc(t(c.positive||''))+'</p></div><div><span class="lbl">'+t('Negative (when triggered)')+'</span><p class="effect" style="margin:4px 0 0">'+esc(t(c.negative||''))+'</p></div></div>':'';
  return h;
 }
-function setTrait(s,t,cost){const c=chars[s];const d=A.TRAITS[t]||['',''];const p={personality:t,positive:d[0],negative:d[1]};if(cost)p.xpUnused=c.xpUnused-cost;edit.trait=null;save(s,p,t?(cost?'Changed personality trait to '+t+' (2 XP)':'Personality trait: '+t):'Cleared personality trait');}
+function setTrait(s,tr,cost){const c=chars[s];const d=A.TRAITS[tr]||['',''];const p={personality:tr,positive:d[0],negative:d[1]};if(cost)p.xpUnused=c.xpUnused-cost;edit.trait=null;save(s,p,tr?(cost?logm('Changed personality trait to {trait} (2 XP)',{trait:tr}):logm('Personality trait: {trait}',{trait:tr})):logm('Cleared personality trait'));}
 function knackPicker(c){
  const kn=A.knacksFor(c.archetype);
- if(!kn.length)return '<p class="note" style="margin:0">Choose an archetype (under Player, archetype &amp; XP) to pick knacks from its list.</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">Add a knack by hand</button></div>';
+ if(!kn.length)return '<p class="note" style="margin:0">'+t('Choose an archetype (under Player, archetype &amp; XP) to pick knacks from its list.')+'</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">'+t('Add a knack by hand')+'</button></div>';
  const owned=c.knacks.map(k=>k.name);
- return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+esc(c.archetype)+' knacks (\u2605 unique)</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">Add a knack…</option>'+[1,2,3,4].map(t=>'<optgroup label="Tier '+t+' \u00b7 '+KNACK_COST[t]+' XP">'+kn.filter(k=>k.tier===t&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'\u2605 ':'')+esc(k.name)+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">Buy with XP</button><button class="btn" data-act="kgrant">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+t('{archetype} knacks (★ unique)',{archetype:esc(t(c.archetype))})+'</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">'+t('Add a knack…')+'</option>'+[1,2,3,4].map(tier=>'<optgroup label="'+t('Tier {n} · {xp} XP',{n:tier,xp:KNACK_COST[tier]})+'">'+kn.filter(k=>k.tier===tier&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'★ ':'')+esc(t(k.name))+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">'+t('Buy with XP')+'</button><button class="btn" data-act="kgrant">'+t('Add free')+'</button></div>';
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Buy equipment</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">Add equipment…</option>'+cats.map(ct=>'<optgroup label="'+ct+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">Buy</button><button class="btn" data-act="gfree">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>';
 }
 function vehiclePicker(s){
  const c=chars[s];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Get a vehicle</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">Choose a vehicle…</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(g.n)+' \u2014 '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="vbuy">Buy</button><button class="btn" data-act="vfree">Add free</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a vehicle')+'</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">'+t('Choose a vehicle…')+'</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="vbuy">'+t('Buy')+'</button><button class="btn" data-act="vfree">'+t('Add free')+'</button></div>';
 }
 function weaponPicker(s){
- const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(w.n)+(w.house?' (house rule)':'')+' \u2014 '+money(w.c)+'</option>':'').join('')+'</optgroup>';
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">Get a weapon</span><select class="f" id="wpick-'+s+'" data-pick="w"><option value="">Add a weapon…</option>'+grp('Ranged','Ranged Combat')+grp('Melee','Melee Combat')+'</select></label><button class="btn" data-act="wbuy">Buy</button><button class="btn" data-act="wfree">Add free</button></div>';
+ const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(t(w.n))+(w.house?' '+t('(house rule)'):'')+' — '+money(w.c)+'</option>':'').join('')+'</optgroup>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a weapon')+'</span><select class="f" id="wpick-'+s+'" data-pick="w"><option value="">'+t('Add a weapon…')+'</option>'+grp(t('Ranged'),'Ranged Combat')+grp(t('Melee'),'Melee Combat')+'</select></label><button class="btn" data-act="wbuy">'+t('Buy')+'</button><button class="btn" data-act="wfree">'+t('Add free')+'</button></div>';
 }
 function addGear(s,val,pay){
- const c=chars[s];const [t,i]=val.split(':');const it=t==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return;
- const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast('Not enough money. '+it.n+' costs '+money(it.c)+'.');
+ const c=chars[s];const [ty,i]=val.split(':');const it=ty==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return;
+ const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast(t('Not enough money. {item} costs {price}.',{item:t(it.n),price:money(it.c)}));
  const p={money:m};
- if(t==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
+ if(ty==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
  else if(it.cat==='Transport'){const v=(c.bg.vehicle||'').trim();p.bg={...c.bg,vehicle:v?v+', '+it.n:it.n};}
- else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||'Habitual item',used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
+ else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||tk('Habitual item'),used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
- save(s,p,(pay?'Bought ':'Added ')+it.n+(pay?' for '+money(it.c):''));
+ save(s,p,pay?logm('Bought {item} for {price}',{item:it.n,price:money(it.c)}):logm('Added {item}',{item:it.n}));
 }
 function render(){
  const ae=document.activeElement;
@@ -285,7 +285,7 @@ function render(){
  // Don't refocus dropdowns: on phones that reopens the picker right after a choice.
  const keepId=inApp&&ae.id&&ae.tagName!=='SELECT'?ae.id:null;
  pending=false;
- if(halted){document.getElementById('tabs').innerHTML='';document.getElementById('app').innerHTML='<section class="sec"><h2>Can\u2019t open this campaign</h2><p class="note" style="margin:0">'+esc(halted)+'</p><div class="row"><a class="btn pri" href="./">Go to My campaigns</a></div></section>';return;}
+ if(halted){document.getElementById('tabs').innerHTML='';document.getElementById('app').innerHTML='<section class="sec"><h2>'+t('Can’t open this campaign')+'</h2><p class="note" style="margin:0">'+esc(halted)+'</p><div class="row"><a class="btn pri" href="./">'+t('Go to My campaigns')+'</a></div></section>';return;}
  renderTabs();
  const app=document.getElementById('app');
  app.innerHTML=active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty();

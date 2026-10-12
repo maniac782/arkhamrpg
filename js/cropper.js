@@ -7,9 +7,9 @@
 window.openCropper=function(file,o){
  o=o||{};
  const err=m=>{(o.onError||alert)(m);};
- if(!file||!/^image\//.test(file.type))return err('Choose an image file.');
+ if(!file||!/^image\//.test(file.type))return err(t('Choose an image file.'));
  const url=URL.createObjectURL(file),img=new Image();
- img.onerror=()=>{URL.revokeObjectURL(url);err('Couldn’t read that image. Try a JPG or PNG.');};
+ img.onerror=()=>{URL.revokeObjectURL(url);err(t('Couldn’t read that image. Try a JPG or PNG.'));};
  img.onload=()=>{
   const wide=o.shape==='wide',VW=wide?Math.max(280,Math.min(560,window.innerWidth-80)):260,VH=wide?Math.round(VW*9/16):260,PX=2; // view size in CSS px, canvas drawn at 2x
   const OUTW=o.outW||(wide?800:320),OUTH=o.outH||(wide?450:320),MAX=o.maxLen||120000;
@@ -17,12 +17,12 @@ window.openCropper=function(file,o){
   // Banners can zoom out until the whole picture fits; the space around it is filled with a soft, darkened blur of it.
   const MINZ=wide?Math.min(1,Math.min(VW/img.width,VH/img.height)/base):1;
   let soft=null;if(MINZ<1){soft=document.createElement('canvas');const k=24/Math.max(img.width,img.height);soft.width=Math.max(2,Math.round(img.width*k));soft.height=Math.max(2,Math.round(img.height*k));soft.getContext('2d').drawImage(img,0,0,soft.width,soft.height);}
-  const bg=document.createElement('div');bg.className='crop-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',o.title||'Position picture');
-  bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||'Position your picture')+'</h2><canvas class="'+(wide?'rect':'')+'" width="'+VW*PX+'" height="'+VH*PX+'"'+(wide?' style="width:'+VW+'px;height:'+VH+'px"':'')+' tabindex="0" aria-label="Drag to move the picture. Arrow keys also move it."></canvas>'+
-   '<label class="field" style="width:100%"><span class="lbl">Zoom</span><input type="range" class="crop-zoom" min="'+MINZ+'" max="4" step="0.01" value="1"></label>'+
-   (MINZ<1?'<button class="btn sm" type="button" data-c="fit">Show the whole picture</button>':'')+
-   '<p class="note" style="margin:0;text-align:center">'+(wide?'Drag the picture to choose what shows in the banner.'+(o.full?' The whole picture is kept too, for viewing full size.':''):'Drag the picture to center the face in the circle.'+(o.full?' The whole picture is kept too, for viewing full size.':''))+'</p>'+
-   '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel" type="button">Cancel</button><button class="btn pri" data-c="save" type="button">'+(o.button||'Save picture')+'</button></div></div>';
+  const bg=document.createElement('div');bg.className='crop-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',o.title||t('Position picture'));
+  bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||t('Position your picture'))+'</h2><canvas class="'+(wide?'rect':'')+'" width="'+VW*PX+'" height="'+VH*PX+'"'+(wide?' style="width:'+VW+'px;height:'+VH+'px"':'')+' tabindex="0" aria-label="'+t('Drag to move the picture. Arrow keys also move it.')+'"></canvas>'+
+   '<label class="field" style="width:100%"><span class="lbl">'+t('Zoom')+'</span><input type="range" class="crop-zoom" min="'+MINZ+'" max="4" step="0.01" value="1"></label>'+
+   (MINZ<1?'<button class="btn sm" type="button" data-c="fit">'+t('Show the whole picture')+'</button>':'')+
+   '<p class="note" style="margin:0;text-align:center">'+(wide?t('Drag the picture to choose what shows in the banner.'):t('Drag the picture to center the face in the circle.'))+(o.full?' '+t('The whole picture is kept too, for viewing full size.'):'')+'</p>'+
+   '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel" type="button">'+t('Cancel')+'</button><button class="btn pri" data-c="save" type="button">'+(o.button||t('Save picture'))+'</button></div></div>';
   document.body.appendChild(bg);
   const cv=bg.querySelector('canvas'),g=cv.getContext('2d'),zr=bg.querySelector('.crop-zoom');
   const clamp=()=>{const sc=base*zoom,mx=Math.abs(img.width*sc-VW)/2,my=Math.abs(img.height*sc-VH)/2;ox=Math.min(mx,Math.max(-mx,ox));oy=Math.min(my,Math.max(-my,oy));};

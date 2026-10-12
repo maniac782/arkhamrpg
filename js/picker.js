@@ -68,7 +68,7 @@
         if(items.length === before) html = html.slice(0, mark); // drop empty groups
       } else add(node, '');
     }
-    ul.innerHTML = html || '<div class="none">Nothing matches.</div>';
+    ul.innerHTML = html || '<div class="none">'+t('Nothing matches.')+'</div>';
     open.items = items;
     let hi = items.findIndex(o => !o.disabled && (nq ? true : o.value === sel.value));
     if(hi < 0) hi = items.findIndex(o => !o.disabled);
@@ -109,10 +109,10 @@
     if(open) close(false);
     const back = document.createElement('div'); back.className = 'spk-back';
     const box = document.createElement('div'); box.className = 'spk'; box.setAttribute('role', 'dialog');
-    const lab = sel.getAttribute('aria-label') || (sel.labels && sel.labels[0] ? sel.labels[0].textContent : '') || 'Choose';
+    const lab = sel.getAttribute('aria-label') || (sel.labels && sel.labels[0] ? sel.labels[0].textContent : '') || t('Choose');
     const withSearch = sel.options.length >= SEARCH_MIN;
     box.tabIndex = -1;
-    box.innerHTML = '<input type="search" placeholder="Search…" aria-label="Search ' + esc(lab.trim()) + '" autocomplete="off" autocapitalize="off" spellcheck="false"' + (withSearch ? '' : ' hidden') + '><ul role="listbox" aria-label="' + esc(lab.trim()) + '"></ul>';
+    box.innerHTML = '<input type="search" placeholder="' + t('Search…') + '" aria-label="' + esc(t('Search {what}', {what: lab.trim()})) + '" autocomplete="off" autocapitalize="off" spellcheck="false"' + (withSearch ? '' : ' hidden') + '><ul role="listbox" aria-label="' + esc(lab.trim()) + '"></ul>';
     document.body.appendChild(back); document.body.appendChild(box);
     open = {sel, box, back, items: [], hi: -1};
     const input = box.querySelector('input');

@@ -1,4 +1,4 @@
-/* Arkham Horror RPG Ledger — the little round account icon: an uploaded photo, or the username's first letter on a colour chosen on the account page. */
+/* Arkham Horror RPG Ledger — the little round account icon: an uploaded photo, or the username's first letter on a color chosen on the account page. */
 window.AVATAR_COLORS={slate:'#56606f',crimson:'#a3322a',rust:'#b0582c',forest:'#2f6b4f',teal:'#1f6f78',navy:'#2d4a8a',violet:'#6a3d8f',rose:'#9b3b63',brass:'#8a6417'};
 window.acctIcon=function(name,prof){
   prof=prof||{};
@@ -14,10 +14,10 @@ window.acctIcon=function(name,prof){
   var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
   window.acctMenuHtml=function(name,prof,opt){
     opt=opt||{};var open=!!window.__acctOpen;
-    return '<span class="acctwrap"><button class="acctbtn" type="button" data-acct="toggle" aria-haspopup="menu" aria-expanded="'+open+'" title="Your account">'+window.acctIcon(name,prof)+'<b class="acctname">'+esc(name)+'</b><span class="caret" aria-hidden="true">▾</span></button>'+
+    return '<span class="acctwrap"><button class="acctbtn" type="button" data-acct="toggle" aria-haspopup="menu" aria-expanded="'+open+'" title="'+t('Your account')+'">'+window.acctIcon(name,prof)+'<b class="acctname">'+esc(name)+'</b><span class="caret" aria-hidden="true">▾</span></button>'+
       '<div class="acctmenu" role="menu"'+(open?'':' hidden')+'><div class="acctmenu-head">'+window.acctIcon(name,prof)+'<span><b>'+esc(name)+'</b>'+(opt.email?'<span class="note">'+esc(opt.email)+'</span>':'')+'</span></div>'+
-      '<a role="menuitem" href="./?account=1" data-a="account">Your account</a>'+(opt.admin?'<a role="menuitem" href="admin.html">Admin</a>':'')+
-      (window.isInstalledApp&&window.isInstalledApp()?'':'<button role="menuitem" type="button" data-acct="install">Install app</button>')+'<button role="menuitem" type="button" data-acct="feedback">Send feedback</button>'+'<button role="menuitem" type="button" data-acct="signout">Sign out</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Horror RPG Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
+      '<a role="menuitem" href="./?account=1" data-a="account">'+t('Your account')+'</a>'+(opt.admin?'<a role="menuitem" href="admin.html">'+t('Admin')+'</a>':'')+
+      (window.isInstalledApp&&window.isInstalledApp()?'':'<button role="menuitem" type="button" data-acct="install">'+t('Install app')+'</button>')+'<button role="menuitem" type="button" data-acct="feedback">'+t('Send feedback')+'</button>'+'<button role="menuitem" type="button" data-acct="signout">'+t('Sign out')+'</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Horror RPG Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
   };
   function setOpen(v){window.__acctOpen=v;document.querySelectorAll('.acctwrap').forEach(function(w){var m=w.querySelector('.acctmenu'),b=w.querySelector('.acctbtn');if(m)m.hidden=!v;if(b)b.setAttribute('aria-expanded',String(v));});}
   document.addEventListener('click',function(e){
@@ -38,14 +38,14 @@ window.acctIcon=function(name,prof){
   function note(m){var t=document.getElementById('toast');if(!t)return alert(m);t.textContent=m;t.hidden=false;clearTimeout(note.t);note.t=setTimeout(function(){t.hidden=true;},3200);}
   window.openFeedback=function(){
     if(document.querySelector('.fb-bg'))return;
-    var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Send feedback');
-    var kinds=[['bug','Bug','What happened? What were you trying to do?'],['idea','Idea','What would make the site better for your group?'],['other','Other','What\u2019s on your mind?']];
+    var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',t('Send feedback'));
+    var kinds=[['bug',t('Bug'),t('What happened? What were you trying to do?')],['idea',t('Idea'),t('What would make the site better for your group?')],['other',t('Other'),t('What’s on your mind?')]];
     bg.innerHTML='<form class="crop fbform" novalidate>'+
-      '<div class="fbhead"><div><h2>Send feedback</h2><p class="note">Bugs, ideas, anything. It goes straight to the person who runs the site.</p></div><button class="fbx" type="button" data-f="cancel" aria-label="Close">\u00d7</button></div>'+
-      '<div class="fbkinds" role="radiogroup" aria-label="What kind of feedback">'+kinds.map(function(k,i){return '<label class="fbkind"><input type="radio" name="fbk" value="'+k[0]+'"'+(i===0?' checked':'')+'><span>'+k[1]+'</span></label>';}).join('')+'</div>'+
-      '<div class="fbbox"><textarea id="fbmsg" rows="6" maxlength="2000" aria-label="Message" placeholder="'+kinds[0][2]+'"></textarea><span class="fbcount" id="fbcount">0 / 2000</span></div>'+
+      '<div class="fbhead"><div><h2>'+t('Send feedback')+'</h2><p class="note">'+t('Bugs, ideas, anything. It goes straight to the person who runs the site.')+'</p></div><button class="fbx" type="button" data-f="cancel" aria-label="'+t('Close')+'">×</button></div>'+
+      '<div class="fbkinds" role="radiogroup" aria-label="'+t('What kind of feedback')+'">'+kinds.map(function(k,i){return '<label class="fbkind"><input type="radio" name="fbk" value="'+k[0]+'"'+(i===0?' checked':'')+'><span>'+k[1]+'</span></label>';}).join('')+'</div>'+
+      '<div class="fbbox"><textarea id="fbmsg" rows="6" maxlength="2000" aria-label="'+t('Message')+'" placeholder="'+kinds[0][2]+'"></textarea><span class="fbcount" id="fbcount">0 / 2000</span></div>'+
       '<p class="err" id="fberr" hidden></p>'+
-      '<div class="fbfoot"><span class="note">Includes the page you\u2019re on, your browser and the site version.</span><div class="row"><button class="btn" type="button" data-f="cancel">Cancel</button><button class="btn pri" type="submit">Send</button></div></div></form>';
+      '<div class="fbfoot"><span class="note">'+t('Includes the page you’re on, your browser and the site version.')+'</span><div class="row"><button class="btn" type="button" data-f="cancel">'+t('Cancel')+'</button><button class="btn pri" type="submit">'+t('Send')+'</button></div></div></form>';
     document.body.appendChild(bg);
     var form=bg.querySelector('form'),ta=bg.querySelector('#fbmsg'),er=bg.querySelector('#fberr'),cnt=bg.querySelector('#fbcount');ta.focus();
     ta.addEventListener('input',function(){er.hidden=true;cnt.textContent=ta.value.length+' / 2000';});
@@ -54,12 +54,12 @@ window.acctIcon=function(name,prof){
     var esc=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',esc);
     bg.addEventListener('click',function(e){if(e.target===bg||e.target.closest('[data-f=cancel]'))close();});
     form.addEventListener('submit',function(e){e.preventDefault();
-      var msg=ta.value.trim();if(!msg){er.textContent='Write a message first.';er.hidden=false;return;}
-      var a=app(),u=a&&a.auth&&a.auth().currentUser;if(!u){er.textContent='Sign in first, then try again.';er.hidden=false;return;}
+      var msg=ta.value.trim();if(!msg){er.textContent=t('Write a message first.');er.hidden=false;return;}
+      var a=app(),u=a&&a.auth&&a.auth().currentUser;if(!u){er.textContent=t('Sign in first, then try again.');er.hidden=false;return;}
       var v=document.getElementById('ver'),kind=(form.querySelector('input[name=fbk]:checked')||{}).value||'other',btn=form.querySelector('[type=submit]');btn.disabled=true;
-      a.firestore().collection('feedback').add({kind:kind,msg:msg.slice(0,2000),page:(location.pathname+location.search.replace(/join=[^&]*/,'join=\u2026')).slice(0,300),
+      a.firestore().collection('feedback').add({kind:kind,msg:msg.slice(0,2000),page:(location.pathname+location.search.replace(/join=[^&]*/,'join=…')).slice(0,300),
         ua:String(navigator.userAgent||'').slice(0,300),v:v?v.textContent.slice(0,20):'',t:Date.now(),uid:u.uid})
-       .then(function(){close();note('Thanks! Your feedback was sent.');},function(e2){btn.disabled=false;er.textContent=(e2&&e2.code==='resource-exhausted')?'The site has hit its daily limit. Try again tomorrow.':'Couldn\u2019t send that. Try again in a moment.';er.hidden=false;});
+       .then(function(){close();note(t('Thanks! Your feedback was sent.'));},function(e2){btn.disabled=false;er.textContent=(e2&&e2.code==='resource-exhausted')?t('The site has hit its daily limit. Try again tomorrow.'):t('Couldn’t send that. Try again in a moment.');er.hidden=false;});
     });
   };
 })();
@@ -70,13 +70,13 @@ window.acctIcon=function(name,prof){
   window.openLightbox=function(src,alt,list,index){
     if(!src||document.querySelector('.lb-bg'))return;
     list=list&&list.length?list:[{src:src,alt:alt||''}];var i=Math.max(0,Math.min(list.length-1,index||0));
-    var bg=document.createElement('div');bg.className='lb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',alt||'Picture');
+    var bg=document.createElement('div');bg.className='lb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',alt||t('Picture'));
     var fig=document.createElement('figure');fig.className='lb-fig';var im=document.createElement('img');var cap=document.createElement('figcaption');cap.className='lb-cap';fig.appendChild(im);fig.appendChild(cap);
-    var x=document.createElement('button');x.type='button';x.className='lb-x';x.setAttribute('aria-label','Close');x.textContent='×';
+    var x=document.createElement('button');x.type='button';x.className='lb-x';x.setAttribute('aria-label',t('Close'));x.textContent='×';
     bg.appendChild(fig);bg.appendChild(x);
     var many=list.length>1,prev,next,count;
-    if(many){prev=document.createElement('button');prev.type='button';prev.className='lb-nav lb-prev';prev.setAttribute('aria-label','Previous picture');prev.textContent='‹';
-      next=document.createElement('button');next.type='button';next.className='lb-nav lb-next';next.setAttribute('aria-label','Next picture');next.textContent='›';
+    if(many){prev=document.createElement('button');prev.type='button';prev.className='lb-nav lb-prev';prev.setAttribute('aria-label',t('Previous picture'));prev.textContent='‹';
+      next=document.createElement('button');next.type='button';next.className='lb-nav lb-next';next.setAttribute('aria-label',t('Next picture'));next.textContent='›';
       count=document.createElement('span');count.className='lb-count';bg.appendChild(prev);bg.appendChild(next);bg.appendChild(count);}
     var show=function(){var it=list[i];im.src=it.src;im.alt=it.alt||'';cap.textContent=it.cap||'';cap.hidden=!it.cap;if(many)count.textContent=(i+1)+' / '+list.length;};
     var go=function(d){if(!many)return;i=(i+d+list.length)%list.length;show();};
@@ -94,7 +94,7 @@ window.acctIcon=function(name,prof){
    server function contactEmail emails it to the site owner, with Reply going to the address given here. It uses its own
    Firebase app ("contact") so it works the same on every page, including the no-account campaign. */
 (function(){
-  var TOPICS=[['general','General'],['bug','Something’s broken'],['content','Game content / publisher'],['privacy','Privacy or my data']];
+  var TOPICS=[['general',t('General')],['bug',t('Something’s broken')],['content',t('Game content / publisher')],['privacy',t('Privacy or my data')]];
   function note(m){var t=document.getElementById('toast');if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(note.t);note.t=setTimeout(function(){t.hidden=true;},3600);}
   function store(){
     var fb=window.firebase,cfg=window.FIREBASE_CONFIG;if(!fb||!fb.initializeApp||!cfg||!fb.firestore)return null;
@@ -106,15 +106,15 @@ window.acctIcon=function(name,prof){
   window.openContact=function(topic){
     if(document.querySelector('.fb-bg'))return;
     var who=me(),e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
-    var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Contact');
+    var bg=document.createElement('div');bg.className='crop-bg fb-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',t('Contact'));
     bg.innerHTML='<form class="crop fbform" novalidate>'+
-      '<div class="fbhead"><div><h2>Contact</h2><p class="note">Questions, problems, or anything else. It goes straight to the person who runs the site, and replies come to your email.</p></div><button class="fbx" type="button" data-f="cancel" aria-label="Close">×</button></div>'+
-      '<div class="ctrow"><label class="field"><span class="lbl">Your email</span><input class="f" id="ctemail" type="email" maxlength="120" autocomplete="email" required value="'+e(who.email)+'"></label>'+
-      '<label class="field"><span class="lbl">Name (optional)</span><input class="f" id="ctname" maxlength="60" autocomplete="name" value="'+e(who.name)+'"></label></div>'+
-      '<label class="field"><span class="lbl">About</span><select class="f" id="cttopic">'+TOPICS.map(function(t){return '<option value="'+t[0]+'"'+(t[0]===topic?' selected':'')+'>'+t[1]+'</option>';}).join('')+'</select></label>'+
-      '<div class="fbbox"><textarea id="ctmsg" rows="6" maxlength="3000" aria-label="Message" placeholder="Your message"></textarea><span class="fbcount" id="ctcount">0 / 3000</span></div>'+
+      '<div class="fbhead"><div><h2>'+t('Contact')+'</h2><p class="note">'+t('Questions, problems, or anything else. It goes straight to the person who runs the site, and replies come to your email.')+'</p></div><button class="fbx" type="button" data-f="cancel" aria-label="'+t('Close')+'">×</button></div>'+
+      '<div class="ctrow"><label class="field"><span class="lbl">'+t('Your email')+'</span><input class="f" id="ctemail" type="email" maxlength="120" autocomplete="email" required value="'+e(who.email)+'"></label>'+
+      '<label class="field"><span class="lbl">'+t('Name (optional)')+'</span><input class="f" id="ctname" maxlength="60" autocomplete="name" value="'+e(who.name)+'"></label></div>'+
+      '<label class="field"><span class="lbl">'+t('About')+'</span><select class="f" id="cttopic">'+TOPICS.map(function(t){return '<option value="'+t[0]+'"'+(t[0]===topic?' selected':'')+'>'+t[1]+'</option>';}).join('')+'</select></label>'+
+      '<div class="fbbox"><textarea id="ctmsg" rows="6" maxlength="3000" aria-label="'+t('Message')+'" placeholder="'+t('Your message')+'"></textarea><span class="fbcount" id="ctcount">0 / 3000</span></div>'+
       '<p class="err" id="cterr" hidden></p>'+
-      '<div class="fbfoot"><span class="note">Your email is only used to reply.</span><div class="row"><button class="btn" type="button" data-f="cancel">Cancel</button><button class="btn pri" type="submit">Send</button></div></div></form>';
+      '<div class="fbfoot"><span class="note">'+t('Your email is only used to reply.')+'</span><div class="row"><button class="btn" type="button" data-f="cancel">'+t('Cancel')+'</button><button class="btn pri" type="submit">'+t('Send')+'</button></div></div></form>';
     document.body.appendChild(bg);
     var form=bg.querySelector('form'),ta=bg.querySelector('#ctmsg'),em=bg.querySelector('#ctemail'),er=bg.querySelector('#cterr'),cnt=bg.querySelector('#ctcount');
     (em.value?ta:em).focus();
@@ -124,14 +124,14 @@ window.acctIcon=function(name,prof){
     bg.addEventListener('click',function(ev){if(ev.target===bg||ev.target.closest('[data-f=cancel]'))close();});
     form.addEventListener('submit',function(ev){ev.preventDefault();
       var email=em.value.trim(),msg=ta.value.trim(),name=bg.querySelector('#ctname').value.trim(),tp=bg.querySelector('#cttopic').value;
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){er.textContent='Enter your email so we can reply.';er.hidden=false;em.focus();return;}
-      if(!msg){er.textContent='Write a message first.';er.hidden=false;ta.focus();return;}
-      var db=store();if(!db){er.textContent='Couldn’t connect. Check your connection and try again.';er.hidden=false;return;}
-      var v=document.getElementById('ver'),btn=form.querySelector('[type=submit]');btn.disabled=true;btn.textContent='Sending…';
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){er.textContent=t('Enter your email so we can reply.');er.hidden=false;em.focus();return;}
+      if(!msg){er.textContent=t('Write a message first.');er.hidden=false;ta.focus();return;}
+      var db=store();if(!db){er.textContent=t('Couldn’t connect. Check your connection and try again.');er.hidden=false;return;}
+      var v=document.getElementById('ver'),btn=form.querySelector('[type=submit]');btn.disabled=true;btn.textContent=t('Sending…');
       db.collection('contact').add({email:email.slice(0,120),name:name.slice(0,60),topic:tp,msg:msg.slice(0,3000),page:location.pathname.slice(0,300),
         ua:String(navigator.userAgent||'').slice(0,300),v:v?v.textContent.slice(0,20):'',t:Date.now()})
-       .then(function(){close();note('Thanks! Your message was sent. Replies come to '+email+'.');},
-        function(){btn.disabled=false;btn.textContent='Send';er.textContent='Couldn’t send that. Try again in a moment.';er.hidden=false;});
+       .then(function(){close();note(t('Thanks! Your message was sent. Replies come to {email}.',{email:email}));},
+        function(){btn.disabled=false;btn.textContent=t('Send');er.textContent=t('Couldn’t send that. Try again in a moment.');er.hidden=false;});
     });
   };
   // Contact links: open the form here when this page can, otherwise go to the home page, which opens it.
@@ -143,29 +143,31 @@ window.acctIcon=function(name,prof){
   var HOUR=3600000,DAY=24*HOUR,LIVE=5*HOUR;
   // Is the session still worth showing? (upcoming, or started less than 5 hours ago)
   window.sessionShown=function(t){return typeof t==='number'&&t+LIVE>Date.now();};
-  window.sessionRel=function(t){
-    var d=t-Date.now();
-    if(d<=0)return 'Happening now';
+  // How long until it starts ("18 days", "1 day 3 hr", "2 hr 5 min"), or null once it has started.
+  function until(ts){
+    var d=ts-Date.now();
+    if(d<=0)return null;
     var days=Math.floor(d/DAY),hrs=Math.floor((d%DAY)/HOUR),mins=Math.max(1,Math.ceil((d%HOUR)/60000));
-    if(d>=2*DAY-HOUR)return 'in '+Math.round(d/DAY)+' days';
-    if(days===1)return 'in 1 day'+(hrs?' '+hrs+' hr':'');
-    if(hrs)return 'in '+hrs+' hr '+(mins===60?0:mins)+' min';
-    return 'in '+mins+' min';
-  };
+    if(d>=2*DAY-HOUR)return tn('{n} day','{n} days',Math.round(d/DAY));
+    if(days===1)return tn('{n} day','{n} days',1)+(hrs?' '+t('{n} hr',{n:hrs}):'');
+    if(hrs)return t('{h} hr {m} min',{h:hrs,m:mins===60?0:mins});
+    return t('{n} min',{n:mins});
+  }
+  window.sessionRel=function(ts){var a=until(ts);return a?t('in {time}',{time:a}):t('Happening now');};
   // Countdown with only the amount bold: "in <b>18 days</b>".
-  window.sessionRelHtml=function(t){var s=window.sessionRel(t);return /^in /.test(s)?'in <b>'+s.slice(3)+'</b>':'<b>'+s+'</b>';};
+  window.sessionRelHtml=function(ts){var a=until(ts);return a?t('in {time}',{time:'<b>'+a+'</b>'}):'<b>'+t('Happening now')+'</b>';};
   // Directions for a place that looks like an address (has a number or a comma), e.g. not "Discord".
   window.mapsHref=function(where){where=String(where||'').trim();if(!where||!/[0-9,]/.test(where)||/^https?:/i.test(where))return '';return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(where);};
   // Food near the session's place, as a Google Maps search (same rule as Directions: only for real addresses).
-  window.foodHref=function(where){if(!window.mapsHref(where))return '';return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent('restaurants near '+String(where).trim());};
+  window.foodHref=function(where){if(!window.mapsHref(where))return '';return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(t('restaurants near {place}',{place:String(where).trim()}));};
   // The session's place as text, or for a real address a tappable link with a small menu: Directions and Food nearby.
   // The ▾ stays on the same line as the last word, so it never wraps onto a line by itself.
-  function keepCaret(t){var i=t.lastIndexOf(' ');return t.slice(0,i+1)+'<span style="white-space:nowrap">'+t.slice(i+1)+'<span class="placecaret" aria-hidden="true">\u25be</span></span>';}
+  function keepCaret(t){var i=t.lastIndexOf(' ');return t.slice(0,i+1)+'<span style="white-space:nowrap">'+t.slice(i+1)+'<span class="placecaret" aria-hidden="true">▾</span></span>';}
   window.placeHtml=function(where){
     var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
     var d=window.mapsHref(where);if(!d)return e(where);
     return '<span class="placewrap"><button type="button" class="placelink" data-placemenu aria-haspopup="true" aria-expanded="false">'+keepCaret(e(String(where).trim()))+'</button>'+
-      '<span class="placemenu" role="menu" hidden><a role="menuitem" href="'+e(d)+'" target="_blank" rel="noopener">Directions</a><a role="menuitem" href="'+e(window.foodHref(where))+'" target="_blank" rel="noopener">Food nearby</a></span></span>';
+      '<span class="placemenu" role="menu" hidden><a role="menuitem" href="'+e(d)+'" target="_blank" rel="noopener">'+t('Directions')+'</a><a role="menuitem" href="'+e(window.foodHref(where))+'" target="_blank" rel="noopener">'+t('Food nearby')+'</a></span></span>';
   };
   document.addEventListener('click',function(ev){
     var b=ev.target.closest&&ev.target.closest('[data-placemenu]');
@@ -175,39 +177,39 @@ window.acctIcon=function(name,prof){
       if(!m.hidden){m.style.left='';m.style.right='';var r=m.getBoundingClientRect();if(r.left<8){m.style.left='0';m.style.right='auto';}else if(r.right>window.innerWidth-8){m.style.left='auto';m.style.right='0';}}}
   });
   document.addEventListener('keydown',function(ev){if(ev.key==='Escape')document.querySelectorAll('.placemenu').forEach(function(m){m.hidden=true;});});
-  window.sessionWhen=function(t){return new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
+  window.sessionWhen=function(t){return new Date(t).toLocaleString(I18N.locale, {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
   // Expected session length in hours for calendar events (owner/GM may choose 1-12; calendars assume 4 when it's not set).
   window.sessionHours=function(h){h=Number(h);return h>=1&&h<=12?h:4;};
   // "Fri, Oct 23, 6:00 – 10:00 PM": start and expected end.
   window.sessionSpan=function(t,h){h=Number(h);if(!(h>=1&&h<=12))return window.sessionWhen(t);var end=t+h*HOUR;
-    try{var fmt=new Intl.DateTimeFormat([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});if(fmt.formatRange)return fmt.formatRange(new Date(t),new Date(end));}catch(e){}
-    return window.sessionWhen(t)+' \u2013 '+new Date(end).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});};
+    try{var fmt=new Intl.DateTimeFormat(I18N.locale, {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});if(fmt.formatRange)return fmt.formatRange(new Date(t),new Date(end));}catch(e){}
+    return window.sessionWhen(t)+' – '+new Date(end).toLocaleTimeString(I18N.locale, {hour:'numeric',minute:'2-digit'});};
   // The Length dropdown used where the owner or GM sets the next session.
-  window.sessionHoursSelect=function(id,h){h=Number(h);var o='<option value="">Not set</option>';for(var i=1;i<=8;i++)o+='<option value="'+i+'"'+(i===h?' selected':'')+'>'+i+' hour'+(i===1?'':'s')+'</option>';return '<label class="field"><span class="lbl">Length (optional)</span><select class="f" id="'+id+'">'+o+'</select></label>';};
+  window.sessionHoursSelect=function(id,h){h=Number(h);var o='<option value="">'+t('Not set')+'</option>';for(var i=1;i<=8;i++)o+='<option value="'+i+'"'+(i===h?' selected':'')+'>'+tn('{n} hour','{n} hours',i)+'</option>';return '<label class="field"><span class="lbl">'+t('Length (optional)')+'</span><select class="f" id="'+id+'">'+o+'</select></label>';};
   // What to save for the Length dropdown: a number of hours, or null when left as "Not set".
   window.sessionHoursValue=function(v){v=Number(v);return v>=1&&v<=12?v:null;};
-  window.sessionIcs=function(name,t,where,hours){
+  window.sessionIcs=function(name,ts,where,hours){
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},e=function(s){return String(s||'').replace(/([,;\\])/g,'\\$1').replace(/\n/g,'\\n');};
-    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Horror RPG Ledger//EN','BEGIN:VEVENT','UID:'+t+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(t),'DTEND:'+f(t+window.sessionHours(hours)*HOUR),
-      'SUMMARY:'+e(name+' — Arkham Horror RPG'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e('Open the ledger: '+location.origin+'/'),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+    var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Arkham Horror RPG Ledger//EN','BEGIN:VEVENT','UID:'+ts+'-'+encodeURIComponent(name).slice(0,40)+'@arkhamrpg.web.app','DTSTAMP:'+f(Date.now()),'DTSTART:'+f(ts),'DTEND:'+f(ts+window.sessionHours(hours)*HOUR),
+      'SUMMARY:'+e(name+' — Arkham Horror RPG'),(where?'LOCATION:'+e(where):''),'DESCRIPTION:'+e(t('Open the ledger: {link}',{link:location.origin+'/'})),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
     return 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   };
   // "Add to calendar" with a menu: Google Calendar, Apple Calendar (a real link that iPhones and Macs open in Calendar),
   // Outlook, or the file itself.
-  window.calMenuHtml=function(name,t,where,cid,hours){
+  window.calMenuHtml=function(name,ts,where,cid,hours){
     var e=function(x){return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
     var f=function(x){return new Date(x).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');},iso=function(x){return new Date(x).toISOString().replace(/\.\d{3}/,'');};
-    var title=(name||'Session')+' \u2014 Arkham Horror RPG',end=t+window.sessionHours(hours)*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details='Open the ledger: '+link;
-    var g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+f(t)+'/'+f(end)+'&details='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
-    var o='https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject='+encodeURIComponent(title)+'&startdt='+encodeURIComponent(iso(t))+'&enddt='+encodeURIComponent(iso(end))+'&body='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
+    var title=(name||t('Session'))+' — Arkham Horror RPG',end=ts+window.sessionHours(hours)*HOUR,link=location.origin+'/play.html?c='+encodeURIComponent(cid||''),details=t('Open the ledger: {link}',{link:link});
+    var g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+f(ts)+'/'+f(end)+'&details='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
+    var o='https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject='+encodeURIComponent(title)+'&startdt='+encodeURIComponent(iso(ts))+'&enddt='+encodeURIComponent(iso(end))+'&body='+encodeURIComponent(details)+(where?'&location='+encodeURIComponent(where):'');
     var a=cid?'/cal/'+encodeURIComponent(cid)+'.ics':'';
     var fileName=String(name||'session').replace(/[^\w -]+/g,'')+'.ics';
-    return '<span class="placewrap"><button type="button" class="btn sm" data-placemenu aria-haspopup="true" aria-expanded="false">Add to calendar<span class="placecaret" aria-hidden="true">\u25be</span></button>'+
+    return '<span class="placewrap"><button type="button" class="btn sm" data-placemenu aria-haspopup="true" aria-expanded="false">'+t('Add to calendar')+'<span class="placecaret" aria-hidden="true">▾</span></button>'+
       '<span class="placemenu right" role="menu" hidden>'+
       '<a role="menuitem" href="'+e(g)+'" target="_blank" rel="noopener">Google Calendar</a>'+
-      (a?'<a role="menuitem" href="'+e(a)+'">Apple Calendar (iPhone, Mac)</a>':'')+
+      (a?'<a role="menuitem" href="'+e(a)+'">'+t('Apple Calendar (iPhone, Mac)')+'</a>':'')+
       '<a role="menuitem" href="'+e(o)+'" target="_blank" rel="noopener">Outlook</a>'+
-      '<a role="menuitem" href="'+window.sessionIcs(name,t,where,hours)+'" download="'+e(fileName)+'">Download file (.ics)</a></span></span>';
+      '<a role="menuitem" href="'+window.sessionIcs(name,ts,where,hours)+'" download="'+e(fileName)+'">'+t('Download file (.ics)')+'</a></span></span>';
   };
   // Keep every countdown on the page current without redrawing anything else.
   setInterval(function(){document.querySelectorAll('[data-cd]').forEach(function(el){var t=Number(el.getAttribute('data-cd'));if(window.sessionShown(t)){if(el.hasAttribute('data-cdb'))el.innerHTML=window.sessionRelHtml(t);else el.textContent=window.sessionRel(t);}else el.remove();});},30000);
@@ -233,7 +235,7 @@ window.acctIcon=function(name,prof){
   function search(q){
     var my=++seq;if(!token)newToken();
     fetch('https://places.googleapis.com/v1/places:autocomplete',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':window.PLACES_KEY,'X-Goog-FieldMask':'suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat'},
-      body:JSON.stringify({input:q,sessionToken:token,languageCode:'en'})})
+      body:JSON.stringify({input:q,sessionToken:token,languageCode:I18N.lang})})
     .then(function(r){return r.ok?r.json():{};}).then(function(j){
       if(my!==seq)return;var seen={},out=[];
       (j.suggestions||[]).forEach(function(s){var p=s.placePrediction;if(!p||!p.text)return;var full=p.text.text,sf=p.structuredFormat||{};
@@ -269,18 +271,18 @@ window.acctIcon=function(name,prof){
   function steps(){
     var ua=navigator.userAgent||'';window.__instIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),android=/Android/.test(ua);
     var ios=window.__instIOS;
-    if(ios)return ['Tap the <b>Share</b> button (the square with an arrow) in Safari\u2019s toolbar.','Scroll down and tap <b>Add to Home Screen</b>.','Tap <b>Add</b>. Arkham Horror RPG Ledger appears on your home screen and opens full-screen.'];
-    if(android)return ['Tap the browser\u2019s <b>\u22ee</b> menu (top right in Chrome).','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Confirm, and open Arkham Horror RPG Ledger from your home screen.'];
-    return ['In Chrome or Edge, click the <b>install</b> icon at the right end of the address bar (a screen with a down arrow), or open the browser menu and choose <b>Install Arkham Horror RPG Ledger</b>.','Open it from your Start menu, Dock or desktop like any other app. (Safari on a Mac: <b>File \u203a Add to Dock</b>.)'];
+    if(ios)return [t('Tap the <b>Share</b> button (the square with an arrow) in Safari’s toolbar.'),t('Scroll down and tap <b>Add to Home Screen</b>.'),t('Tap <b>Add</b>. Arkham Horror RPG Ledger appears on your home screen and opens full-screen.')];
+    if(android)return [t('Tap the browser’s <b>⋮</b> menu (top right in Chrome).'),t('Tap <b>Install app</b> or <b>Add to Home screen</b>.'),t('Confirm, and open Arkham Horror RPG Ledger from your home screen.')];
+    return [t('In Chrome or Edge, click the <b>install</b> icon at the right end of the address bar (a screen with a down arrow), or open the browser menu and choose <b>Install Arkham Horror RPG Ledger</b>.'),t('Open it from your Start menu, Dock or desktop like any other app. (Safari on a Mac: <b>File › Add to Dock</b>.)')];
   }
   window.openInstall=function(){
     if(deferred){var d=deferred;deferred=null;d.prompt();return;}
     if(document.querySelector('.inst-bg'))return;
-    var bg=document.createElement('div');bg.className='crop-bg inst-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label','Install Arkham Horror RPG Ledger');
-    bg.innerHTML='<div class="crop fbform instbox"><div class="fbhead"><div><h2>Install Arkham Horror RPG Ledger</h2><p class="note">Put the ledger on your home screen. It opens full-screen like an app, with its own icon.</p></div><button class="fbx" type="button" data-i="close" aria-label="Close">\u00d7</button></div>'+
+    var bg=document.createElement('div');bg.className='crop-bg inst-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',t('Install Arkham Horror RPG Ledger'));
+    bg.innerHTML='<div class="crop fbform instbox"><div class="fbhead"><div><h2>'+t('Install Arkham Horror RPG Ledger')+'</h2><p class="note">'+t('Put the ledger on your home screen. It opens full-screen like an app, with its own icon.')+'</p></div><button class="fbx" type="button" data-i="close" aria-label="'+t('Close')+'">×</button></div>'+
       '<ol class="inststeps">'+steps().map(function(x){return '<li>'+x+'</li>';}).join('')+'</ol>'+
-      (window.__instIOS?'<p class="note" style="margin:0">You\u2019ll sign in once more inside the app; after that it remembers you.</p>':'')+
-      '<div class="row" style="justify-content:flex-end"><button class="btn pri" type="button" data-i="close">Got it</button></div></div>';
+      (window.__instIOS?'<p class="note" style="margin:0">'+t('You’ll sign in once more inside the app; after that it remembers you.')+'</p>':'')+
+      '<div class="row" style="justify-content:flex-end"><button class="btn pri" type="button" data-i="close">'+t('Got it')+'</button></div></div>';
     document.body.appendChild(bg);
     var close=function(){bg.remove();document.removeEventListener('keydown',esc);};var esc=function(e){if(e.key==='Escape')close();};document.addEventListener('keydown',esc);
     bg.addEventListener('click',function(e){if(e.target===bg||e.target.closest('[data-i=close]'))close();});

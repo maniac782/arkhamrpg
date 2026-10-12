@@ -13,7 +13,9 @@
       "storage.rules",
       "BACKLOG.md",
       "functions/**",
-      "docs/**"
+      "docs/**",
+      "test/**",
+      "scripts/**"
     ],
     "headers": [
       {

@@ -16,31 +16,32 @@ let SLOTS=CAMP?[]:['p1','p2','p3','p4'];
 const MAX_SLOTS=12,slotNum=x=>parseInt(String(x).slice(1))||0,isSlotId=x=>/^p([1-9]|1[0-2])$/.test(x);
 let rosterLocked=false,pendingTab=null;
 const SEED={"p1": {"archetype": "Seeker", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "Stick of Gum", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [{"id": "i1", "name": "Lockpicks", "note": ""}], "knacks": [{"id": "k1", "name": "Scientific", "text": "When performing a complex action using Knowledge to conduct an experiment or scientific analysis, add 1 to the result of each die rolled.", "tier": 1}, {"id": "k2", "name": "Brilliant Insight", "text": "On a complex Knowledge or Lore action that rolls two or more 6s, you or one ally within earshot immediately regains 1 insight (up to the insight limit).", "tier": 1}], "log": [{"m": "Refilled dice pool", "t": 1790404667653}, {"m": "Bought Colt Police Revolver for $30.00", "t": 1790404660204}, {"m": "Gained $5.00", "t": 1790404654074}, {"m": "Gained $5.00", "t": 1790404653898}, {"m": "Gained $5.00", "t": 1790404653348}, {"m": "Gained $5.00", "t": 1790404653206}, {"m": "Gained $5.00", "t": 1790404653058}, {"m": "Gained $5.00", "t": 1790404652874}, {"m": "Gained $5.00", "t": 1790404652540}, {"m": "Gained $5.00", "t": 1790404652315}, {"m": "Refilled dice pool", "t": 1790403386024}, {"m": "Rested: pool limit restored", "t": 1790403188043}], "money": 13.75, "name": "Wallace Morrow", "negative": "", "personality": "", "player": "Dan", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 4, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "2", "r": 5}, "lore": {"max": "3", "r": 5}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "3", "r": 4}, "resolve": {"max": "", "r": 5}, "wits": {"max": "3", "r": 5}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [{"ammo": 2, "ammoMax": 2, "dmg": "2", "id": "w1", "inj": "3", "name": "Colt 1911 Pistol", "range": "75 ft", "rc": 1, "skill": "Ranged Combat", "special": "None"}, {"ammo": 0, "ammoMax": 0, "dmg": "1", "id": "w2", "inj": "4", "name": "Pocketknife", "range": "Engaged", "skill": "Melee Combat", "special": "Very Hard to Find (3 successes to spot)"}], "xpTotal": 12, "xpUnused": 7}, "p2": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667655}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 2", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p3": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386025}], "money": 0, "name": "Investigator 3", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}, "p4": {"archetype": "", "bg": {"employment": "", "encounter": "", "enemies": "", "family": "", "lodging": "", "origin": "", "salary": "", "vehicle": ""}, "debts": "", "habitual": {"name": "", "used": false}, "horror": 0, "horrorLimit": 0, "injuries": [], "insight": 1, "insightLimit": 1, "items": [], "knacks": [], "log": [{"m": "Refilled dice pool", "t": 1790404667656}, {"m": "Refilled dice pool", "t": 1790403386026}], "money": 0, "name": "Investigator 4", "negative": "", "personality": "", "player": "", "poolLimit": 6, "poolMax": 6, "positive": "", "regular": 6, "relics": "", "reloads": 0, "skills": {"agility": {"max": "", "r": 6}, "athletics": {"max": "", "r": 6}, "intuition": {"max": "", "r": 6}, "knowledge": {"max": "", "r": 6}, "lore": {"max": "", "r": 6}, "melee": {"max": "", "r": 6}, "presence": {"max": "", "r": 6}, "ranged": {"max": "", "r": 6}, "resolve": {"max": "", "r": 6}, "wits": {"max": "", "r": 6}}, "tomes": "", "traumaMod": 0, "traumas": [], "weapons": [], "xpTotal": 0, "xpUnused": 0}};
-const SKILLS=[['agility','Agility'],['athletics','Athletics'],['wits','Wits'],['presence','Presence'],['intuition','Intuition'],['knowledge','Knowledge'],['resolve','Resolve'],['melee','Melee Combat'],['ranged','Ranged Combat'],['lore','Lore']];
-const ARCH=['Adventurer','Believer','Guardian','Hunter','Mystic','Rogue','Seeker','Survivor'];
+// Names from the book stay in English in the code and on the sheets (tk marks them for translating); pages show them with t().
+const SKILLS=[['agility',tk('Agility')],['athletics',tk('Athletics')],['wits',tk('Wits')],['presence',tk('Presence')],['intuition',tk('Intuition')],['knowledge',tk('Knowledge')],['resolve',tk('Resolve')],['melee',tk('Melee Combat')],['ranged',tk('Ranged Combat')],['lore',tk('Lore')]];
+const ARCH=[tk('Adventurer'),tk('Believer'),tk('Guardian'),tk('Hunter'),tk('Mystic'),tk('Rogue'),tk('Seeker'),tk('Survivor')];
 const SKILL_COST={6:2,5:4,4:7,3:12};
 const KNACK_COST={1:3,2:6,3:10,4:15};
 const KNACK_CAP={1:3,2:2,3:2,4:1};
 const INJURIES=[null,
- ['Heavy Blow','Knocked prone. Next turn, spend 1 die to clear your head before any other action.'],
- ['Slowed','You move at half speed.'],
- ['Nasty Cut','Bleeding. Your pool limit can’t rise (rest, healing or straining) until healed.'],
- ['Concussed','−1 on each die for complex actions with Wits, Intuition, Knowledge or Lore.'],
- ['Injured Arm','Simple actions with that arm become complex; −1 per die on Athletics, Agility, Ranged and Melee.'],
- ['Injured Leg','Simple actions with that leg (moving too) become complex; −1 per die on Athletics, Agility and Melee.'],
- ['Loss of a Sense','Lose sight, smell or hearing (1d3). Takes 2 successes to heal.'],
- ['Severely Injured','−2 on each die for every complex action. Takes 2 successes to heal.'],
- ['Comatose','Pool limit drops to 0 until healed. Takes 2 successes to heal.'],
- ['Dire','Pool limit drops to 0. Takes 3 successes to heal. Without medical care within an hour, you die.'],
- ['Dead','You are dead — unless you permanently lower your insight limit by 2 to survive.']];
+ [tk('Heavy Blow'),tk('Knocked prone. Next turn, spend 1 die to clear your head before any other action.')],
+ [tk('Slowed'),tk('You move at half speed.')],
+ [tk('Nasty Cut'),tk('Bleeding. Your pool limit can’t rise (rest, healing or straining) until healed.')],
+ [tk('Concussed'),tk('−1 on each die for complex actions with Wits, Intuition, Knowledge or Lore.')],
+ [tk('Injured Arm'),tk('Simple actions with that arm become complex; −1 per die on Athletics, Agility, Ranged and Melee.')],
+ [tk('Injured Leg'),tk('Simple actions with that leg (moving too) become complex; −1 per die on Athletics, Agility and Melee.')],
+ [tk('Loss of a Sense'),tk('Lose sight, smell or hearing (1d3). Takes 2 successes to heal.')],
+ [tk('Severely Injured'),tk('−2 on each die for every complex action. Takes 2 successes to heal.')],
+ [tk('Comatose'),tk('Pool limit drops to 0 until healed. Takes 2 successes to heal.')],
+ [tk('Dire'),tk('Pool limit drops to 0. Takes 3 successes to heal. Without medical care within an hour, you die.')],
+ [tk('Dead'),tk('You are dead — unless you permanently lower your insight limit by 2 to survive.')]];
 function injuryFor(n){return INJURIES[Math.min(Math.max(n,1),11)];}
 function traumaFor(n){
- if(n<=2)return['Subtle Strangeness','Something odd at the edge of your senses. No further effect.'];
- if(n===3)return['Shocked','Discard 1 die. If you have none, add 1 to trauma rolls for the rest of the session.'];
- if(n===4)return['Stunned','Discard all dice. If you have none, add 1 to trauma rolls for the rest of the session.'];
- if(n<=7)return['Overcome by Horror','Spend 1 insight or trigger the negative side of your personality trait.'];
- if(n<=10)return['Mind Undone','Spend 2 insight or trigger your negative trait, with its effects lasting longer. Add 1 to trauma rolls for the rest of the session.'];
- return['Lost Forever','Your investigator is lost — unless you permanently lower your insight limit by 2 to survive.'];
+ if(n<=2)return[tk('Subtle Strangeness'),tk('Something odd at the edge of your senses. No further effect.')];
+ if(n===3)return[tk('Shocked'),tk('Discard 1 die. If you have none, add 1 to trauma rolls for the rest of the session.')];
+ if(n===4)return[tk('Stunned'),tk('Discard all dice. If you have none, add 1 to trauma rolls for the rest of the session.')];
+ if(n<=7)return[tk('Overcome by Horror'),tk('Spend 1 insight or trigger the negative side of your personality trait.')];
+ if(n<=10)return[tk('Mind Undone'),tk('Spend 2 insight or trigger your negative trait, with its effects lasting longer. Add 1 to trauma rolls for the rest of the session.')];
+ return[tk('Lost Forever'),tk('Your investigator is lost — unless you permanently lower your insight limit by 2 to survive.')];
 }
 const TRAUMA_AT={'Subtle Strangeness':1,'Shocked':3,'Stunned':4,'Overcome by Horror':5,'Mind Undone':8,'Lost Forever':11};
 const TRAUMA_ROLL={'Subtle Strangeness':'1–2','Shocked':'3','Stunned':'4','Overcome by Horror':'5–7','Mind Undone':'8–10','Lost Forever':'11+'};
@@ -51,7 +52,7 @@ const d6=()=>1+Math.floor(Math.random()*6);
 
 function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
- return {name:'Investigator '+i,player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
+ return {name:t('Investigator {n}',{n:i}),player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
   injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
@@ -90,16 +91,29 @@ SLOTS.forEach(s=>{if(!chars[s])chars[s]=blank(slotNum(s));});
 const toastEl=document.getElementById('toast');let toastT;
 function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 
+// Recent-list entries are saved in English (m) along with their wording and values (k, v; o is a plural's singular),
+// so everyone in the party reads them in their own language: logm('Earned {n} XP',{n:3}), logn(one, other, n, values).
+const fillEn=(s,v)=>String(s).replace(/\|[^|]*$/,'').replace(/\{(\w+)\}/g,(x,k)=>v&&v[k]!=null?v[k]:x);
+function logm(k,v){v=v||{};return {m:fillEn(k,v),k,v};}
+function logn(one,other,n,v){v={...(v||{}),n};return {m:fillEn(n===1?one:other,v),k:other,o:one,v};}
+// values that name something from the book (a skill, knack, injury, item…) are translated too
+const LOG_NAMES=['skill','knack','injury','trauma','item','weapon','src','trait','who','clue'];
+// "Cultist 2": a name from the book with a number after it
+function nameT(s){const m=/^(.+?)( \d+)$/.exec(String(s||''));return m?t(m[1])+m[2]:t(String(s||''));}
+function logText(e){if(!e)return '';if(Array.isArray(e.p))return e.p.map(logText).join(' · ');
+ if(e.k){const v={...(e.v||{})};LOG_NAMES.forEach(x=>{if(typeof v[x]==='string')v[x]=t(v[x]);});if(typeof v.enemy==='string')v.enemy=nameT(v.enemy);return e.o?tn(e.o,e.k,Number(v.n),v):t(e.k,v);}
+ return t(e.m||'');}
 async function save(slot,patch,logMsg){
- if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?'Only '+(chars[slot].name||'this investigator')+'\u2019s player can change that.':chars[slot].name+'’s sheet is locked. Unlock it to make changes.');return;}
+ if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?t('Only {name}’s player can change that.',{name:chars[slot].name||t('this investigator')}):t('{name}’s sheet is locked. Unlock it to make changes.',{name:chars[slot].name}));return;}
  const c=chars[slot];
  if(patch.weapons&&legacyRel.has(slot)){patch.reloads=0;legacyRel.delete(slot);}
  Object.assign(c,patch);
- if(logMsg){c.log=[{t:Date.now(),m:logMsg},...(c.log||[])].slice(0,12);patch.log=c.log;logHistory(slot,logMsg);}
+ if(Array.isArray(logMsg))logMsg=logMsg.length?{m:logMsg.map(x=>x.m).join(' · '),p:logMsg}:null;else if(typeof logMsg==='string')logMsg=logMsg?{m:logMsg}:null;
+ if(logMsg){c.log=[{t:Date.now(),...logMsg},...(c.log||[])].slice(0,12);patch.log=c.log;logHistory(slot,logMsg);}
  render();
  if(!db)return;
  try{await db.doc('characters/'+slot).update(patch);}
  catch(e){
-  try{await db.doc('characters/'+slot).set(JSON.parse(JSON.stringify(c)));}catch(e2){if(window.quotaHit&&quotaHit(e2))return;toast(e2&&e2.code==='permission-denied'?'That sheet’s passcode has changed. Unlock it again to edit.':'Couldn’t save that change. Check your connection and try again.');}
+  try{await db.doc('characters/'+slot).set(JSON.parse(JSON.stringify(c)));}catch(e2){if(window.quotaHit&&quotaHit(e2))return;toast(e2&&e2.code==='permission-denied'?t('That sheet’s passcode has changed. Unlock it again to edit.'):t('Couldn’t save that change. Check your connection and try again.'));}
  }
 }

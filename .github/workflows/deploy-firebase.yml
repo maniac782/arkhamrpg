@@ -6,7 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Checks every language file has the same {placeholders}, HTML and plural forms as the English.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node test/i18n.test.js
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

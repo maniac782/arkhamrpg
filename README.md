@@ -19,7 +19,7 @@ This repo is the code behind the live site. It isn't packaged for running your o
   - one-tap Add to calendar (Google, Apple, Outlook);
   - Directions and Food nearby;
   - a reminder the day before, by email and push notification.
-- **Six languages.** English, Spanish, Catalan, French, Polish and Portuguese (Brazil), picked in the footer or under **Your account**. Everyone at the table can use their own language in the same campaign, and emails and notifications follow each person's choice. A few strings of game content (some gear, enemy profiles and house-rule text) are still in English in the other languages.
+- **Six languages.** English, Spanish, Catalan, French, Polish and Portuguese (Brazil), picked in the footer or under **Your account**. Everyone at the table can use their own language in the same campaign, and emails and notifications follow each person's choice.
 - **Works anywhere.** Phones, tablets and computers. It can be installed like an app, and it's free with no ads.
 
 <table>
@@ -109,7 +109,7 @@ Knack names and tiers follow each archetype's table in the Core Rulebook. Each k
 - **Firebase Hosting** serves the site at arkhamrpg.web.app. **Firestore** holds the data, **Cloud Storage** holds pictures, **Firebase Authentication** handles sign-in (Google and email/password), **Cloud Functions** send email and notifications, and **App Check** with reCAPTCHA Enterprise blocks bots.
 - The project is on Firebase's **Blaze** (pay-as-you-go) plan: the free allowances still apply and only use above them is charged (see *Costs and limits*). It started with a $300, 90-day Google Cloud free trial; confirm the paid account when Google emails about the trial ending, or billing stops and the free limits apply again.
 - **Every push to `main` deploys automatically** through `.github/workflows/deploy-firebase.yml`, in four jobs:
-  - **test:** `node test/i18n.test.js` checks every translation keeps the English string's {placeholders}, HTML and plural forms. Strings not yet translated are counted, not failed. **deploy** waits for it.
+  - **test:** `node test/i18n.test.js` checks every language has every string, with the English string's {placeholders}, HTML and plural forms. New interface text needs an entry in each `js/lang/*.js` before it can deploy. **deploy** waits for it.
   - **deploy:** the site to Firebase Hosting.
   - **rules:** `firestore.rules`.
   - **backend:** `storage.rules` and the server functions in `functions/`. If it fails, the end of its log appears in the run's annotations.

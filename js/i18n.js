@@ -28,6 +28,8 @@ var I=window.I18N={
   add:function(code,pairs){if(code!==lang)return;T={};(pairs||[]).forEach(function(p){T[p[0]]=p[1];});},
   // is there a translation for this exact English? (for saved text that may be ours or typed by someone)
   has:function(s){return typeof T[s]==='string';},
+  // older English wording that's still saved on sheets: show it as the current string's translation
+  alias:function(map){if(lang==='en')return;for(var o in map)if(typeof T[map[o]]==='string'&&!(o in T))T[o]=T[map[o]];},
   // the English behind a translation shown in a box someone just edited (a knack or item name), else the text as typed
   back:function(s){if(!s||lang==='en')return s;if(!B){B={};for(var k in T)if(typeof T[k]==='string'&&!(T[k] in B))B[T[k]]=k.replace(/\|[^|]*$/,'');}return B[s]||s;},
   name:function(code){var x=LANGS.filter(function(y){return y[0]===code;})[0];return x?x[1]:code;},
@@ -48,7 +50,10 @@ var I=window.I18N={
 // t("Plays"), t("{n} or more", {n:7}): the text in this language, with {names} filled in. A key may end in "|context"
 // when one English word needs different words elsewhere ("Won|total" heads a count); English drops the "|…".
 var plain=function(s){return String(s).replace(/\|[^|]*$/,'');};
-var t=window.t=function(s,v){var r=T[s];return fill(typeof r==='string'?r:plain(s),v);};
+// saved text that differs from a key only by its closing period still translates ("Hard to find" / "Hard to find.")
+var near=function(s){if(typeof s!=='string'||!s)return null;var x=/\.$/.test(s)?s.slice(0,-1):s+'.',r=T[x];
+  return typeof r==='string'?(/\.$/.test(s)?r.replace(/[.。]?$/,'.'):r.replace(/\.$/,'')):null;};
+var t=window.t=function(s,v){var r=T[s];if(typeof r!=='string')r=near(s);return fill(typeof r==='string'?r:plain(s),v);};
 // tk('Heavy Blow'): marks English that's kept as it is (it's saved, or compared) but shown elsewhere with t().
 window.tk=function(s){return s;};
 // tn('{n} play', '{n} plays', count, {...}): the right form for the count (Polish has three). The table keeps the

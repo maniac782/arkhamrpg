@@ -144,7 +144,11 @@ const KT={
 };
 function knackText(n){return KT[String(n||'').trim()]||'';}
 // A knack's effect as this person should see it: the book's (translated) unless someone has written their own.
-function knackShown(k){const own=k&&k.text,book=knackText(k&&k.name);return own&&own!==book?own:t(book);}
+// Book wording from before the summaries were rewritten, still saved on the first sheets: translated as today's text.
+const OLD_TEXT={"When performing a complex action using Knowledge to conduct an experiment or scientific analysis, add 1 to the result of each die rolled.": "+1 to each die on complex Knowledge actions to run an experiment or scientific analysis.", "On a complex Knowledge or Lore action that rolls two or more 6s, you or one ally within earshot immediately regains 1 insight (up to the insight limit).": "When a complex Knowledge or Lore action rolls two or more 6s, you or an ally within earshot regain 1 insight (up to the limit).", "Very Hard to Find (3 successes to spot)": "Very Hard to Find (3 successes to spot)."};
+if(window.I18N&&I18N.alias)I18N.alias(OLD_TEXT);
+// a knack's text as shown: the translated summary unless the player wrote their own
+function knackShown(k){const own=k&&k.text,book=knackText(k&&k.name);return own&&own!==book?t(own):t(book);}
 // knack table for an archetype: [{name,tier,unique,text}]
 function knacksFor(a){const d=ARCH[a];if(!d)return[];const out=[];d.t.forEach((list,i)=>list.forEach(n=>{const nm=n.replace(/\*$/,'');out.push({name:nm,tier:i+1,unique:n.endsWith('*'),text:knackText(nm)});}));return out;}
 function maxFor(a,k){const d=ARCH[a];if(!d)return 4;if(d.two===k)return 2;if(d.three.includes(k))return 3;return 4;}

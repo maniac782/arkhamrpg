@@ -226,7 +226,7 @@ function sheetHtml(c){
  [[1,3],[2,2],[3,2],[4,1]].forEach(([tier,n])=>{const have=byT[tier];for(let i=0;i<Math.max(n,have.length);i++){const k=have[i],kn=k?t(k.name||''):'';knRows.push('<div class="kr"><span class="tl">'+t('Tier {n}',{n:['I','II','III','IV'][tier-1]})+'</span><span>'+(k?'<b>'+e(kn)+(/[.!?…]$/.test(kn)?'':'.')+'</b> '+e(knackShown(k)):'')+'</span></div>');}});
  const w=(c.weapons||[]).slice(0,4);while(w.length<3)w.push(null);
  const pips=n=>{let s='';for(let i=0;i<n;i++)s+='<i class="pip"></i>';return s||'—';};
- const skills=SK.map(([k,n])=>{const s=(c.skills||{})[k]||{r:6,max:''};return '<div class="sk"><span class="sn">'+n+'</span><span class="rt">'+s.r+'+</span><span class="mx"><small>'+t('max')+'</small><em>'+(s.max?s.max+'+':'')+'</em></span></div>';}).join('');
+ const skills=SK.map(([k,n])=>{const s=(c.skills||{})[k]||{r:6,max:''};return '<div class="sk"><span class="sn">'+e(t(n))+'</span><span class="rt">'+s.r+'+</span><span class="mx"><small>'+t('max')+'</small><em>'+(s.max?s.max+'+':'')+'</em></span></div>';}).join('');
  const lines=n=>'<div class="ln"></div>'.repeat(n);
  const f=(l,v,n)=>'<div class="fd"><span class="lb">'+l+'</span>'+(v?'<div class="val">'+e(v)+'</div>':'')+lines(v?Math.max(0,(n||1)-1):(n||1))+'</div>';
  const eq=(c.items||[]).map(it=>'<div class="eq"><b>'+e(t(it.name))+'</b>'+(it.note?' — '+e(t(it.note)):'')+'</div>').join('');

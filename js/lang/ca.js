@@ -379,6 +379,7 @@ I18N.add('ca',[
 [`this rule`,`aquesta regla`],
 [`(no name yet)`,`(encara sense nom)`],
 [`Edit`,`Edita`],
+[`Edit picture`,`Editar imatge`],
 [`Name`,`Nom`],
 [`What it does`,`Què fa`],
 [`Skill`,`Habilitat`],

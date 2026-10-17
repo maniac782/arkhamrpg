@@ -63,7 +63,6 @@ input.f::-webkit-datetime-edit{padding:0}
 /* sheet header: picture on the left (its buttons under it when you can edit), name and status beside it; the same whether or not you can edit */
 .sheethead{display:flex;gap:14px;align-items:flex-start}
 .shpic{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
-.shname .pic-btns{flex-direction:row;flex-wrap:wrap;align-items:center}
 .shname{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding-top:6px}
 .shname .chips{justify-content:flex-start}
 .namein:disabled{color:var(--ink);-webkit-text-fill-color:var(--ink);opacity:1}
@@ -293,6 +292,12 @@ a.btn{text-decoration:none;color:inherit}
 .placemenu a{padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px;white-space:nowrap}
 .placemenu a:hover,.placemenu a:focus-visible{background:var(--surface2)}
 .placemenu.right{left:auto;right:0}
+.placemenu label,.placemenu button{padding:8px 10px;border-radius:6px;color:var(--ink);font:inherit;font-size:14px;white-space:nowrap;cursor:pointer;border:0;background:none;text-align:left}
+.placemenu label:hover,.placemenu label:focus-visible,.placemenu button:hover,.placemenu button:focus-visible{background:var(--surface2)}
+.placemenu button.dng{color:var(--danger)}
+/* the picture's Edit / Add picture button sits over the bottom edge of the portrait */
+.picedit{margin-top:-22px;position:relative;z-index:2}
+.picedit>.btn,label.picedit{background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
 .inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.5}
 @media (max-width:440px){.brand h1{font-size:19px;letter-spacing:0}.brand h1 .beta{font-size:9px}}
 @keyframes clueflash{0%,30%{box-shadow:0 0 0 2px var(--ink);background:var(--surface2)}100%{box-shadow:0 0 0 0 transparent}}

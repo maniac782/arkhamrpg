@@ -130,9 +130,17 @@ async function removeSlot(s){
  if(db){try{await db.doc('characters/'+s).delete();if(CAMP){if(pu)await db.doc('players/'+pu).delete().catch(()=>{});}else await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?t('Only the campaign owner can remove investigators.'):t('Only the master key can remove investigators (and the updated rules must be published).')):t('Couldn’t remove that investigator. Try again.'));return;}}
  SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast(t('{name} was removed from the party.',{name:name||t('Investigator')}));
 }
+// The picture's edit control, overlapping the bottom of the portrait: one Edit button that opens Change / Remove
+// (clicking the portrait itself shows it full size). With no picture yet it's a plain Add picture button.
+function picEdit(c,s){
+ const file='<input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>';
+ if(!c.portrait)return '<label class="btn sm picedit" for="pic-'+s+'">'+t('Add picture')+'</label>'+file;
+ return '<span class="placewrap picedit"><button type="button" class="btn sm" data-placemenu aria-haspopup="true" aria-expanded="false" aria-label="'+t('Edit picture')+'">'+t('Edit')+'<span class="placecaret" aria-hidden="true">▾</span></button>'+
+  '<span class="placemenu" role="menu" hidden><label role="menuitem" for="pic-'+s+'" tabindex="0">'+t('Change picture')+'</label><button type="button" role="menuitem" class="dng" data-act="picdel">'+t('Remove')+'</button></span></span>'+file;
+}
 function renderCharBody(s){
  const c=chars[s];const rl=lastRoll[s];
- let h='<section class="sec"><div class="sheethead"><div class="shpic">'+avatarHtml(c,'lg')+'</div><div class="shname"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="'+t('Investigator name')+'">'+statusChips(c)+(canEdit(s)?'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?t('Change picture'):t('Add picture'))+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">'+t('Remove')+'</button>':'')+'</div>':'')+'</div></div></section>';
+ let h='<section class="sec"><div class="sheethead"><div class="shpic">'+avatarHtml(c,'lg')+(canEdit(s)?picEdit(c,s):'')+'</div><div class="shname"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="'+t('Investigator name')+'">'+statusChips(c)+'</div></div></section>';
  if(c.insightChance)h+='<section class="sec">'+(c.insightChance?'<div class="roll" role="status"><span>'+t('<b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).')+'</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>'+t('Raise it · 1 XP')+'</button><button class="btn sm" data-act="skipins">'+t('Not this time')+'</button></div></div>':'')+'</section>';
 
  // condition

@@ -379,6 +379,7 @@ I18N.add('fr',[
 [`this rule`,`cette règle`],
 [`(no name yet)`,`(pas encore de nom)`],
 [`Edit`,`Modifier`],
+[`Edit picture`,`Modifier l’image`],
 [`Name`,`Nom`],
 [`What it does`,`Effet`],
 [`Skill`,`Compétence`],

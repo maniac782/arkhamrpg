@@ -9,9 +9,9 @@ function sheetStatuses(c){
  const out=[];
  if(inj.includes('Dire'))out.push(['bad',t('Dire')]);
  if(c.poolLimit===0)out.push(['bad',t('Wounded')]);
- if(!inj.includes('Dire')&&inj.length)out.push(['warn',t('Injured')]);
- if(c.traumas.length)out.push(['warn',t('Traumatized')]);
- if(c.horrorLimit>=Math.max(3,c.poolMax/2))out.push(['warn',t('Shaken')]);
+ if(!inj.includes('Dire')&&inj.length)out.push(['inj',t('Injured')]);
+ if(c.traumas.length)out.push(['mind',t('Traumatized')]);
+ if(c.horrorLimit>=Math.max(3,c.poolMax/2))out.push(['mind',t('Shaken')]);
  if(!inj.length&&c.poolLimit>0&&c.poolLimit<c.poolMax)out.push(['warn',t('Damaged')]);
  return out.length?out.slice(0,2):[['ok',t('Healthy')]];
 }

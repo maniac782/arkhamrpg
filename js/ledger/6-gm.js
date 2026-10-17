@@ -98,7 +98,7 @@ function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limi
 function enemyStatus(e){
  if(e.out)return['bad',t('Out')];
  if(e.limit===0)return['bad',t('Wounded')];
- if(e.injuries.length)return['warn',t('Injured')];
+ if(e.injuries.length)return['inj',t('Injured')];
  if(e.limit<e.max)return['warn',t('Damaged')];
  return null;
 }

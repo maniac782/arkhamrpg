@@ -117,6 +117,12 @@ details.sec[open]>summary::after{content:"–"}
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;text-align:left;cursor:pointer}
 .pcard:hover{border-color:var(--brass)}
 .pcard h3{margin:0;font-family:var(--display);font-size:21px}
+.pcard>.row:first-child{flex-wrap:nowrap;align-items:flex-start}
+.pcard>.row:first-child>.row{flex:1;min-width:0;align-items:center}
+.pcard>.row:first-child>.row>div:last-child{min-width:0}
+.pcard>.row:first-child>.row>:first-child{flex:none}
+.pcard h3{overflow-wrap:break-word;hyphens:auto}
+.pcard .chips{max-width:45%;padding-top:4px}
 .mini .die{width:24px;height:24px;border-radius:5px;border-width:2px}
 .mini .die::after{width:5px!important;height:5px!important}
 .kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}

@@ -130,7 +130,7 @@ async function removeSlot(s){
  if(db){try{await db.doc('characters/'+s).delete();if(CAMP){if(pu)await db.doc('players/'+pu).delete().catch(()=>{});}else await db.doc('locks/'+s).delete().catch(()=>{});}catch(e){toast(e&&e.code==='permission-denied'?(CAMP?t('Only the campaign owner can remove investigators.'):t('Only the master key can remove investigators (and the updated rules must be published).')):t('Couldn’t remove that investigator. Try again.'));return;}}
  SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast(t('{name} was removed from the party.',{name:name||t('Investigator')}));
 }
-// The picture's edit control, overlapping the bottom of the portrait: one Edit button that opens Change / Remove
+// The picture's edit control, just under the portrait: one Edit button that opens Change / Remove
 // (clicking the portrait itself shows it full size). With no picture yet it's a plain Add picture button.
 function picEdit(c,s){
  const file='<input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>';

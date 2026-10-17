@@ -295,9 +295,8 @@ a.btn{text-decoration:none;color:inherit}
 .placemenu label,.placemenu button{padding:8px 10px;border-radius:6px;color:var(--ink);font:inherit;font-size:14px;white-space:nowrap;cursor:pointer;border:0;background:none;text-align:left}
 .placemenu label:hover,.placemenu label:focus-visible,.placemenu button:hover,.placemenu button:focus-visible{background:var(--surface2)}
 .placemenu button.dng{color:var(--danger)}
-/* the picture's Edit / Add picture button sits over the bottom edge of the portrait */
-.picedit{margin-top:-22px;position:relative;z-index:2}
-.picedit>.btn,label.picedit{background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+/* the picture's Edit / Add picture button, just under the portrait */
+.picedit>.btn,label.picedit{cursor:pointer;display:inline-flex;align-items:center;gap:4px}
 .inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.5}
 @media (max-width:440px){.brand h1{font-size:19px;letter-spacing:0}.brand h1 .beta{font-size:9px}}
 @keyframes clueflash{0%,30%{box-shadow:0 0 0 2px var(--ink);background:var(--surface2)}100%{box-shadow:0 0 0 0 transparent}}

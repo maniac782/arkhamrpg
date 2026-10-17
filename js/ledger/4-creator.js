@@ -163,6 +163,8 @@ function creatorClick(b){
  crSave();render();
 }
 function downloadSheet(c){
+ // Bring each injury's and trauma's effect along, so the sheet (and the copy rebuilt from its link on iPhone) can print it.
+ c={...c,injuries:(c.injuries||[]).map(j=>{const x=INJURIES.find(y=>y&&y[0]===j.name);return x?{...j,fx:x[1]}:j;}),traumas:(c.traumas||[]).map(j=>TRAUMA_AT[j.name]?{...j,fx:traumaFor(TRAUMA_AT[j.name])[1]}:j)};
  const html=A.sheetHtml(c);
  // Hand the sheet to print.html on this same (secure) site through this browser's storage.
  let id=null;

@@ -94,12 +94,20 @@ function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limi
   else toast(t('{enemy} is wounded.',{enemy:nameT(e.n)}));}
  gmLog(p.out?logn('{enemy} took {n} damage and is out','{enemy} took {n} damage and is out',n,{enemy:e.n}):e.limit===0?logn('{enemy} took {n} damage and is wounded','{enemy} took {n} damage and is wounded',n,{enemy:e.n}):logn('{enemy} took {n} damage','{enemy} took {n} damage',n,{enemy:e.n}),false);if(p.out&&e.shown)gmStory(logm('{enemy} was taken down',{enemy:e.n}));
  updEnemy(e.id,p);}
+// An enemy's status, in the same words as investigators. Nothing shows while it is unhurt.
+function enemyStatus(e){
+ if(e.out)return['bad',t('Out')];
+ if(e.limit===0)return['bad',t('Wounded')];
+ if(e.injuries.length)return['warn',t('Injured')];
+ if(e.limit<e.max)return['warn',t('Damaged')];
+ return null;
+}
 function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();
  const pc={regular:e.regular,horror:e.horror,poolLimit:e.limit,poolMax:e.max,horrorLimit:e.horrorLimit||0};
  let h='<div class="enemy'+(e.out?' out':'')+'"><div class="row" style="justify-content:space-between;align-items:center"><div class="row" style="gap:8px;align-items:center">'+
   (master?'<input class="f" id="en-'+e.id+'" data-gen="'+e.id+'" data-k="n" value="'+esc(nameT(e.n))+'" style="font-weight:700;max-width:220px">':'<b>'+esc(nameT(e.n))+'</b>')+
-  '<span class="chip'+(e.out?' bad':e.limit<e.max?' warn':'')+'">'+(e.out?t('Out'):e.limit===0?t('Wounded'):esc(e.type==='Named'?t('Named'):t(e.type+' NPC')))+'</span>'+(master&&e.shown?'<span class="chip ok" title="'+t('Players can see this enemy')+'">'+t('Shown')+'</span>':'')+'</div>'+
+  (()=>{const st=enemyStatus(e);return st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'';})()+'<span class="note">'+esc(e.type==='Named'?t('Named'):t(e.type+' NPC'))+'</span>'+(master&&e.shown?'<span class="chip ok" title="'+t('Players can see this enemy')+'">'+t('Shown')+'</span>':'')+'</div>'+
   (master?'<div class="row" style="gap:6px"><button class="btn sm" data-gact="eshow" data-id="'+e.id+'">'+(e.shown?t('Hide from players'):t('Show to players'))+'</button><button class="btn sm icon" data-gact="edel" data-id="'+e.id+'" aria-label="'+t('Remove {name}',{name:esc(nameT(e.n))})+'">×</button></div>':'')+'</div>'+
   poolHtml(pc,true)+
   '<div class="note">'+t('Pool {n} / limit {limit} / max {max}',{n:e.regular+e.horror,limit:e.limit,max:e.max})+(e.horrorLimit?' · '+t('horror limit {n}',{n:e.horrorLimit}):'')+(e.injuries.length?' · '+e.injuries.map(x=>esc(t(x))).join(', '):'')+(e.traumas.length?' · <b>'+e.traumas.map(x=>esc(t(x))).join(', ')+'</b>':'')+'</div>';

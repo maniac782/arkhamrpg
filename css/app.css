@@ -72,6 +72,7 @@ input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--brass);outline:
 .chip.ok{background:var(--horror-soft);color:var(--ok)}
 .chip.bad{background:var(--danger-soft);color:var(--danger)}
 .chip.warn{background:var(--brass-soft);color:var(--warn)}
+.chips{display:inline-flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;flex:none}
 /* dice pool */
 .pool{display:flex;gap:6px;flex-wrap:wrap}
 .die{width:40px;height:40px;border-radius:7px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;background:var(--surface)}

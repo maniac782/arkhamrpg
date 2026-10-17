@@ -1,15 +1,21 @@
 /* Arkham Horror RPG Ledger — Drawing the page: tabs, party, investigator sheets, pickers, house rules.
    Part of the ledger; these files load in order and share their variables. */
 // ---------- render ----------
-function sheetStatus(c){
- if(c.injuries.some(j=>j.name==='Dead'))return['bad',t('Dead')];
- if(c.traumas.some(j=>j.name==='Lost Forever'))return['bad',t('Lost forever')];
- if(c.injuries.some(j=>j.name==='Dire'))return['bad',t('Dire')];
- if(c.poolLimit===0)return['bad',t('Wounded')];
- if(c.horrorLimit>=Math.max(3,c.poolMax/2))return['warn',t('Shaken')];
- if(c.poolLimit<c.poolMax||c.injuries.length)return['warn',t('Hurt')];
- return['ok',t('Healthy')];
+// An investigator's status chips, most serious first; at most two show. Dead and Lost forever show alone.
+function sheetStatuses(c){
+ const inj=c.injuries.map(j=>j.name);
+ if(inj.includes('Dead'))return[['bad',t('Dead')]];
+ if(c.traumas.some(j=>j.name==='Lost Forever'))return[['bad',t('Lost forever')]];
+ const out=[];
+ if(inj.includes('Dire'))out.push(['bad',t('Dire')]);
+ if(c.poolLimit===0)out.push(['bad',t('Wounded')]);
+ if(!inj.includes('Dire')&&inj.length)out.push(['warn',t('Injured')]);
+ if(c.traumas.length)out.push(['warn',t('Traumatized')]);
+ if(c.horrorLimit>=Math.max(3,c.poolMax/2))out.push(['warn',t('Shaken')]);
+ if(!inj.length&&c.poolLimit>0&&c.poolLimit<c.poolMax)out.push(['warn',t('Damaged')]);
+ return out.length?out.slice(0,2):[['ok',t('Healthy')]];
 }
+const statusChips=c=>'<span class="chips">'+sheetStatuses(c).map(([cls,lab])=>'<span class="chip '+cls+'">'+lab+'</span>').join('')+'</span>';
 function poolHtml(c,mini){
  let h='',k=0;const pend=()=>k++<c.horrorLimit;
  for(let i=0;i<c.horror;i++){k++;h+='<span class="die hor" title="'+t('Horror die')+'"></span>';}
@@ -40,8 +46,8 @@ function renderParty(){
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">'+t('You have your investigator. Only the campaign owner can add more.')+'</p>':'')+
   (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?t('+ Create my investigator'):t('+ Add an investigator'))+'</button><span class="note">'+(rosterLocked?t('Publish the updated Firestore rules (see README) to add or remove investigators.'):t('Adds a blank sheet. Use the New investigator tab to build one step by step.'))+'</span></div>':'')+
   '<div class="party">';
- SLOTS.forEach(s=>{const c=chars[s];const [cls,lab]=sheetStatus(c);const lr=(c.log||[])[0];
-  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype&&t(c.archetype),c.player&&t('played by {name}',{name:c.player==='You'?t('You'):c.player})].filter(Boolean).join(' · ')||t('Unassigned'))+'</div></div></div><span class="chip '+cls+'">'+lab+'</span></div>'+
+ SLOTS.forEach(s=>{const c=chars[s];const lr=(c.log||[])[0];
+  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([c.archetype&&t(c.archetype),c.player&&t('played by {name}',{name:c.player==='You'?t('You'):c.player})].filter(Boolean).join(' · ')||t('Unassigned'))+'</div></div></div>'+statusChips(c)+'</div>'+
   poolHtml(c,true)+
   '<div class="kv"><div><span class="lbl">'+t('Pool')+'</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">'+t('Horror')+'</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">'+t('Insight')+'</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">'+t('Injuries')+'</span><b>'+c.injuries.length+'</b></div></div>'+
   (lr?'<div class="log">'+t('Latest: {text}',{text:esc(logText(lr))})+'</div>':'')+'</button>';});
@@ -125,8 +131,8 @@ async function removeSlot(s){
  SLOTS=SLOTS.filter(x=>x!==s);delete chars[s];edit.rm=null;go('party');toast(t('{name} was removed from the party.',{name:name||t('Investigator')}));
 }
 function renderCharBody(s){
- const c=chars[s];const [cls,lab]=sheetStatus(c);const rl=lastRoll[s];
- let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+(canEdit(s)?'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?t('Change picture'):t('Add picture'))+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">'+t('Remove')+'</button>':'')+'</div>':'')+'</div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="'+t('Investigator name')+'"></div><span class="chip '+cls+'">'+lab+'</span></div>'+'</section>';
+ const c=chars[s];const rl=lastRoll[s];
+ let h='<section class="sec"><div class="row" style="justify-content:space-between;align-items:flex-start"><div class="row" style="flex:none;gap:10px;align-items:center">'+avatarHtml(c,'lg')+(canEdit(s)?'<div class="pic-btns"><label class="btn sm" for="pic-'+s+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(c.portrait?t('Change picture'):t('Add picture'))+'</label><input type="file" accept="image/*" id="pic-'+s+'" data-pic="1" hidden>'+(c.portrait?'<button class="btn sm" data-act="picdel">'+t('Remove')+'</button>':'')+'</div>':'')+'</div><div style="flex:1;min-width:220px"><input class="namein" id="nm-'+s+'" data-f="name" value="'+esc(c.name)+'" aria-label="'+t('Investigator name')+'"></div>'+statusChips(c)+'</div>'+'</section>';
  if(c.insightChance)h+='<section class="sec">'+(c.insightChance?'<div class="roll" role="status"><span>'+t('<b>Momentous session.</b> You may raise your insight limit by 1 for 1 XP (once, now).')+'</span><div class="row"><button class="btn sm pri" data-act="buyins" '+(c.xpUnused>=1&&c.insightLimit<10?'':'disabled')+'>'+t('Raise it · 1 XP')+'</button><button class="btn sm" data-act="skipins">'+t('Not this time')+'</button></div></div>':'')+'</section>';
 
  // condition

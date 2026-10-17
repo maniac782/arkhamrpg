@@ -60,6 +60,13 @@ input.f::-webkit-datetime-edit{padding:0}
 .crop canvas:active{cursor:grabbing}
 .crop input[type=range]{width:100%;accent-color:var(--ink)}
 .pic-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+/* sheet header: picture on the left (its buttons under it when you can edit), name and status beside it; the same whether or not you can edit */
+.sheethead{display:flex;gap:14px;align-items:flex-start}
+.shpic{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+.shname .pic-btns{flex-direction:row;flex-wrap:wrap;align-items:center}
+.shname{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding-top:6px}
+.shname .chips{justify-content:flex-start}
+.namein:disabled{color:var(--ink);-webkit-text-fill-color:var(--ink);opacity:1}
 select{background-color:var(--surface);color:var(--ink)}
 select option,select optgroup{background-color:var(--surface);color:var(--ink)}
 select optgroup{font-weight:700;color:var(--muted)}

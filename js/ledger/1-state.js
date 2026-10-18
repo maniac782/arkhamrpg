@@ -60,6 +60,8 @@ function blank(i){
 function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});
  o.weapons=(o.weapons||[]).map(w=>({...w}));
  o.kits=(o.kits||[]).map(k=>({...k}));
+ // equipment bought before it had a description gets the catalog's one
+ o.items=(o.items||[]).map(it=>it&&!it.note&&window.APL?{...it,note:(window.APL.GEAR.find(g=>g.n===it.name)||{}).note||''}:it);
  o.knacks=(o.knacks||[]).map(k=>k.text||!window.APL?k:{...k,text:window.APL.knackText(k.name)});
  if(o.reloads>0&&!o.weapons.some(w=>typeof w.reloads==='number')){const g=o.weapons.find(w=>Number(w.ammoMax)>0&&!w.fr);if(g){g.reloads=o.reloads;o.reloads=0;legacyRel.add('p'+i);}}
  o.weapons.forEach(w=>{if(typeof w.reloads!=='number')w.reloads=0;});

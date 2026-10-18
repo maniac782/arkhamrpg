@@ -283,15 +283,17 @@ function knackPicker(c){
  return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+t('{archetype} knacks (★ unique)',{archetype:esc(t(c.archetype))})+'</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">'+t('Add a knack…')+'</option>'+[1,2,3,4].map(tier=>'<optgroup label="'+t('Tier {n} · {xp} XP',{n:tier,xp:KNACK_COST[tier]})+'">'+kn.filter(k=>k.tier===tier&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'★ ':'')+esc(t(k.name))+'</option>').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="kbuy">'+t('Buy with XP')+'</button><button class="btn" data-act="kgrant">'+t('Add free')+'</button></div>';
 }
 function gearPicker(s){
- const cats=['Protection','Useful items','Tools and personal','Outdoors'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct&&!g.u?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>';
+ const cats=['Protection','Useful items','Tools and personal','Outdoors','Fares and fuel','Around town'];
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct&&!g.u?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>'+pickDesc('g'+s);
 }
+// the chosen item's description, under its picker
+function pickDesc(key){const v=pickSel[key];if(!v)return '';const g=GR()[Number(v.split(':')[1])];return g&&g.note?'<p class="note pickdesc">'+esc(t(g.note))+'</p>':'';}
 function kitPicker(s){
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a kit or supply')+'</span><select class="f" id="kpick-'+s+'" data-pick="k"><option value="">'+t('Choose one…')+'</option>'+GR().map((g,i)=>g.u?'<option value="g:'+i+'"'+(pickSel['k'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="kitbuy">'+t('Buy')+'</button><button class="btn" data-act="kitadd">'+t('Add free')+'</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a kit or supply')+'</span><select class="f" id="kpick-'+s+'" data-pick="k"><option value="">'+t('Choose one…')+'</option>'+GR().map((g,i)=>g.u?'<option value="g:'+i+'"'+(pickSel['k'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="kitbuy">'+t('Buy')+'</button><button class="btn" data-act="kitadd">'+t('Add free')+'</button></div>'+pickDesc('k'+s);
 }
 function vehiclePicker(s){
  const c=chars[s];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a vehicle')+'</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">'+t('Choose a vehicle…')+'</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="vbuy">'+t('Buy')+'</button><button class="btn" data-act="vfree">'+t('Add free')+'</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a vehicle')+'</span><select class="f" id="vpick-'+s+'" data-pick="v"><option value="">'+t('Choose a vehicle…')+'</option>'+GR().map((g,i)=>g.cat==='Transport'?'<option value="g:'+i+'"'+(pickSel['v'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="vbuy">'+t('Buy')+'</button><button class="btn" data-act="vfree">'+t('Add free')+'</button></div>'+pickDesc('v'+s);
 }
 function weaponPicker(s){
  const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(t(w.n))+(w.house?' '+t('(house rule)'):'')+' — '+money(w.c)+'</option>':'').join('')+'</optgroup>';
@@ -301,6 +303,8 @@ function addGear(s,val,pay){
  const c=chars[s];const [ty,i]=val.split(':');const it=ty==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return;
  const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast(t('Not enough money. {item} costs {price}.',{item:t(it.n),price:money(it.c)}));
  const p={money:m};
+ // fares, meals and drinks are spent, not kept: just take the money and note it
+ if(it.x){if(!pay)return toast(t('That’s paid for, not kept, so there’s nothing to add free.'));save(s,p,logm('Paid {price} for {item}',{item:it.n,price:money(it.c)}));return;}
  if(ty==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
  else if(it.cat==='Transport'){const v=(c.bg.vehicle||'').trim();p.bg={...c.bg,vehicle:v?v+', '+it.n:it.n};}
  else if(it.u)p.kits=[...c.kits,{id:uid(),name:it.n,note:it.note,uses:it.u,left:it.u,rp:it.rp||0,c:it.c,once:!it.rp}];

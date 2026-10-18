@@ -86,7 +86,7 @@ app.addEventListener('change',e=>{
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast(t('Choose an image file.'));
   openCrop(f,s);el.value='';return;}
  if(el.dataset.xpamt){xpAmt[s]=Math.max(1,Math.min(30,Math.round(Number(el.value)||1)));return;}
- if(el.dataset.pick){pickSel[el.dataset.pick+s]=el.value;return;}
+ if(el.dataset.pick){pickSel[el.dataset.pick+s]=el.value;if(el.dataset.pick!=='w')render();return;}
  if(el.dataset.kpick){kpickSel[el.dataset.kpick==='cr'?'cr':s]=el.value;return;}
  if(s==='create'){
   if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}

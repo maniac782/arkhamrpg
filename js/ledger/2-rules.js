@@ -49,6 +49,14 @@ const R={
   for(let lo=1;lo<tier;lo++)if(!c.knacks.some(k=>Number(k.tier)===lo))return toast(t('You need a tier {tier} knack first.',{tier:lo}));
   if(c.xpUnused<KNACK_COST[tier])return toast(t('Needs {n} XP.',{n:KNACK_COST[tier]}));
   save(s,{knacks:[...c.knacks,{id:uid(),tier,name:'',text:''}],xpUnused:c.xpUnused-KNACK_COST[tier]},logm('Bought a tier {tier} knack ({n} XP)',{tier,n:KNACK_COST[tier]}));},
+ dropHabit(s){const c=chars[s];if(!(c.habitual.uses>0))return;
+  save(s,{habitual:{...c.habitual,uses:c.habitual.uses-1}},logm('Removed one {item} ({n} left)',{item:c.habitual.name||tk('habitual item'),n:c.habitual.uses-1}));},
+ kitMark(s,id,i){const c=chars[s];const ks=c.kits.map(k=>({...k}));const k=ks.find(x=>x.id===id);if(!k)return;const was=k.left;k.left=(i<k.left)?i:i+1;
+  save(s,{kits:ks},k.left<was?(k.left===0?logm('Used the last of {item}',{item:k.name||tk('a kit')}):logm('Marked a use of {item} ({n} left)',{item:k.name||tk('a kit'),n:k.left})):null);},
+ kitFill(s,id,pay){const c=chars[s];const ks=c.kits.map(k=>({...k}));const k=ks.find(x=>x.id===id);if(!k)return;
+  if(k.left>=k.uses)return toast(t('It’s already full.'));
+  const cost=pay?(k.once?k.c:k.rp)||0:0;const m=Math.round(((Number(c.money)||0)-cost)*100)/100;if(m<0)return toast(t('Not enough money.'));
+  k.left=k.uses;save(s,{kits:ks,money:m},!pay?logm('Refilled {item}',{item:k.name||tk('a kit')}):k.once?logm('Bought a new {item} for {price}',{item:k.name||tk('kit'),price:money(cost)}):logm('Replenished {item} for {price}',{item:k.name||tk('a kit'),price:money(cost)}));},
  ammo(s,id,i){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);w.ammo=(i<w.ammo)?i:i+1;save(s,{weapons:ws});},
  reload(s,id){const c=chars[s];const ws=c.weapons.map(w=>({...w}));const w=ws.find(x=>x.id===id);if(!w)return;
   if(w.ammo>=w.ammoMax)return toast(t('Already fully loaded.'));

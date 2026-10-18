@@ -54,11 +54,12 @@ function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
  return {name:t('Investigator {n}',{n:i}),player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
-  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
 function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});
  o.weapons=(o.weapons||[]).map(w=>({...w}));
+ o.kits=(o.kits||[]).map(k=>({...k}));
  o.knacks=(o.knacks||[]).map(k=>k.text||!window.APL?k:{...k,text:window.APL.knackText(k.name)});
  if(o.reloads>0&&!o.weapons.some(w=>typeof w.reloads==='number')){const g=o.weapons.find(w=>Number(w.ammoMax)>0&&!w.fr);if(g){g.reloads=o.reloads;o.reloads=0;legacyRel.add('p'+i);}}
  o.weapons.forEach(w=>{if(typeof w.reloads!=='number')w.reloads=0;});

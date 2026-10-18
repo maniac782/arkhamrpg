@@ -43,18 +43,18 @@ function crBuild(){
  const td=A.TRAITS[cr.trait]||['',''];
  const kn=A.knacksFor(cr.archetype);
  const knacks=crKnackList().map(n=>{const k=kn.find(x=>x.name===n);return {id:uid(),tier:k?k.tier:1,name:n,text:A.knackText(n)};});
- const weapons=[],items=[],vehicles=[];let reloads=0,habitual={name:'',used:false,uses:0};
+ const weapons=[],items=[],kits=[],vehicles=[];let reloads=0,habitual={name:'',used:false,uses:0};
  cr.cart.forEach(it=>{
   if(it.type==='w'){const w=W().find(x=>x.n===it.n);if(w)weapons.push({id:uid(),name:w.n,skill:w.s,range:w.r,dmg:w.d,inj:w.i,ammoMax:w.a,ammo:w.a,reloads:0,rc:w.rc,fr:!!w.fr,special:w.sp});}
   else if(it.type==='reload'){const g=weapons.find(x=>x.name===it.n);if(g)g.reloads++;else reloads++;}
   else if(it.n==='Habitual Item')habitual={name:tk('Habitual item'),used:false,uses:habitual.uses+1};
-  else{const g=GR().find(x=>x.n===it.n);if(g&&g.cat==='Transport'){vehicles.push(it.n);return;}items.push({id:uid(),name:it.n,note:g?g.note:''});}
+  else{const g=GR().find(x=>x.n===it.n);if(g&&g.cat==='Transport'){vehicles.push(it.n);return;}if(g&&g.u){kits.push({id:uid(),name:g.n,note:g.note,uses:g.u,left:g.u,rp:g.rp||0,c:g.c,once:!g.rp});return;}items.push({id:uid(),name:it.n,note:g?g.note:''});}
  });
  const xp=crXpBudget();
  const b=blank(1);
  return Object.assign(b,{name:cr.name.trim(),player:CAMP?(((camp&&camp.names)||{})[keys.master?crPlayerUid():authUid]||''):cr.player,archetype:cr.archetype,personality:cr.trait,positive:td[0],negative:td[1],
   xpTotal:xp,xpUnused:xp-crXpSpent(),skills,insightLimit:cr.bonus==='insight'?2:1,insight:cr.bonus==='insight'?2:1,
-  knacks,weapons,items,reloads,habitual,money:Math.round((crMoneyBudget()-crMoneySpent())*100)/100,
+  knacks,weapons,kits,items,reloads,habitual,money:Math.round((crMoneyBudget()-crMoneySpent())*100)/100,
   bg:Object.assign(b.bg,cr.bg,vehicles.length?{vehicle:[cr.bg.vehicle,...vehicles].filter(Boolean).join(', ')}:{}),log:[{t:Date.now(),...logm('Created in the ledger')}]});
 }
 // Who plays the new investigator. In a campaign it's someone already in it: the owner picks any member or decides later;

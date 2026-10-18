@@ -169,9 +169,23 @@ function renderCharBody(s){
   '</div><button class="btn sm icon" data-act="del" data-list="weapons" data-id="'+w.id+'" aria-label="'+t('Remove weapon')+'">×</button></div>';}).join(''):'<p class="note">'+t('No weapons.')+'</p>')+
  '</div></section>';
 
+ // kits & supplies: items with use circles (first aid and surgeon kits, tool kits, lights), marked like ammo
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Kits &amp; supplies')+'</h2><span class="chip">'+t('{amount} left',{amount:money(c.money)})+'</span></div>'+
+ kitPicker(s)+'<p class="note" style="margin:0">'+t('Mark a use when you roll a 1 while using it (tool kits: mark one to get their bonus). When every circle is marked, replenish it.')+'</p><div class="list">'+
+ (c.kits.length?c.kits.map(k=>{let pips='';for(let i=0;i<k.uses;i++)pips+='<button class="pip'+(i<k.left?'':' spent')+'" data-act="kitmark" data-id="'+k.id+'" data-n="'+i+'" aria-label="'+(i<k.left?t('Use {n} left',{n:i+1}):t('Use {n} marked',{n:i+1}))+'"></button>';
+  const cost=k.once?k.c:k.rp;
+  return '<div class="item"><div class="grow"><input class="f" id="kn-'+k.id+'" data-list="kits" data-id="'+k.id+'" data-key="name" value="'+esc(t(k.name||''))+'" placeholder="'+t('Kit or supply')+'" style="font-weight:600">'+
+  '<input class="f" id="ko-'+k.id+'" data-list="kits" data-id="'+k.id+'" data-key="note" value="'+esc(t(k.note||''))+'" placeholder="'+t('What it does')+'">'+
+  '<div class="wgrid"><label class="field"><span class="lbl">'+t('Uses')+'</span><input class="f" id="ku-'+k.id+'" data-list="kits" data-id="'+k.id+'" data-key="uses" type="number" min="0" max="12" value="'+k.uses+'"></label>'+
+  '<label class="field"><span class="lbl">'+(k.once?t('Price of a new one'):t('Replenish cost'))+'</span><input class="f" id="kc-'+k.id+'" data-list="kits" data-id="'+k.id+'" data-key="'+(k.once?'c':'rp')+'" type="number" min="0" step="0.01" value="'+(Number(cost)||0)+'"></label></div>'+
+  (k.uses>0?'<div class="ammo">'+pips+(cost>0?'<button class="btn sm" data-act="kitfill" data-id="'+k.id+'" '+(k.left>=k.uses?'disabled':'')+'>'+(k.once?t('Buy a new one · {price}',{price:money(cost)}):t('Replenish · {price}',{price:money(cost)}))+'</button>':'')+
+   '<button class="btn sm" data-act="kitfree" data-id="'+k.id+'" '+(k.left>=k.uses?'disabled':'')+'>'+t('Refill (free)')+'</button></div>':'')+
+  '</div><button class="btn sm icon" data-act="del" data-list="kits" data-id="'+k.id+'" aria-label="'+t('Remove item')+'">×</button></div>';}).join(''):'<p class="note">'+t('No kits or supplies.')+'</p>')+
+ '</div><div class="row"><button class="btn sm" data-act="addkit">'+t('Add your own')+'</button></div></section>';
+
  // horror & insight
  h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>'+t('Horror')+'</h2><div class="row"><div class="stat"><span class="lbl">'+t('Horror dice limit')+'</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">'+t('Suffer 1')+'</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>'+t('Remove 1')+'</button></div>'+
- '<div class="row">'+fld('habitual.name',t('Habitual item'),t(c.habitual.name||''),'text','placeholder="'+t('e.g. Stick of gum')+'"')+'<span class="num" title="'+t('How many you have')+'" style="white-space:nowrap">× '+c.habitual.uses+'</span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?t('Used this session'):c.habitual.uses<=0?t('None left'):t('Use one (−1 horror)'))+'</button><button class="btn sm" data-act="buyhabit">'+t('Buy another $1')+'</button><span class="note">'+t('{amount} left',{amount:money(c.money)})+'</span></div>'+
+ '<div class="row">'+fld('habitual.name',t('Habitual item'),t(c.habitual.name||''),'text','placeholder="'+t('e.g. Stick of gum')+'"')+'<span class="stepper"><button class="btn sm icon" data-act="habitdrop" '+(c.habitual.uses>0?'':'disabled')+' aria-label="'+t('Remove one (no effect, no refund)')+'" title="'+t('Remove one (no effect, no refund)')+'">−</button><span class="num" title="'+t('How many you have')+'" style="white-space:nowrap">× '+c.habitual.uses+'</span></span><button class="btn" data-act="habit" '+(c.habitual.used||!c.horrorLimit||c.habitual.uses<=0?'disabled':'')+'>'+(c.habitual.used?t('Used this session'):c.habitual.uses<=0?t('None left'):t('Use one (−1 horror)'))+'</button><button class="btn sm" data-act="buyhabit">'+t('Buy another $1')+'</button><span class="note">'+t('{amount} left',{amount:money(c.money)})+'</span></div>'+
  '<p class="note" style="margin:0">'+t('Refills put horror dice in first. A 1 on a horror die means a trauma. Introspection (Resolve) or counseling (Presence) also removes 1.')+'</p></div>'+
  '<div style="display:flex;flex-direction:column;gap:10px"><h2>'+t('Insight')+'</h2><div class="row"><div class="stat"><span class="lbl">'+t('Insight')+'</span><b class="num">'+c.insight+' / '+c.insightLimit+'</b></div><button class="btn" data-act="ins" data-n="-1" '+(c.insight?'':'disabled')+'>'+t('Spend 1')+'</button><button class="btn" data-act="ins" data-n="1" '+(c.insight<c.insightLimit?'':'disabled')+'>'+t('Regain 1')+'</button></div>'+
  '<p class="note" style="margin:0">'+t('Spend for +1 success after a success, advantage before a roll, a clue, or a handy detail in the scene.')+'</p>'+
@@ -270,7 +284,10 @@ function knackPicker(c){
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct&&!g.u?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>';
+}
+function kitPicker(s){
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a kit or supply')+'</span><select class="f" id="kpick-'+s+'" data-pick="k"><option value="">'+t('Choose one…')+'</option>'+GR().map((g,i)=>g.u?'<option value="g:'+i+'"'+(pickSel['k'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="kitbuy">'+t('Buy')+'</button><button class="btn" data-act="kitadd">'+t('Add free')+'</button></div>';
 }
 function vehiclePicker(s){
  const c=chars[s];
@@ -286,6 +303,7 @@ function addGear(s,val,pay){
  const p={money:m};
  if(ty==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
  else if(it.cat==='Transport'){const v=(c.bg.vehicle||'').trim();p.bg={...c.bg,vehicle:v?v+', '+it.n:it.n};}
+ else if(it.u)p.kits=[...c.kits,{id:uid(),name:it.n,note:it.note,uses:it.u,left:it.u,rp:it.rp||0,c:it.c,once:!it.rp}];
  else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||tk('Habitual item'),used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
  save(s,p,pay?logm('Bought {item} for {price}',{item:it.n,price:money(it.c)}):logm('Added {item}',{item:it.n}));

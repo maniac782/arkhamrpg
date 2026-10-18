@@ -26,6 +26,7 @@ app.addEventListener('click',e=>{
   case 'hor':R.horror(s,n);break;
   case 'habit':R.habitual(s);break;
   case 'buyhabit':R.buyHabit(s);break;
+  case 'habitdrop':R.dropHabit(s);break;
   case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
   case 'healinj':{const x=c.injuries.find(j=>j.id===b.dataset.id);save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},x?logm('Healed injury: {injury}',{injury:x.name}):logm('Healed injury'));break;}
@@ -65,6 +66,11 @@ app.addEventListener('click',e=>{
   case 'addw':save(s,{weapons:[...c.weapons,{id:uid(),name:'',skill:'',range:'',dmg:'',inj:'',ammoMax:0,ammo:0,reloads:0,special:''}]});break;
   case 'addi':save(s,{items:[...c.items,{id:uid(),name:'',note:''}]});break;
   case 'ammo':R.ammo(s,b.dataset.id,n);break;
+  case 'kitmark':R.kitMark(s,b.dataset.id,n);break;
+  case 'kitfill':R.kitFill(s,b.dataset.id,true);break;
+  case 'kitfree':R.kitFill(s,b.dataset.id,false);break;
+  case 'kitbuy':case 'kitadd':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast(t('Choose one first.'));pickSel['k'+s]='';addGear(s,sel.value,a==='kitbuy');break;}
+  case 'addkit':save(s,{kits:[...c.kits,{id:uid(),name:'',note:'',uses:3,left:3,rp:1,c:0,once:false}]});break;
   case 'reload':R.reload(s,b.dataset.id);break;
   case 'wrel':R.wrel(s,b.dataset.id,n);break;
   case 'cash':R.money(s,n);break;
@@ -100,6 +106,8 @@ app.addEventListener('change',e=>{
  if(el.dataset.skmax){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skmax].max=el.value;save(s,{skills:sks});return;}
  if(el.dataset.skr){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skr].r=Number(el.value);save(s,{skills:sks});return;}
  if(el.dataset.list){const l=el.dataset.list;const arr=c[l].map(x=>({...x}));const it=arr.find(x=>x.id===el.dataset.id);if(!it)return;let v=el.value;
+  if(l==='kits'&&el.dataset.key==='uses'){v=Math.max(0,Math.min(12,parseInt(v)||0));it.left=it.uses?Math.min(it.left,v):v;}
+  if(l==='kits'&&(el.dataset.key==='rp'||el.dataset.key==='c'))v=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
   if(el.dataset.key==='ammoMax'){v=Math.max(0,Math.min(12,parseInt(v)||0));it.ammo=Math.min(it.ammo,v);if(it.ammoMax===0)it.ammo=v;}
   // a name or note shown translated and then edited goes back to the book's English if it still matches one
   if(/^(name|text|note|skill|range|special)$/.test(el.dataset.key))v=I18N.back(v);

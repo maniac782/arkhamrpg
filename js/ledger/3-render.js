@@ -74,7 +74,7 @@ function ownerPanel(s){
  const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;
  // The owner picks the player right in the header; everyone else just sees who plays it.
- const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">'+t('Played by')+'</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" aria-label="'+t('Who plays this investigator')+'" style="width:auto;font-weight:600"><option value="">'+t('Nobody yet')+'</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||t('Member'))+(u===authUid?' '+t('(you)'):'')+'</option>').join('')+'</select></label>'
+ const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">'+t('Played by')+'</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" data-fit="1" aria-label="'+t('Who plays this investigator')+'" style="width:auto;font-weight:600"><option value="">'+t('Nobody yet')+'</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||t('Member'))+(u===authUid?' '+t('(you)'):'')+'</option>').join('')+'</select></label>'
   :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?t('Your investigator'):who?t('Played by {name}',{name:esc(who)}):t('Unclaimed'))+'</span>';
  const oe=!!(camp&&camp.ownerEdits===true);
  const note=mine?(oe?t('Only you, the campaign owner and the GM can change it.'):t('Only you and the GM can change it.')):boss?(oe?t('You can edit any investigator as the campaign owner.'):t('Locked to its player. You can change this in Settings.')):who?t('Only its player can change it.'):t('Nobody plays this investigator yet.');
@@ -312,6 +312,15 @@ function addGear(s,val,pay){
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
  save(s,p,pay?logm('Bought {item} for {price}',{item:it.n,price:money(it.c)}):logm('Added {item}',{item:it.n}));
 }
+// A dropdown is as wide as its longest option; size marked ones (data-fit) to the chosen option instead.
+function fitSelects(root){
+ (root||document).querySelectorAll('select[data-fit]').forEach(el=>{
+  const o=el.options[el.selectedIndex];if(!o)return;const cs=getComputedStyle(el);
+  const m=document.createElement('span');m.style.cssText='position:absolute;visibility:hidden;white-space:pre';m.style.font=cs.font;m.style.letterSpacing=cs.letterSpacing;m.textContent=o.text;
+  document.body.appendChild(m);const w=m.getBoundingClientRect().width;m.remove();
+  el.style.width=Math.ceil(w+parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth)+2)+'px';});
+}
+document.addEventListener('change',e=>{if(e.target.matches&&e.target.matches('select[data-fit]'))fitSelects(e.target.parentNode);});
 function render(){
  const ae=document.activeElement;
  const inApp=ae&&ae.closest&&ae.closest('#app');
@@ -326,5 +335,6 @@ function render(){
  const app=document.getElementById('app');
  app.innerHTML=active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty();
  if(keepId){const el=document.getElementById(keepId);if(el)try{el.focus({preventScroll:true});}catch(e){}}
+ fitSelects(app);
  if(typeof focusPendingClue==='function')focusPendingClue();
 }

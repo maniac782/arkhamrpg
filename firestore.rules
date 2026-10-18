@@ -259,6 +259,7 @@ service cloud.firestore {
       allow update: if realUser() && oldC().get('deleting', false) != true && (
         (isOwner() && changedOnly(['name']) && goodName())
         || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
+        || (isOwner() && changedOnly(['gmEdits']) && newC().gmEdits is bool)
         || ((isOwner() || gmOf(oldC()) == me()) && changedOnly(['nextSession', 'nextWhere', 'nextHours'])
           && (!('nextSession' in newC()) || newC().nextSession is int)
           && (!('nextWhere' in newC()) || (newC().nextWhere is string && newC().nextWhere.size() <= 80))
@@ -290,7 +291,8 @@ service cloud.firestore {
       function plays(s) { return isSlot(s) && sheetOwner(s) == request.auth.uid; }
 
       // Investigators: everyone in the campaign can see them. A player edits their own; the owner edits any and can make
-      // any number; other players make or claim one. The GM can award XP, start sessions and refill pools.
+      // any number; other players make or claim one. The GM can award XP, start sessions and refill pools
+      // (or edit everything, if the owner allows it).
       match /characters/{slot} {
         function oldOwner() { return resource.data.get('ownerUid', null); }
         function newOwner() { return request.resource.data.get('ownerUid', null); }
@@ -300,6 +302,8 @@ service cloud.firestore {
         allow update: if member() && isSlot(slot) && (
           cOwner()
           || (oldOwner() == request.auth.uid && (newOwner() == request.auth.uid || newOwner() == null))
+          // GM with "Let the GM edit every investigator" ticked in Settings: anything except who plays it.
+          || (cGM() && C().get('gmEdits', false) == true && newOwner() == oldOwner())
           || (cGM() && changed().hasOnly(['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log']))
           || ((oldOwner() == null || !(oldOwner() in C().memberIds)) && newOwner() == request.auth.uid && changed().hasOnly(['ownerUid', 'player']) && takesOnly(slot)));
         allow delete: if (cOwner()) || cleaner();

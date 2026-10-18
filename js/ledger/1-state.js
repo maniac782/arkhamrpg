@@ -76,7 +76,11 @@ let gmClaimed=false;
 const gmCan=s=>canEdit(s)||isGM();
 // In a campaign the owner's extra powers (editing every sheet, deleting Recent entries) follow the Settings switch.
 const ownerEditsOn=()=>!CAMP||!!(camp&&camp.ownerEdits===true); // off unless the owner turns it on in Settings
-function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return (!!keys.master&&ownerEditsOn())||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
+// The GM edits every sheet only while the owner has ticked "Let the GM edit every investigator" in Settings.
+const gmEditsOn=()=>!!(CAMP&&camp&&camp.gmEdits===true&&camp.gmUid&&camp.gmUid===authUid);
+// Owner or GM with full edit rights over other players' sheets.
+const fullEdit=()=>(!!keys.master&&ownerEditsOn())||gmEditsOn();
+function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return fullEdit()||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
 // Last-seen party, kept on this device so a refresh shows the sheets right away while Firebase reconnects.

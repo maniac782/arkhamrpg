@@ -44,8 +44,8 @@ app.addEventListener('click',e=>{
   case 'picdel':save(s,{portrait:'',portraitFull:''},logm('Removed portrait'));break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast(on?t('House rules on for the party.'):t('House rules off for the party.'))).catch(()=>toast(CAMP?t('Only the campaign owner can change house rules.'):t('Only the master key can change house rules.')));break;}
   case 'gotogm':e.preventDefault();go('gm');break;
-  case 'dellog':if(!keys.master||!ownerEditsOn())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
-  case 'clearlog':if(!keys.master||!ownerEditsOn())return;save(s,{log:[]});toast(t('Recent history cleared.'));break;
+  case 'dellog':if(!fullEdit())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
+  case 'clearlog':if(!fullEdit())return;save(s,{log:[]});toast(t('Recent history cleared.'));break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
   case 'gmclearask':edit.gmclear=true;render();break;
   case 'gmclearno':edit.gmclear=false;render();break;

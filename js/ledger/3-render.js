@@ -77,7 +77,7 @@ function ownerPanel(s){
  const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">'+t('Played by')+'</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" data-fit="1" aria-label="'+t('Who plays this investigator')+'" style="width:auto;font-weight:600"><option value="">'+t('Nobody yet')+'</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||t('Member'))+(u===authUid?' '+t('(you)'):'')+'</option>').join('')+'</select></label>'
   :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?t('Your investigator'):who?t('Played by {name}',{name:esc(who)}):t('Unclaimed'))+'</span>';
  const oe=!!(camp&&camp.ownerEdits===true);
- const note=mine?(oe?t('Only you, the campaign owner and the GM can change it.'):t('Only you and the GM can change it.')):boss?(oe?t('You can edit any investigator as the campaign owner.'):t('Locked to its player. You can change this in Settings.')):who?t('Only its player can change it.'):t('Nobody plays this investigator yet.');
+ const note=mine?(oe?t('Only you, the campaign owner and the GM can change it.'):t('Only you and the GM can change it.')):boss?(oe?t('You can edit any investigator as the campaign owner.'):gmEditsOn()?t('You can edit any investigator as the GM.'):t('Locked to its player. You can change this in Settings.')):gmEditsOn()?t('You can edit any investigator as the GM.'):who?t('Only its player can change it.'):t('Nobody plays this investigator yet.');
  let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row" style="align-items:center">'+head+'<span class="note">'+note+'</span></div><button class="btn sm" data-act="printc">'+t('Open printable sheet')+'</button></div>';
  let row='';
  if(!boss&&(!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">'+t('This is my investigator')+'</button>';
@@ -226,7 +226,7 @@ function renderCharBody(s){
 
  h+='<details class="sec"><summary><h2>'+t('Background')+'</h2></summary><div class="grid2">'+fld('bg.origin',t('Place of origin'),c.bg.origin)+fld('bg.family',t('Family & friends'),c.bg.family)+fld('bg.employment',t('Employment'),c.bg.employment)+fld('bg.salary',t('Weekly salary'),c.bg.salary)+fld('bg.encounter',t('First supernatural encounter'),c.bg.encounter)+fld('bg.enemies',t('Notable enemies'),c.bg.enemies)+'</div></details>';
 
- const gm=!!keys.master&&ownerEditsOn()&&!localMode;
+ const gm=fullEdit()&&!localMode;
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Recent')+'</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">'+t('Clear all')+'</button>':'')+'<button class="btn sm" data-act="session">'+t('New session')+'</button></div></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="'+t('Remove this entry')+'">×</button>':'')+'<span>'+new Date(l.t).toLocaleString(I18N.locale, {weekday:'short',hour:'numeric',minute:'2-digit'})+' — '+esc(logText(l))+'</span></span>').join(''):t('Nothing yet.'))+'</div>'+(gm?'<p class="note" style="margin:0">'+(CAMP?t('As the campaign owner, you can remove entries.'):t('Master key: you can remove entries.'))+'</p>':'')+'</section>';
  return h;
 }

@@ -46,8 +46,20 @@ const R={
  buyInsight(s){const c=chars[s];if(c.xpUnused<1)return toast(t('Needs 1 XP.'));if(c.insightLimit>=10)return toast(t('Insight limit can’t go above 10.'));
   save(s,{insightLimit:c.insightLimit+1,xpUnused:c.xpUnused-1,insightChance:false},logm('Insight limit raised to {n} (1 XP)',{n:c.insightLimit+1}));},
  addXp(s,n){const c=chars[s];save(s,{xpTotal:c.xpTotal+n,xpUnused:c.xpUnused+n},logm('Earned {n} XP',{n}));},
- buyKnack(s,tier){const c=chars[s];const have=c.knacks.filter(k=>Number(k.tier)===tier).length;
-  if(have>=KNACK_CAP[tier])return toast(tn('Limit reached: {n} tier {tier} knack.','Limit reached: {n} tier {tier} knacks.',KNACK_CAP[tier],{tier}));
+ multiclass(s,arch){const c=chars[s];if(c.mc)return;if(!arch||!A.ARCH[arch])return toast(t('Choose an archetype first.'));
+  if(xpSpent(c)<MC_AT)return toast(t('Multiclassing opens once {n} XP has been spent.',{n:MC_AT}));
+  if(c.xpUnused<MC_COST)return toast(t('Needs {n} XP.',{n:MC_COST}));
+  const p={mc:{arch,at:Date.now()},xpUnused:c.xpUnused-MC_COST,poolMax:c.poolMax+1,poolLimit:c.poolLimit+(c.poolLimit>=c.poolMax?1:0)};
+  // The new archetype's skill limits only ever loosen a skill's max; the old maxes are kept so Undo can restore them.
+  if(arch!==c.archetype){const sks=JSON.parse(JSON.stringify(c.skills)),prev={};SKILLS.forEach(([k])=>{prev[k]=sks[k].max||'';const now=sks[k].max?Number(sks[k].max):4,f=Math.min(now,A.maxFor(arch,k));sks[k].max=f<4?String(f):'';});p.skills=sks;p.mc.prev=prev;}
+  save(s,p,arch===c.archetype?logm('Multiclassed within {trait} (20 XP): dice pool max {n}, more knacks',{trait:c.archetype,n:p.poolMax}):logm('Multiclassed into {trait} (20 XP): dice pool max {n}',{trait:arch,n:p.poolMax}));},
+ unMulticlass(s){const c=chars[s];if(!c.mc)return;const was=c.mc.arch;
+  const p={mc:null,xpUnused:c.xpUnused+MC_COST,poolMax:Math.max(1,c.poolMax-1)};p.poolLimit=Math.min(c.poolLimit,p.poolMax);
+  if(was!==c.archetype&&c.mc.prev){const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([k])=>{if(k in c.mc.prev)sks[k].max=c.mc.prev[k];});p.skills=sks;}
+  c.poolLimit=p.poolLimit;c.poolMax=p.poolMax;clampPool(c);p.regular=c.regular;p.horror=c.horror;
+  save(s,p,logm('Undid multiclassing (20 XP back): dice pool max {n}',{n:p.poolMax}));},
+ buyKnack(s,tier){const c=chars[s];const have=c.knacks.filter(k=>Number(k.tier)===tier&&knackArch(c,k)===c.archetype).length;const cap=knackCap(c,tier,c.archetype);
+  if(have>=cap)return toast(tn('Limit reached: {n} tier {tier} knack.','Limit reached: {n} tier {tier} knacks.',cap,{tier}));
   for(let lo=1;lo<tier;lo++)if(!c.knacks.some(k=>Number(k.tier)===lo))return toast(t('You need a tier {tier} knack first.',{tier:lo}));
   if(c.xpUnused<KNACK_COST[tier])return toast(t('Needs {n} XP.',{n:KNACK_COST[tier]}));
   save(s,{knacks:[...c.knacks,{id:uid(),tier,name:'',text:''}],xpUnused:c.xpUnused-KNACK_COST[tier]},logm('Bought a tier {tier} knack ({n} XP)',{tier,n:KNACK_COST[tier]}));},

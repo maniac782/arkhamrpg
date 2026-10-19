@@ -49,12 +49,14 @@ app.addEventListener('click',e=>{
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
   case 'gmclearask':edit.gmclear=true;render();break;
   case 'gmclearno':edit.gmclear=false;render();break;
-  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast(t('Choose a knack first.'));const k=A.knacksFor(c.archetype).find(x=>x.name===sel.value);if(!k)return;
-   if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name)}]},logm('Added knack {knack}',{knack:k.name}));break;}
-   const have=c.knacks.filter(x=>Number(x.tier)===k.tier).length;if(have>=KNACK_CAP[k.tier])return toast(tn('Limit reached: {n} tier {tier} knack.','Limit reached: {n} tier {tier} knacks.',KNACK_CAP[k.tier],{tier:k.tier}));
+  case 'multiclass':{const sel=document.getElementById('mcpick-'+s);R.multiclass(s,sel&&sel.value);break;}
+  case 'unmulticlass':if(!fullEdit())return;R.unMulticlass(s);break;
+  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast(t('Choose a knack first.'));const [ka,kn]=sel.value.includes('|')?sel.value.split('|'):[c.archetype,sel.value];const k=A.knacksFor(ka).find(x=>x.name===kn);if(!k)return;
+   if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name),arch:ka}]},logm('Added knack {knack}',{knack:k.name}));break;}
+   const have=c.knacks.filter(x=>Number(x.tier)===k.tier&&knackArch(c,x)===ka).length,cap=knackCap(c,k.tier,ka);if(have>=cap)return toast(tn('Limit reached: {n} tier {tier} knack.','Limit reached: {n} tier {tier} knacks.',cap,{tier:k.tier}));
    for(let lo=1;lo<k.tier;lo++)if(!c.knacks.some(x=>Number(x.tier)===lo))return toast(t('You need a tier {tier} knack first.',{tier:lo}));
    if(c.xpUnused<KNACK_COST[k.tier])return toast(t('Needs {n} XP.',{n:KNACK_COST[k.tier]}));
-   save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name)}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},logm('Bought {knack} ({n} XP)',{knack:k.name,n:KNACK_COST[k.tier]}));break;}
+   save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name),arch:ka}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},logm('Bought {knack} ({n} XP)',{knack:k.name,n:KNACK_COST[k.tier]}));break;}
   case 'vbuy':case 'vfree':{const sel=document.getElementById('vpick-'+s);if(!sel||!sel.value)return toast(t('Choose a vehicle first.'));pickSel['v'+s]='';addGear(s,sel.value,a==='vbuy');break;}
   case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(!sel||!sel.value)return toast(t('Choose something to add first.'));pickSel['g'+s]='';addGear(s,sel.value,a==='gbuy');break;}
   case 'wbuy':case 'wfree':{const sel=document.getElementById('wpick-'+s);if(!sel||!sel.value)return toast(t('Choose a weapon first.'));pickSel['w'+s]='';addGear(s,sel.value,a==='wbuy');break;}
@@ -69,7 +71,7 @@ app.addEventListener('click',e=>{
   case 'kitmark':R.kitMark(s,b.dataset.id,n);break;
   case 'kitfill':R.kitFill(s,b.dataset.id,true);break;
   case 'kitfree':R.kitFill(s,b.dataset.id,false);break;
-  case 'kitbuy':case 'kitadd':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast(t('Choose one first.'));pickSel['k'+s]='';addGear(s,sel.value,a==='kitbuy');break;}
+  case 'kitbuy':case 'kitadd':{const sel=document.getElementById('kitpick-'+s);if(!sel||!sel.value)return toast(t('Choose one first.'));pickSel['k'+s]='';addGear(s,sel.value,a==='kitbuy');break;}
   case 'addkit':save(s,{kits:[...c.kits,{id:uid(),name:'',note:'',uses:3,left:3,rp:1,c:0,once:false}]});break;
   case 'reload':R.reload(s,b.dataset.id);break;
   case 'wrel':R.wrel(s,b.dataset.id,n);break;
@@ -100,7 +102,7 @@ app.addEventListener('change',e=>{
  if(el.dataset.trait){const t=el.value;if(c.personality&&A.TRAITS[c.personality]&&t&&t!==c.personality){edit.trait={s,t};render();}else setTrait(s,t,0);return;}
  if(el.dataset.f){const p=el.dataset.f;let v=el.value;
   if(p==='xpTotal'||p==='xpUnused'){v=Math.max(0,parseInt(v)||0);const old=Number(c[p])||0;if(v===old)return;save(s,{[p]:v},p==='xpTotal'?logm('Fixed total XP: {from} → {to}',{from:old,to:v}):logm('Fixed unused XP: {from} → {to}',{from:old,to:v}));return;}
-  if(p==='archetype'&&v){const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([k])=>{const f=A.maxFor(v,k);sks[k].max=f<4?String(f):'';});save(s,{archetype:v,skills:sks});return;}
+  if(p==='archetype'&&v){const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([k])=>{sks[k].max=archMax(c,k,v);});save(s,{archetype:v,skills:sks});return;}
   if(/^(habitual|lucky)\.name$/.test(p))v=I18N.back(v);
   if(p.includes('.')){const [a,k]=p.split('.');const o={...c[a],[k]:v};save(s,{[a]:o});}else save(s,{[p]:v});return;}
  if(el.dataset.skmax){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skmax].max=el.value;save(s,{skills:sks});return;}

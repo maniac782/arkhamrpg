@@ -22,6 +22,20 @@ const ARCH=[tk('Adventurer'),tk('Believer'),tk('Guardian'),tk('Hunter'),tk('Myst
 const SKILL_COST={6:2,5:4,4:7,3:12};
 const KNACK_COST={1:3,2:6,3:10,4:15};
 const KNACK_CAP={1:3,2:2,3:2,4:1};
+// Multiclassing (book p. 67): after 125 XP spent, 20 XP buys +1 dice pool maximum and either a second archetype
+// (its knacks and skill limits too) or extra knacks in the same archetype (2 more tier 1, 1 more of tiers 2-4).
+// c.mc = {arch} where arch is the second archetype, or the character's own archetype for "stay".
+const MC_AT=125,MC_COST=20,MC_EXTRA={1:2,2:1,3:1,4:1};
+const xpSpent=c=>Math.max(0,(Number(c.xpTotal)||0)-(Number(c.xpUnused)||0));
+const mcArch=c=>c&&c.mc&&c.mc.arch&&c.mc.arch!==c.archetype?c.mc.arch:'';   // second archetype, if any
+const mcSame=c=>!!(c&&c.mc&&c.mc.arch&&c.mc.arch===c.archetype);           // multiclassed within their own archetype
+const archLabel=c=>[c.archetype,mcArch(c)].filter(Boolean).map(a=>t(a)).join(' / ');
+// Which of the investigator's archetypes a knack belongs to (older knacks don't say; the first archetype wins ties).
+function knackArch(c,k){if(k.arch)return k.arch;const m=mcArch(c);if(m&&!A.knacksFor(c.archetype).some(x=>x.name===k.name)&&A.knacksFor(m).some(x=>x.name===k.name))return m;return c.archetype;}
+// How many knacks of this tier the investigator may have from that archetype.
+function knackCap(c,tier,arch){return KNACK_CAP[tier]+(mcSame(c)&&arch===c.archetype?MC_EXTRA[tier]:0);}
+// Skill "max" from every archetype the investigator has (the better limit wins).
+function archMax(c,k,first){const a=[first||c.archetype,mcArch(c)].filter(Boolean);const f=a.length?Math.min(...a.map(x=>A.maxFor(x,k))):4;return f<4?String(f):'';}
 const INJURIES=[null,
  [tk('Heavy Blow'),tk('Knocked prone. Next turn, spend 1 die to clear your head before any other action.')],
  [tk('Slowed'),tk('You move at half speed.')],
@@ -66,7 +80,7 @@ function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
  return {name:t('Investigator {n}',{n:i}),player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
-  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],mc:null,money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
 function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});

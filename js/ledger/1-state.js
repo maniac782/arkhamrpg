@@ -34,6 +34,18 @@ const INJURIES=[null,
  [tk('Comatose'),tk('Pool limit drops to 0 until healed. Takes 2 successes to heal.')],
  [tk('Dire'),tk('Pool limit drops to 0. Takes 3 successes to heal. Without medical care within an hour, you die.')],
  [tk('Dead'),tk('You are dead — unless you permanently lower your insight limit by 2 to survive.')]];
+// Unique injuries (Additional Rules): they come from fire, lack of air, poison or disease, never from a roll on the table.
+// They still add 1 to later injury rolls; a third instance of the same one kills.
+const UNIQUE_INJURIES=[
+ [tk('Burned'),tk('All complex actions with disadvantage. Each 1 you roll on a complex action discards a die from your pool afterward.')],
+ [tk('Choking'),tk('Simple actions cost 2 dice. Every complex action is difficult. Another one each turn (or minute) you still can’t breathe.')],
+ [tk('Sickened'),tk('Before each complex action, roll 1d3: that’s the most dice you can spend on it.')]];
+// Effect text for any injury, from the table or unique.
+function injuryInfo(nm){return INJURIES.find(x=>x&&x[0]===nm)||UNIQUE_INJURIES.find(x=>x[0]===nm)||null;}
+const isUniqueInjury=nm=>UNIQUE_INJURIES.some(x=>x[0]===nm);
+// Options for an injury picker: the table by roll result, then the unique ones.
+function injuryOptions(){return INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(t(x[0]))+'</option>').join('')+
+ '<optgroup label="'+t('Unique (fire, air, poison or disease)')+'">'+UNIQUE_INJURIES.map(x=>'<option value="'+esc(x[0])+'">'+esc(t(x[0]))+'</option>').join('')+'</optgroup>';}
 function injuryFor(n){return INJURIES[Math.min(Math.max(n,1),11)];}
 function traumaFor(n){
  if(n<=2)return[tk('Subtle Strangeness'),tk('Something odd at the edge of your senses. No further effect.')];
@@ -57,7 +69,9 @@ function blank(i){
   injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
-function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});
+function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});
+ // An injury or trauma saved as a bare name becomes a proper entry.
+ ['injuries','traumas'].forEach(k=>{o[k]=(Array.isArray(o[k])?o[k]:[]).map(j=>typeof j==='string'?{id:uid(),name:j,note:''}:j).filter(j=>j&&j.name);});o.skills=Object.assign(blank(i).skills,o.skills||{});o.bg=Object.assign(blank(i).bg,o.bg||{});o.habitual=Object.assign({name:'',used:false},o.habitual||{});if(typeof o.habitual.uses!=='number')o.habitual.uses=o.habitual.name?1:0;o.lucky=Object.assign({name:'',used:false},o.lucky||{});
  o.weapons=(o.weapons||[]).map(w=>({...w}));
  o.kits=(o.kits||[]).map(k=>({...k}));
  // equipment bought before it had a description gets the catalog's one

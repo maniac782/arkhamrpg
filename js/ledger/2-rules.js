@@ -24,8 +24,10 @@ const R={
  buyHabit(s){const c=chars[s];const m=Math.round(((Number(c.money)||0)-1)*100)/100;if(m<0)return toast(t('Not enough money. Each one costs $1.00.'));
   save(s,{money:m,habitual:{...c.habitual,uses:c.habitual.uses+1}},logm('Bought another {item} for $1.00',{item:c.habitual.name||tk('habitual item')}));},
  insight(s,n){const c=chars[s];const v=Math.max(0,Math.min(c.insightLimit,c.insight+n));save(s,{insight:v},n<0?logm('Spent 1 insight'):null);},
- addInjury(s,nm){const c=chars[s];if(!INJURIES.some(x=>x&&x[0]===nm))return;
+ addInjury(s,nm){const c=chars[s];if(!injuryInfo(nm))return;
   const p={injuries:[...c.injuries,{id:uid(),name:nm,note:''}]};
+  // A third instance of the same unique injury (Burned, Choking, Sickened) kills.
+  if(isUniqueInjury(nm)&&c.injuries.filter(j=>j.name===nm).length>=2&&!c.injuries.some(j=>j.name==='Dead')){p.injuries.push({id:uid(),name:'Dead',note:''});toast(t('A third {injury} injury is fatal.',{injury:t(nm)}));}
   if(nm==='Comatose'||nm==='Dire'){c.poolLimit=0;clampPool(c);Object.assign(p,{poolLimit:0,regular:c.regular,horror:c.horror});}
   save(s,p,logm('Injury: {injury}',{injury:nm}));},
  addTrauma(s,nm){const c=chars[s];if(!(nm in TRAUMA_AT))return;

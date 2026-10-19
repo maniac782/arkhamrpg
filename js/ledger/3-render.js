@@ -199,9 +199,9 @@ function renderCharBody(s){
  // injuries & trauma
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Injuries &amp; traumas')+'</h2></div>'+
  '<div class="grid2"><div><span class="lbl">'+t('Injuries')+'</span>'+
- '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="'+t('Add an injury')+'" style="flex:1;min-width:0"><option value="">'+t('Add an injury…')+'</option>'+INJURIES.slice(1).map((x,i)=>'<option value="'+esc(x[0])+'">'+(i===10?'11+':i+1)+' · '+esc(t(x[0]))+'</option>').join('')+'</select></div>'+
- '<p class="note" style="margin:6px 0">'+(c.injuries.length?t('Roll 1d6 + {n} at the table (+1 for each injury you already have), then pick the result.',{n:c.injuries.length}):t('Roll 1d6 at the table, then pick the result.'))+'</p>'+
- '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="item"><div class="grow"><b>'+esc(t(j.name))+'</b>'+(e?'<span class="effect">'+esc(t(e[1]))+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">'+t('Healed')+'</button></div>';}).join(''):'<p class="note">'+t('None.')+'</p>')+'</div></div>'+
+ '<div class="row"><select class="maxsel" id="injsel-'+s+'" data-addinj="1" aria-label="'+t('Add an injury')+'" style="flex:1;min-width:0"><option value="">'+t('Add an injury…')+'</option>'+injuryOptions()+'</select></div>'+
+ '<p class="note" style="margin:6px 0">'+(c.injuries.length?t('Roll 1d6 + {n} at the table (+1 for each injury you already have), then pick the result.',{n:c.injuries.length}):t('Roll 1d6 at the table, then pick the result.'))+' '+t('A fall of 10 ft or more rolls 1d3 instead, plus 1d3 for every 10 ft beyond the first. Fire, lack of air, poison and disease give a unique injury, no roll.')+'</p>'+
+ '<div class="list">'+(c.injuries.length?c.injuries.map(j=>{const e=injuryInfo(j.name);return '<div class="item"><div class="grow"><b>'+esc(t(j.name))+'</b>'+(e?'<span class="effect">'+esc(t(e[1]))+'</span>':'')+'</div><button class="btn sm" data-act="healinj" data-id="'+j.id+'">'+t('Healed')+'</button></div>';}).join(''):'<p class="note">'+t('None.')+'</p>')+'</div></div>'+
  '<div><span class="lbl">'+t('Traumas')+(c.traumaMod?' · '+t('+{n} to trauma rolls this session',{n:c.traumaMod}):'')+'</span>'+
  '<div class="row"><select class="maxsel" id="trasel-'+s+'" data-addtra="1" aria-label="'+t('Add a trauma')+'" style="flex:1;min-width:0"><option value="">'+t('Add a trauma…')+'</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(t(k))+'</option>').join('')+'</select></div>'+
  '<p class="note" style="margin:6px 0">'+(c.traumaMod?t('Roll 1d6 + the number of 1s on your horror dice + {n} at the table, then pick the result.',{n:c.traumaMod}):t('Roll 1d6 + the number of 1s on your horror dice at the table, then pick the result.'))+'</p>'+
@@ -231,7 +231,7 @@ function renderCharBody(s){
  return h;
 }
 function activeEffects(c){
- const a=c.injuries.map(j=>{const e=INJURIES.find(x=>x&&x[0]===j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(t(j.name))+'</b>'+(e?' — '+esc(t(e[1])):'')+'</div>';})
+ const a=c.injuries.map(j=>{const e=injuryInfo(j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(t(j.name))+'</b>'+(e?' — '+esc(t(e[1])):'')+'</div>';})
   .concat(c.traumas.map(j=>'<div class="note"><b style="color:var(--horror)">'+esc(t(j.name))+'</b> — '+esc(t(traumaFor(TRAUMA_AT[j.name]||1)[1]))+'</div>'));
  return a.length?'<div style="display:flex;flex-direction:column;gap:4px"><span class="lbl">'+t('Affecting you now')+'</span>'+a.join('')+'</div>':'';
 }

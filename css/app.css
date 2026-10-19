@@ -346,3 +346,4 @@ img[data-zoom]{cursor:zoom-in}
 /* A quiet button that reads as a text link (rarely-needed actions). */
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;cursor:pointer}
 .linkbtn:hover,.linkbtn:focus-visible{color:var(--ink);text-decoration-color:currentColor}
+.log .by{color:var(--brass);font-style:italic;white-space:nowrap}

@@ -121,6 +121,9 @@ function logn(one,other,n,v){v={...(v||{}),n};return {m:fillEn(n===1?one:other,v
 const LOG_NAMES=['skill','knack','injury','trauma','item','weapon','src','trait','who','clue'];
 // "Cultist 2": a name from the book with a number after it
 function nameT(s){const m=/^(.+?)( \d+)$/.exec(String(s||''));return m?t(m[1])+m[2]:t(String(s||''));}
+// "by Dan (GM)" for Recent entries the GM or campaign owner made on someone else's investigator.
+function logBy(e){const b=e&&e.by;if(!b||!b.r)return '';const n=b.n||'';
+ return b.r==='gm'?(n?t('by {name} (GM)',{name:n}):t('by the GM')):(n?t('by {name} (owner)',{name:n}):t('by the campaign owner'));}
 function logText(e){if(!e)return '';if(Array.isArray(e.p))return e.p.map(logText).join(' · ');
  if(e.k){const v={...(e.v||{})};LOG_NAMES.forEach(x=>{if(typeof v[x]==='string')v[x]=t(v[x]);});if(typeof v.enemy==='string')v.enemy=nameT(v.enemy);return e.o?tn(e.o,e.k,Number(v.n),v):t(e.k,v);}
  return t(e.m||'');}
@@ -130,6 +133,9 @@ async function save(slot,patch,logMsg){
  if(patch.weapons&&legacyRel.has(slot)){patch.reloads=0;legacyRel.delete(slot);}
  Object.assign(c,patch);
  if(Array.isArray(logMsg))logMsg=logMsg.length?{m:logMsg.map(x=>x.m).join(' · '),p:logMsg}:null;else if(typeof logMsg==='string')logMsg=logMsg?{m:logMsg}:null;
+ // In a campaign, an entry made by someone other than the investigator's player says who: the GM or the owner.
+ if(logMsg&&CAMP&&camp&&authUid&&c.ownerUid!==authUid){const r=camp.gmUid===authUid?'gm':camp.ownerUid===authUid?'owner':null;
+  if(r)logMsg={...logMsg,by:{r,n:String(((camp.names||{})[authUid])||'').slice(0,40)}};}
  if(logMsg){c.log=[{t:Date.now(),...logMsg},...(c.log||[])].slice(0,12);patch.log=c.log;logHistory(slot,logMsg);}
  render();
  if(!db)return;

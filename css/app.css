@@ -343,3 +343,6 @@ img[data-zoom]{cursor:zoom-in}
 /* a knack's effect shown as its definition (not a help note) */
 .kdef{color:var(--ink);background:var(--surface2);border-left:3px solid var(--muted);border-radius:0 6px 6px 0;padding:10px 14px;line-height:1.5;font-size:15px}
 .pickdesc{margin:-2px 0 0;padding-left:10px;border-left:2px solid var(--line)}
+/* A quiet button that reads as a text link (rarely-needed actions). */
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;cursor:pointer}
+.linkbtn:hover,.linkbtn:focus-visible{color:var(--ink);text-decoration-color:currentColor}

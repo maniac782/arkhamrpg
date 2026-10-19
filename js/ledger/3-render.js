@@ -181,7 +181,7 @@ function renderCharBody(s){
   (k.uses>0?'<div class="ammo">'+pips+(cost>0?'<button class="btn sm" data-act="kitfill" data-id="'+k.id+'" '+(k.left>=k.uses?'disabled':'')+'>'+(k.once?t('Buy a new one · {price}',{price:money(cost)}):t('Replenish · {price}',{price:money(cost)}))+'</button>':'')+
    '<button class="btn sm" data-act="kitfree" data-id="'+k.id+'" '+(k.left>=k.uses?'disabled':'')+'>'+t('Refill (free)')+'</button></div>':'')+
   '</div><button class="btn sm icon" data-act="del" data-list="kits" data-id="'+k.id+'" aria-label="'+t('Remove item')+'">×</button></div>';}).join(''):'<p class="note">'+t('No kits or supplies.')+'</p>')+
- '</div><div class="row"><button class="btn sm" data-act="addkit">'+t('Add your own')+'</button></div></section>';
+ '</div><p class="note" style="margin:0"><button class="linkbtn" data-act="addkit">'+t('Add your own')+'</button></p></section>';
 
  // horror & insight
  h+='<section class="sec"><div class="grid2"><div style="display:flex;flex-direction:column;gap:10px"><h2>'+t('Horror')+'</h2><div class="row"><div class="stat"><span class="lbl">'+t('Horror dice limit')+'</span><b class="num">'+c.horrorLimit+'</b></div><button class="btn hor" data-act="hor" data-n="1">'+t('Suffer 1')+'</button><button class="btn" data-act="hor" data-n="-1" '+(c.horrorLimit?'':'disabled')+'>'+t('Remove 1')+'</button></div>'+

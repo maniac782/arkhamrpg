@@ -27,6 +27,7 @@ const recapGroups=(list=histLog)=>{const story=t('The story'),by={};list.forEach
 function logHistory(slot,m){if(typeof m==='string')m={m};const c=chars[slot];const h={slot,name:(c&&c.name)||'',...m,t:m.t||Date.now(),session:table.session||1};
  if(historySession===h.session)histLog=[...histLog,h];
  if(typeof fullHist!=='undefined'&&fullHist[slot]&&fullHist[slot].list)fullHist[slot].list=[h,...fullHist[slot].list];
+ if(typeof histCache!=='undefined'&&histCache[slot]&&histCache[slot].list)histCache[slot].list.push(h);
  if(db)db.collection('history').add(h).catch(()=>{});}
 
 // subscriptions that depend on whether this device holds the master key

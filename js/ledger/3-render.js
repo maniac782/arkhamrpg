@@ -242,7 +242,7 @@ function recentMore(s,c){const n=(c.log||[]).length,shown=Math.min(n,logShown[s]
  if(n>shown)h+='<button class="linkbtn note" data-act="logmore">'+t('Show {n} more',{n:Math.min(LOG_SHOW,n-shown)})+'</button>';
  else if(shown>LOG_SHOW)h+='<button class="linkbtn note" data-act="logless">'+t('Show fewer')+'</button>';
  if(db)h+=(h?' · ':'')+'<button class="linkbtn note" data-act="fullhist" aria-expanded="'+!!(fullHist[s]&&fullHist[s].open)+'">'+(fullHist[s]&&fullHist[s].open?t('Hide full history'):t('Full history'))+'</button>';
- if(db&&canEdit(s))h+=' · <button class="linkbtn note" data-act="logrestore">'+t('Bring back older entries')+'</button>';
+ if(db&&canEdit(s)&&restorableCount(s)>0)h+=' · <button class="linkbtn note" data-act="logrestore">'+t('Bring back older entries')+'</button>';
  return (h?'<p class="note" style="margin:0">'+h+'</p>':'')+fullHistHtml(s)+trashHtml(s,c);}
 // Recently deleted entries (owner or GM only), each with Undo until it's erased for good.
 function trashHtml(s,c){const tr=c.trash||[];if(!tr.length||!fullEdit())return '';setTimeout(()=>purgeTrash(s),0);
@@ -250,6 +250,12 @@ function trashHtml(s,c){const tr=c.trash||[];if(!tr.length||!fullEdit())return '
  let h='<p class="note" style="margin:0"><button class="linkbtn note" data-act="trashshow" aria-expanded="'+!!trashOpen[s]+'">'+tn('{n} deleted entry (undo within 7 days)','{n} deleted entries (undo within 7 days)',live.length)+'</button></p>';
  if(trashOpen[s])h+='<div class="fullhist">'+live.map(z=>'<span class="row" style="gap:8px;flex-wrap:nowrap;align-items:baseline"><button class="btn sm" data-act="undellog" data-id="'+z.id+'">'+t('Undo')+'</button><span class="note">'+logWhen(z.e.t)+' — '+esc(logText(z.e))+' <i>'+t('erased {date}',{date:new Date(z.at+TRASH_DAYS*864e5).toLocaleDateString(I18N.locale,{month:'short',day:'numeric'})})+'</i></span></span>').join('')+'</div>';
  return h;}
+// How many session-history entries are missing from Recent (and not deleted). Loads the history once, in the background.
+function restorableCount(s){const c=chars[s],hc=histCache[s];
+ if(!hc){histCache[s]={loading:true};setTimeout(()=>loadHistCache(s),0);return 0;}
+ if(!hc.list)return 0;
+ return hc.list.filter(x=>histAlive(x)&&!(c.log||[]).some(l=>sameEntry(l,x))&&!(c.trash||[]).some(z=>sameEntry(z.e,x))).length;}
+async function loadHistCache(s){if(!db)return;try{const qs=await db.collection('history').where('slot','==',s).get();const a=[];qs.forEach(d=>{const x=d.data();if(x&&x.t)a.push(x);});histCache[s]={list:a};render();}catch(e){delete histCache[s];}}
 // Everything this investigator has done, newest session first. Comes from the session history, which keeps every entry.
 function fullHistHtml(s){const f=fullHist[s];if(!f||!f.open)return '';
  if(f.loading)return '<p class="note" style="margin:0">'+t('Loading…')+'</p>';

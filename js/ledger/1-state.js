@@ -148,9 +148,12 @@ let fullHist={};
 // Entries the owner or GM deletes vanish everywhere (Recent, Full history, recaps). They wait in c.trash for
 // TRASH_DAYS so they can be undone, then their session-history copies are erased for good.
 const TRASH_DAYS=7;
+// Each investigator's session-history entries, fetched once per page load, so Recent knows whether
+// "Bring back older entries" has anything to bring back. {list} once loaded.
+let histCache={};
 const histAlive=x=>!!x&&!x.gone;
-// Older entries were stamped a moment apart in Recent and in the session history, so match loosely.
-const sameEntry=(a,b)=>!!a&&!!b&&(a.t===b.t||(Math.abs(a.t-b.t)<=3000&&String(a.m||'')===String(b.m||'')));
+// Older entries were stamped a few milliseconds apart in Recent and in the session history, so allow a tiny gap.
+const sameEntry=(a,b)=>!!a&&!!b&&(a.t===b.t||(Math.abs(a.t-b.t)<=50&&String(a.m||'')===String(b.m||'')));
 async function save(slot,patch,logMsg){
  if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?t('Only {name}’s player can change that.',{name:chars[slot].name||t('this investigator')}):t('{name}’s sheet is locked. Unlock it to make changes.',{name:chars[slot].name}));return;}
  const c=chars[slot];

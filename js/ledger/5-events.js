@@ -152,7 +152,7 @@ function watchKeys(){
 // Refill Recent from the session history: every Recent entry is also saved there, so entries removed or pushed out come back.
 async function restoreLog(s){const c=chars[s];if(!db||!c||!canEdit(s))return;
  try{const qs=await db.collection('history').where('slot','==',s).get();const have=new Set((c.log||[]).map(l=>l.t));const add=[];
-  qs.forEach(d=>{const x=d.data();if(!histAlive(x)||!x.t||have.has(x.t)||(c.log||[]).some(l=>sameEntry(l,x))||(c.trash||[]).some(z=>sameEntry(z.e,x)))return;have.add(x.t);const e={t:x.t};['m','k','v','o','p','by'].forEach(f=>{if(x[f]!=null)e[f]=x[f];});add.push(e);});
+  {const all=[];qs.forEach(d=>{const x=d.data();if(x&&x.t)all.push(x);});histCache[s]={list:all};}qs.forEach(d=>{const x=d.data();if(!histAlive(x)||!x.t||have.has(x.t)||(c.log||[]).some(l=>sameEntry(l,x))||(c.trash||[]).some(z=>sameEntry(z.e,x)))return;have.add(x.t);const e={t:x.t};['m','k','v','o','p','by'].forEach(f=>{if(x[f]!=null)e[f]=x[f];});add.push(e);});
   if(!add.length)return toast(t('Nothing more to bring back.'));
   const log=[...(c.log||[]),...add].sort((a,b)=>b.t-a.t).slice(0,LOG_KEEP);const n=log.filter(l=>add.includes(l)).length;
   logShown[s]=Math.max(logShown[s]||LOG_SHOW,Math.min(log.length,LOG_SHOW*3));
@@ -173,7 +173,9 @@ async function histMark(s,entries,mode){if(!db||!entries.length)return;
  try{const qs=await db.collection('history').where('slot','==',s).get();const jobs=[];
   qs.forEach(d=>{const x=d.data();if(!entries.some(e=>sameEntry(e,x)))return;
    jobs.push(mode==='erase'?d.ref.delete():d.ref.update({gone:mode==='hide'?Date.now():null}));});
-  await Promise.all(jobs);}catch(e){if(window.quotaHit)quotaHit(e);console.warn(e);}}
+  await Promise.all(jobs);
+  const hc=histCache[s];if(hc&&hc.list){if(mode==='erase')hc.list=hc.list.filter(x=>!entries.some(e=>sameEntry(e,x)));else hc.list.forEach(x=>{if(entries.some(e=>sameEntry(e,x)))x.gone=mode==='hide'?Date.now():null;});render();}
+  }catch(e){if(window.quotaHit)quotaHit(e);console.warn(e);}}
 function trashLog(s,entries){const c=chars[s],now=Date.now();
  const trash=[...entries.map(e=>({id:uid(),at:now,e})),...(c.trash||[])].slice(0,LOG_KEEP);
  save(s,{log:(c.log||[]).filter(l=>!entries.includes(l)),trash});

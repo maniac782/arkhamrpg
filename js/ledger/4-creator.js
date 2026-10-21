@@ -16,9 +16,8 @@ async function impFind(){const raw=db&&db.raw;if(!raw||!authUid)return;imp={load
    jobs.push(raw.collection('campaigns/'+d.id+'/characters').where('ownerUid','==',authUid).get().then(qs=>qs.forEach(x=>{const c=x.data();if(c&&c.name)list.push({cid:d.id,camp:cname,slot:x.id,c});})).catch(()=>{}));});
   await Promise.all(jobs);
   // Leave out anyone already brought into this campaign.
-  // (Matched on the original sheet; copies made before that was recorded are matched on the name.)
-  const here=SLOTS.map(x=>chars[x]).filter(c=>c&&c.from);
-  list=list.filter(x=>!here.some(c=>c.from.cid===x.cid&&(c.from.slot?c.from.slot===x.slot:String(c.from.name||c.name||'')===String(x.c.name||''))));
+  // Leave out anyone who is already here: the same investigator, whichever way round the copy went.
+  list=list.filter(x=>!SLOTS.some(s=>chars[s]&&sameInv(chars[s],CAMP,s,x.c,x.cid,x.slot)));
   list.sort((a,b)=>String(a.c.name).localeCompare(String(b.c.name)));imp={list};}
  catch(e){if(window.quotaHit)quotaHit(e);imp={err:true};}
  render();}
@@ -36,11 +35,17 @@ async function impBring(i){const it=imp.list&&imp.list[i];if(!it||imp.busy)retur
  const down=(c.injuries||[]).some(j=>j.name==='Comatose'||j.name==='Dire');if(!down)c.poolLimit=c.poolMax;
  c.horror=Math.min(c.horrorLimit||0,c.poolLimit);c.regular=Math.max(0,c.poolLimit-c.horror);
  if(camp&&camp.names&&camp.names[authUid])c.player=camp.names[authUid];
- c.from={cid:it.cid,slot:it.slot,camp:it.camp,name:it.c.name,at:Date.now()};
+ c.pid=invKey(it.c,it.cid,it.slot);c.from={cid:it.cid,slot:it.slot,camp:it.camp,name:it.c.name,at:Date.now()};
  c.log=[{t:Date.now(),...logm('Joined from {campaign}',{campaign:it.camp})}];
  if(c.portrait){c.portrait=await impPicture(c.portrait);if(c.portraitFull)c.portraitFull=await impPicture(c.portraitFull);}
  const id=await addSlot(c);imp={};
  if(id){toast(t('{name} joined the party.',{name:c.name}));go(id);}else render();}
+// Every copy of an investigator shares one identity: the campaign/sheet where they were first made.
+function invKey(c,cid,slot){return c.pid||(c.from&&c.from.cid&&c.from.slot?c.from.cid+'/'+c.from.slot:cid+'/'+slot);}
+function sameInv(a,acid,aslot,b,bcid,bslot){if(invKey(a,acid,aslot)===invKey(b,bcid,bslot))return true;
+ // Copies made before the original sheet was recorded only know the campaign and the name.
+ const nm=x=>String(x.name||'').trim().toLowerCase(),old=(c,cid,o)=>c.from&&!c.from.slot&&!c.pid&&c.from.cid===cid&&(nm({name:c.from.name||c.name})===nm(o));
+ return old(a,bcid,b)||old(b,acid,a);}
 // Whether there's anyone to bring: looked up once, quietly, the first time it's asked.
 function impAvailable(){if(!CAMP||(IS_LOCAL&&!IS_DEMO)||!canAddSheet()||!db||!db.raw||!authUid)return false;
  if(!imp.list&&!imp.loading&&!imp.err){imp={loading:true};setTimeout(()=>impFind().then(render),0);return false;}

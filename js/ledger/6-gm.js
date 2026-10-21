@@ -26,6 +26,7 @@ function gmStory(m){if(typeof m==='string')m={m};const e={t:Date.now(),session:t
 const recapGroups=(list=histLog)=>{const story=t('The story'),by={};list.forEach(x=>{const n=x.slot==='gm'?story:(x.name||x.slot);(by[n]=by[n]||[]).push(x);});return Object.entries(by).sort((a,b)=>(b[0]===story)-(a[0]===story));};
 function logHistory(slot,m){if(typeof m==='string')m={m};const c=chars[slot];const h={slot,name:(c&&c.name)||'',...m,t:Date.now(),session:table.session||1};
  if(historySession===h.session)histLog=[...histLog,h];
+ if(typeof fullHist!=='undefined'&&fullHist[slot]&&fullHist[slot].list)fullHist[slot].list=[h,...fullHist[slot].list];
  if(db)db.collection('history').add(h).catch(()=>{});}
 
 // subscriptions that depend on whether this device holds the master key

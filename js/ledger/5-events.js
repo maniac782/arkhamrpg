@@ -48,6 +48,7 @@ app.addEventListener('click',e=>{
   case 'logmore':logShown[s]=(logShown[s]||LOG_SHOW)+LOG_SHOW;render();break;
   case 'logless':logShown[s]=LOG_SHOW;render();break;
   case 'logrestore':restoreLog(s);break;
+  case 'fullhist':toggleFullHist(s);break;
   case 'dellog':if(!fullEdit())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!fullEdit())return;save(s,{log:[]});toast(t('Recent history cleared.'));break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
@@ -155,3 +156,10 @@ async function restoreLog(s){const c=chars[s];if(!db||!c||!canEdit(s))return;
   logShown[s]=Math.max(logShown[s]||LOG_SHOW,Math.min(log.length,LOG_SHOW*3));
   save(s,{log});toast(tn('Brought back {n} entry.','Brought back {n} entries.',n));
  }catch(e){if(window.quotaHit&&quotaHit(e))return;toast(t('Couldn’t load the older entries. Try again.'));}}
+
+async function toggleFullHist(s){const f=fullHist[s];if(f&&f.open){f.open=false;render();return;}
+ fullHist[s]={open:true,loading:true,list:[]};render();if(!db)return;
+ try{const qs=await db.collection('history').where('slot','==',s).get();const a=[];qs.forEach(d=>{const x=d.data();if(x&&x.t)a.push(x);});
+  fullHist[s]={open:true,loading:false,list:a.sort((x,y)=>y.t-x.t)};}
+ catch(e){if(window.quotaHit)quotaHit(e);fullHist[s]={open:true,loading:false,err:true,list:[]};}
+ render();}

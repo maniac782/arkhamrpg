@@ -236,8 +236,16 @@ function logWhen(ts){const d=new Date(ts),old=Date.now()-ts>6*864e5;return d.toL
 function recentMore(s,c){const n=(c.log||[]).length,shown=Math.min(n,logShown[s]||LOG_SHOW);let h='';
  if(n>shown)h+='<button class="linkbtn note" data-act="logmore">'+t('Show {n} more',{n:Math.min(LOG_SHOW,n-shown)})+'</button>';
  else if(shown>LOG_SHOW)h+='<button class="linkbtn note" data-act="logless">'+t('Show fewer')+'</button>';
- if(db&&canEdit(s))h+=(h?' · ':'')+'<button class="linkbtn note" data-act="logrestore">'+t('Bring back older entries')+'</button>';
- return h?'<p class="note" style="margin:0">'+h+'</p>':'';}
+ if(db)h+=(h?' · ':'')+'<button class="linkbtn note" data-act="fullhist" aria-expanded="'+!!(fullHist[s]&&fullHist[s].open)+'">'+(fullHist[s]&&fullHist[s].open?t('Hide full history'):t('Full history'))+'</button>';
+ if(db&&canEdit(s))h+=' · <button class="linkbtn note" data-act="logrestore">'+t('Bring back older entries')+'</button>';
+ return (h?'<p class="note" style="margin:0">'+h+'</p>':'')+fullHistHtml(s);}
+// Everything this investigator has done, newest session first. Comes from the session history, which keeps every entry.
+function fullHistHtml(s){const f=fullHist[s];if(!f||!f.open)return '';
+ if(f.loading)return '<p class="note" style="margin:0">'+t('Loading…')+'</p>';
+ if(f.err)return '<p class="note" style="margin:0">'+t('Couldn’t load the older entries. Try again.')+'</p>';
+ if(!f.list.length)return '<p class="note" style="margin:0">'+t('Nothing yet.')+'</p>';
+ const by={};f.list.forEach(x=>{(by[x.session||0]=by[x.session||0]||[]).push(x);});
+ return '<div class="fullhist">'+Object.keys(by).map(Number).sort((a,b)=>b-a).map(n=>'<div><span class="lbl">'+(n?t('Session {n}',{n}):t('Earlier'))+' · '+tn('{n} entry','{n} entries',by[n].length)+'</span><div class="log">'+by[n].map(l=>'<span>'+logWhen(l.t)+' — '+esc(logText(l))+(logBy(l)?' <span class="by">'+esc(logBy(l))+'</span>':'')+'</span>').join('')+'</div></div>').join('')+'</div>';}
 function activeEffects(c){
  const a=c.injuries.map(j=>{const e=injuryInfo(j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(t(j.name))+'</b>'+(e?' — '+esc(t(e[1])):'')+'</div>';})
   .concat(c.traumas.map(j=>'<div class="note"><b style="color:var(--horror)">'+esc(t(j.name))+'</b> — '+esc(t(traumaFor(TRAUMA_AT[j.name]||1)[1]))+'</div>'));

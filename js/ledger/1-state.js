@@ -143,6 +143,8 @@ function logText(e){if(!e)return '';if(Array.isArray(e.p))return e.p.map(logText
  return t(e.m||'');}
 // Recent keeps this many entries per investigator and shows LOG_SHOW at a time ("Show more" for the rest).
 const LOG_KEEP=100,LOG_SHOW=10;let logShown={};
+// Full history per investigator, read from the session history only when opened: {open,loading,err,list}.
+let fullHist={};
 async function save(slot,patch,logMsg){
  if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?t('Only {name}’s player can change that.',{name:chars[slot].name||t('this investigator')}):t('{name}’s sheet is locked. Unlock it to make changes.',{name:chars[slot].name}));return;}
  const c=chars[slot];

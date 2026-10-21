@@ -11,7 +11,8 @@ app.addEventListener('click',e=>{
  if(active==='create'){const cb=e.target.closest('[data-cact]');if(cb&&!cb.disabled)creatorClick(cb);return;}
  const b=e.target.closest('[data-act]');if(!b||b.matches(':disabled'))return;const s=active,a=b.dataset.act,n=Number(b.dataset.n),c=chars[s];
  switch(a){
-  case 'addslot':addSlot().then(id=>{if(id){toast(t('Added a new investigator.'));go(id);}});break;
+  // Adding an investigator goes through the New investigator tab (build step by step, or bring one over).
+  case 'newinv':go('create');break;
   case 'rmslot':edit.rm=s;render();break;
   case 'rmno':edit.rm=null;render();break;
   case 'rmyes':if(edit.rm===s)removeSlot(s);break;

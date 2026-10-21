@@ -227,9 +227,17 @@ function renderCharBody(s){
  h+='<details class="sec"><summary><h2>'+t('Background')+'</h2></summary><div class="grid2">'+fld('bg.origin',t('Place of origin'),c.bg.origin)+fld('bg.family',t('Family & friends'),c.bg.family)+fld('bg.employment',t('Employment'),c.bg.employment)+fld('bg.salary',t('Weekly salary'),c.bg.salary)+fld('bg.encounter',t('First supernatural encounter'),c.bg.encounter)+fld('bg.enemies',t('Notable enemies'),c.bg.enemies)+'</div></details>';
 
  const gm=fullEdit()&&!localMode;
- h+='<section class="sec"><div class="sec-head"><h2>'+t('Recent')+'</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">'+t('Clear all')+'</button>':'')+'<button class="btn sm" data-act="session">'+t('New session')+'</button></div></div><div class="log">'+((c.log||[]).length?c.log.map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="'+t('Remove this entry')+'">×</button>':'')+'<span>'+new Date(l.t).toLocaleString(I18N.locale, {weekday:'short',hour:'numeric',minute:'2-digit'})+' — '+esc(logText(l))+(logBy(l)?' <span class="by">'+esc(logBy(l))+'</span>':'')+'</span></span>').join(''):t('Nothing yet.'))+'</div>'+(gm?'<p class="note" style="margin:0">'+(CAMP?t('As the campaign owner, you can remove entries.'):t('Master key: you can remove entries.'))+'</p>':'')+'</section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Recent')+'</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">'+t('Clear all')+'</button>':'')+'<button class="btn sm" data-act="session">'+t('New session')+'</button></div></div><div class="log">'+((c.log||[]).length?c.log.slice(0,logShown[s]||LOG_SHOW).map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="'+t('Remove this entry')+'">×</button>':'')+'<span>'+logWhen(l.t)+' — '+esc(logText(l))+(logBy(l)?' <span class="by">'+esc(logBy(l))+'</span>':'')+'</span></span>').join(''):t('Nothing yet.'))+'</div>'+recentMore(s,c)+(gm?'<p class="note" style="margin:0">'+(CAMP?t('As the campaign owner, you can remove entries.'):t('Master key: you can remove entries.'))+'</p>':'')+'</section>';
  return h;
 }
+// "Mon 9:14 PM" this week, "Oct 3, 9:14 PM" before that.
+function logWhen(ts){const d=new Date(ts),old=Date.now()-ts>6*864e5;return d.toLocaleString(I18N.locale,old?{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}:{weekday:'short',hour:'numeric',minute:'2-digit'});}
+// Under Recent: show more of the kept entries, and refill Recent from the session history (every entry is also saved there).
+function recentMore(s,c){const n=(c.log||[]).length,shown=Math.min(n,logShown[s]||LOG_SHOW);let h='';
+ if(n>shown)h+='<button class="linkbtn note" data-act="logmore">'+t('Show {n} more',{n:Math.min(LOG_SHOW,n-shown)})+'</button>';
+ else if(shown>LOG_SHOW)h+='<button class="linkbtn note" data-act="logless">'+t('Show fewer')+'</button>';
+ if(db&&canEdit(s))h+=(h?' · ':'')+'<button class="linkbtn note" data-act="logrestore">'+t('Bring back older entries')+'</button>';
+ return h?'<p class="note" style="margin:0">'+h+'</p>':'';}
 function activeEffects(c){
  const a=c.injuries.map(j=>{const e=injuryInfo(j.name);return '<div class="note"><b style="color:var(--danger)">'+esc(t(j.name))+'</b>'+(e?' — '+esc(t(e[1])):'')+'</div>';})
   .concat(c.traumas.map(j=>'<div class="note"><b style="color:var(--horror)">'+esc(t(j.name))+'</b> — '+esc(t(traumaFor(TRAUMA_AT[j.name]||1)[1]))+'</div>'));

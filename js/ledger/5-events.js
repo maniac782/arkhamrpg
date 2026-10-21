@@ -45,6 +45,9 @@ app.addEventListener('click',e=>{
   case 'picdel':save(s,{portrait:'',portraitFull:''},logm('Removed portrait'));break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast(on?t('House rules on for the party.'):t('House rules off for the party.'))).catch(()=>toast(CAMP?t('Only the campaign owner can change house rules.'):t('Only the master key can change house rules.')));break;}
   case 'gotogm':e.preventDefault();go('gm');break;
+  case 'logmore':logShown[s]=(logShown[s]||LOG_SHOW)+LOG_SHOW;render();break;
+  case 'logless':logShown[s]=LOG_SHOW;render();break;
+  case 'logrestore':restoreLog(s);break;
   case 'dellog':if(!fullEdit())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
   case 'clearlog':if(!fullEdit())return;save(s,{log:[]});toast(t('Recent history cleared.'));break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
@@ -142,3 +145,13 @@ function watchKeys(){
  db.collection('grants/'+authUid+'/keys').onSnapshot(qs=>{Object.keys(keys).forEach(k=>delete keys[k]);qs.forEach(d=>{keys[d.id]=true;});keysReady=true;saveCache();gmMasterState=null;gmSubscribe();render();},
   ()=>{keysReady=true;[...SLOTS,'master','gm'].forEach(k=>{db.doc('grants/'+authUid+'/keys/'+k).onSnapshot(snap=>{keys[k]=snap.exists;render();},()=>{keys[k]=false;});});});
 }
+
+// Refill Recent from the session history: every Recent entry is also saved there, so entries removed or pushed out come back.
+async function restoreLog(s){const c=chars[s];if(!db||!c||!canEdit(s))return;
+ try{const qs=await db.collection('history').where('slot','==',s).get();const have=new Set((c.log||[]).map(l=>l.t));const add=[];
+  qs.forEach(d=>{const x=d.data();if(!x||!x.t||have.has(x.t))return;have.add(x.t);const e={t:x.t};['m','k','v','o','p','by'].forEach(f=>{if(x[f]!=null)e[f]=x[f];});add.push(e);});
+  if(!add.length)return toast(t('Nothing more to bring back.'));
+  const log=[...(c.log||[]),...add].sort((a,b)=>b.t-a.t).slice(0,LOG_KEEP);const n=log.filter(l=>add.includes(l)).length;
+  logShown[s]=Math.max(logShown[s]||LOG_SHOW,Math.min(log.length,LOG_SHOW*3));
+  save(s,{log});toast(tn('Brought back {n} entry.','Brought back {n} entries.',n));
+ }catch(e){if(window.quotaHit&&quotaHit(e))return;toast(t('Couldn’t load the older entries. Try again.'));}}

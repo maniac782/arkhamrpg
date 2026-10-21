@@ -141,6 +141,8 @@ function logBy(e){const b=e&&e.by;if(!b||!b.r)return '';const n=b.n||'';
 function logText(e){if(!e)return '';if(Array.isArray(e.p))return e.p.map(logText).join(' · ');
  if(e.k){const v={...(e.v||{})};LOG_NAMES.forEach(x=>{if(typeof v[x]==='string')v[x]=t(v[x]);});if(typeof v.enemy==='string')v.enemy=nameT(v.enemy);return e.o?tn(e.o,e.k,Number(v.n),v):t(e.k,v);}
  return t(e.m||'');}
+// Recent keeps this many entries per investigator and shows LOG_SHOW at a time ("Show more" for the rest).
+const LOG_KEEP=100,LOG_SHOW=10;let logShown={};
 async function save(slot,patch,logMsg){
  if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?t('Only {name}’s player can change that.',{name:chars[slot].name||t('this investigator')}):t('{name}’s sheet is locked. Unlock it to make changes.',{name:chars[slot].name}));return;}
  const c=chars[slot];
@@ -150,7 +152,7 @@ async function save(slot,patch,logMsg){
  // In a campaign, an entry made by someone other than the investigator's player says who: the GM or the owner.
  if(logMsg&&CAMP&&camp&&authUid&&c.ownerUid!==authUid){const r=camp.gmUid===authUid?'gm':camp.ownerUid===authUid?'owner':null;
   if(r)logMsg={...logMsg,by:{r,n:String(((camp.names||{})[authUid])||'').slice(0,40)}};}
- if(logMsg){c.log=[{t:Date.now(),...logMsg},...(c.log||[])].slice(0,12);patch.log=c.log;logHistory(slot,logMsg);}
+ if(logMsg){c.log=[{t:Date.now(),...logMsg},...(c.log||[])].slice(0,LOG_KEEP);patch.log=c.log;logHistory(slot,logMsg);}
  render();
  if(!db)return;
  try{await db.doc('characters/'+slot).update(patch);}

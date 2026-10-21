@@ -102,6 +102,7 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.slot is string
         && ((isSlot(request.resource.data.slot) && (canEdit(request.resource.data.slot) || isGM()))
           || (request.resource.data.slot == 'gm' && isGM()));
+      allow update: if gmView() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gone']);
       allow delete: if gmView();
     }
 
@@ -358,12 +359,14 @@ service cloud.firestore {
         allow create, delete: if cGM();
       }
       match /history/{id} {
-        allow update: if cOwner();  // re-running the import
+        allow update: if cOwner();  // re-running the import (and hiding deleted entries)
+        // The GM can hide (and un-hide) an entry deleted from Recent; nothing else.
+        allow update: if cGM() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gone']);
         allow read: if (member()) || cleaner();
         allow create: if member() && request.resource.data.slot is string
           && ((request.resource.data.slot == 'gm' && cGM())
             || (isSlot(request.resource.data.slot) && (cOwner() || cGM() || plays(request.resource.data.slot))));
-        allow delete: if (gmSees()) || cleaner();
+        allow delete: if (gmSees()) || cOwner() || cleaner();
       }
       // Gallery: pictures anyone in the campaign posts. Delete your own; the owner and GM can delete any.
       match /gallery/{id} {

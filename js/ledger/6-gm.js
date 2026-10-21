@@ -24,7 +24,7 @@ function gmLog(m,pub){if(typeof m==='string')m={m};const e={id:gmId(),...m,t:Dat
  if(pub)gmStory(m);render();}
 function gmStory(m){if(typeof m==='string')m={m};const e={t:Date.now(),session:table.session||1};{const h={slot:'gm',name:'The story',...m,t:e.t,session:e.session};if(historySession===h.session){histLog=[...histLog,h];render();}if(db)db.collection('history').add(h).catch(()=>{});}}
 const recapGroups=(list=histLog)=>{const story=t('The story'),by={};list.forEach(x=>{const n=x.slot==='gm'?story:(x.name||x.slot);(by[n]=by[n]||[]).push(x);});return Object.entries(by).sort((a,b)=>(b[0]===story)-(a[0]===story));};
-function logHistory(slot,m){if(typeof m==='string')m={m};const c=chars[slot];const h={slot,name:(c&&c.name)||'',...m,t:Date.now(),session:table.session||1};
+function logHistory(slot,m){if(typeof m==='string')m={m};const c=chars[slot];const h={slot,name:(c&&c.name)||'',...m,t:m.t||Date.now(),session:table.session||1};
  if(historySession===h.session)histLog=[...histLog,h];
  if(typeof fullHist!=='undefined'&&fullHist[slot]&&fullHist[slot].list)fullHist[slot].list=[h,...fullHist[slot].list];
  if(db)db.collection('history').add(h).catch(()=>{});}
@@ -53,10 +53,10 @@ function gmBoot(){
 // The Journal's own copy of a finished session's recap (separate from the GM tab's picker).
 let jSession=null,jLog=[];
 async function loadJournalRecap(n){jSession=n;jLog=[];render();
- if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>a.push(d.data()));if(jSession===n){jLog=a.sort((x,y)=>x.t-y.t);render();}}catch(e){}}
+ if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>{const x=d.data();if(histAlive(x))a.push(x);});if(jSession===n){jLog=a.sort((x,y)=>x.t-y.t);render();}}catch(e){}}
 const summaryOf=n=>String(((campaign.summaries||{})[n])||'').trim();
 async function loadRecap(n){historySession=n;histLog=[];render();
- if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>a.push(d.data()));histLog=a.sort((x,y)=>x.t-y.t);render();}catch(e){toast(t('Couldn’t load that session. Publish the updated rules (see README).'));}}
+ if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>{const x=d.data();if(histAlive(x))a.push(x);});histLog=a.sort((x,y)=>x.t-y.t);render();}catch(e){toast(t('Couldn’t load that session. Publish the updated rules (see README).'));}}
 
 // ---------- turn tracker ----------
 function turnBar(){

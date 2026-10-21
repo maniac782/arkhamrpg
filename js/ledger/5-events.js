@@ -49,8 +49,10 @@ app.addEventListener('click',e=>{
   case 'logless':logShown[s]=LOG_SHOW;render();break;
   case 'logrestore':restoreLog(s);break;
   case 'fullhist':toggleFullHist(s);break;
-  case 'dellog':if(!fullEdit())return;save(s,{log:(c.log||[]).filter(l=>String(l.t)!==b.dataset.n)});break;
-  case 'clearlog':if(!fullEdit())return;save(s,{log:[]});toast(t('Recent history cleared.'));break;
+  case 'dellog':{if(!fullEdit())return;const gone=(c.log||[]).filter(l=>String(l.t)===b.dataset.n);if(!gone.length)return;trashLog(s,gone);toast(t('Entry deleted. You can undo it for 7 days.'));break;}
+  case 'clearlog':{if(!fullEdit()||!(c.log||[]).length)return;trashLog(s,c.log.slice());toast(t('Recent history cleared. You can undo it for 7 days.'));break;}
+  case 'undellog':if(!fullEdit())return;untrashLog(s,b.dataset.id);break;
+  case 'trashshow':trashOpen[s]=!trashOpen[s];render();break;
   case 'unlock':case 'lockset':case 'lockoff':case 'forget':case 'munlock':case 'mforget':case 'gmset':case 'gmunlock':case 'gmforget':case 'gmreset':case 'gmclear':edit.gmclear=false;lockAction(a,s);break;
   case 'gmclearask':edit.gmclear=true;render();break;
   case 'gmclearno':edit.gmclear=false;render();break;
@@ -150,7 +152,7 @@ function watchKeys(){
 // Refill Recent from the session history: every Recent entry is also saved there, so entries removed or pushed out come back.
 async function restoreLog(s){const c=chars[s];if(!db||!c||!canEdit(s))return;
  try{const qs=await db.collection('history').where('slot','==',s).get();const have=new Set((c.log||[]).map(l=>l.t));const add=[];
-  qs.forEach(d=>{const x=d.data();if(!x||!x.t||have.has(x.t))return;have.add(x.t);const e={t:x.t};['m','k','v','o','p','by'].forEach(f=>{if(x[f]!=null)e[f]=x[f];});add.push(e);});
+  qs.forEach(d=>{const x=d.data();if(!histAlive(x)||!x.t||have.has(x.t)||(c.log||[]).some(l=>sameEntry(l,x))||(c.trash||[]).some(z=>sameEntry(z.e,x)))return;have.add(x.t);const e={t:x.t};['m','k','v','o','p','by'].forEach(f=>{if(x[f]!=null)e[f]=x[f];});add.push(e);});
   if(!add.length)return toast(t('Nothing more to bring back.'));
   const log=[...(c.log||[]),...add].sort((a,b)=>b.t-a.t).slice(0,LOG_KEEP);const n=log.filter(l=>add.includes(l)).length;
   logShown[s]=Math.max(logShown[s]||LOG_SHOW,Math.min(log.length,LOG_SHOW*3));
@@ -159,7 +161,33 @@ async function restoreLog(s){const c=chars[s];if(!db||!c||!canEdit(s))return;
 
 async function toggleFullHist(s){const f=fullHist[s];if(f&&f.open){f.open=false;render();return;}
  fullHist[s]={open:true,loading:true,list:[]};render();if(!db)return;
- try{const qs=await db.collection('history').where('slot','==',s).get();const a=[];qs.forEach(d=>{const x=d.data();if(x&&x.t)a.push(x);});
+ try{const qs=await db.collection('history').where('slot','==',s).get();const a=[];qs.forEach(d=>{const x=d.data();if(histAlive(x)&&x.t)a.push(x);});
   fullHist[s]={open:true,loading:false,list:a.sort((x,y)=>y.t-x.t)};}
  catch(e){if(window.quotaHit)quotaHit(e);fullHist[s]={open:true,loading:false,err:true,list:[]};}
  render();}
+
+// ---- deleting Recent entries (owner or GM): gone from Recent, Full history and recaps; undo for TRASH_DAYS days ----
+let trashOpen={},trashPurged={};
+// Mark (or unmark, or erase) this investigator's session-history copies of these entries.
+async function histMark(s,entries,mode){if(!db||!entries.length)return;
+ try{const qs=await db.collection('history').where('slot','==',s).get();const jobs=[];
+  qs.forEach(d=>{const x=d.data();if(!entries.some(e=>sameEntry(e,x)))return;
+   jobs.push(mode==='erase'?d.ref.delete():d.ref.update({gone:mode==='hide'?Date.now():null}));});
+  await Promise.all(jobs);}catch(e){if(window.quotaHit)quotaHit(e);console.warn(e);}}
+function trashLog(s,entries){const c=chars[s],now=Date.now();
+ const trash=[...entries.map(e=>({id:uid(),at:now,e})),...(c.trash||[])].slice(0,LOG_KEEP);
+ save(s,{log:(c.log||[]).filter(l=>!entries.includes(l)),trash});
+ const drop=x=>!entries.some(e=>sameEntry(e,x));
+ if(fullHist[s]&&fullHist[s].list)fullHist[s].list=fullHist[s].list.filter(drop);
+ if(typeof histLog!=='undefined')histLog=histLog.filter(x=>x.slot!==s||drop(x));
+ if(typeof jLog!=='undefined')jLog=jLog.filter(x=>x.slot!==s||drop(x));
+ histMark(s,entries,'hide');}
+function untrashLog(s,id){const c=chars[s];const z=(c.trash||[]).find(x=>x.id===id);if(!z)return;
+ const log=[z.e,...(c.log||[])].sort((a,b)=>b.t-a.t).slice(0,LOG_KEEP);
+ save(s,{log,trash:c.trash.filter(x=>x.id!==id)});histMark(s,[z.e],'show');
+ if(fullHist[s]&&fullHist[s].list)fullHist[s].list=[...fullHist[s].list,{slot:s,...z.e}].sort((a,b)=>b.t-a.t);
+ toast(t('Entry restored.'));}
+// After TRASH_DAYS, deleted entries are erased for good (once per page load, by the owner or GM).
+function purgeTrash(s){const c=chars[s];if(trashPurged[s]||!fullEdit()||!c||!(c.trash||[]).length)return;trashPurged[s]=true;
+ const cut=Date.now()-TRASH_DAYS*864e5,old=c.trash.filter(z=>z.at<cut);if(!old.length)return;
+ save(s,{trash:c.trash.filter(z=>z.at>=cut)});histMark(s,old.map(z=>z.e),'erase');}

@@ -80,7 +80,7 @@ function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
  return {name:t('Investigator {n}',{n:i}),player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
-  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],mc:null,money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],mc:null,trash:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
 function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});
@@ -145,6 +145,12 @@ function logText(e){if(!e)return '';if(Array.isArray(e.p))return e.p.map(logText
 const LOG_KEEP=100,LOG_SHOW=10;let logShown={};
 // Full history per investigator, read from the session history only when opened: {open,loading,err,list}.
 let fullHist={};
+// Entries the owner or GM deletes vanish everywhere (Recent, Full history, recaps). They wait in c.trash for
+// TRASH_DAYS so they can be undone, then their session-history copies are erased for good.
+const TRASH_DAYS=7;
+const histAlive=x=>!!x&&!x.gone;
+// Older entries were stamped a moment apart in Recent and in the session history, so match loosely.
+const sameEntry=(a,b)=>!!a&&!!b&&(a.t===b.t||(Math.abs(a.t-b.t)<=3000&&String(a.m||'')===String(b.m||'')));
 async function save(slot,patch,logMsg){
  if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?t('Only {name}’s player can change that.',{name:chars[slot].name||t('this investigator')}):t('{name}’s sheet is locked. Unlock it to make changes.',{name:chars[slot].name}));return;}
  const c=chars[slot];
@@ -154,7 +160,7 @@ async function save(slot,patch,logMsg){
  // In a campaign, an entry made by someone other than the investigator's player says who: the GM or the owner.
  if(logMsg&&CAMP&&camp&&authUid&&c.ownerUid!==authUid){const r=camp.gmUid===authUid?'gm':camp.ownerUid===authUid?'owner':null;
   if(r)logMsg={...logMsg,by:{r,n:String(((camp.names||{})[authUid])||'').slice(0,40)}};}
- if(logMsg){c.log=[{t:Date.now(),...logMsg},...(c.log||[])].slice(0,LOG_KEEP);patch.log=c.log;logHistory(slot,logMsg);}
+ if(logMsg){const now=Date.now();c.log=[{t:now,...logMsg},...(c.log||[])].slice(0,LOG_KEEP);patch.log=c.log;logHistory(slot,{...logMsg,t:now});}
  render();
  if(!db)return;
  try{await db.doc('characters/'+slot).update(patch);}

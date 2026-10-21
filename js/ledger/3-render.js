@@ -238,7 +238,13 @@ function recentMore(s,c){const n=(c.log||[]).length,shown=Math.min(n,logShown[s]
  else if(shown>LOG_SHOW)h+='<button class="linkbtn note" data-act="logless">'+t('Show fewer')+'</button>';
  if(db)h+=(h?' · ':'')+'<button class="linkbtn note" data-act="fullhist" aria-expanded="'+!!(fullHist[s]&&fullHist[s].open)+'">'+(fullHist[s]&&fullHist[s].open?t('Hide full history'):t('Full history'))+'</button>';
  if(db&&canEdit(s))h+=' · <button class="linkbtn note" data-act="logrestore">'+t('Bring back older entries')+'</button>';
- return (h?'<p class="note" style="margin:0">'+h+'</p>':'')+fullHistHtml(s);}
+ return (h?'<p class="note" style="margin:0">'+h+'</p>':'')+fullHistHtml(s)+trashHtml(s,c);}
+// Recently deleted entries (owner or GM only), each with Undo until it's erased for good.
+function trashHtml(s,c){const tr=c.trash||[];if(!tr.length||!fullEdit())return '';setTimeout(()=>purgeTrash(s),0);
+ const cut=Date.now()-TRASH_DAYS*864e5,live=tr.filter(z=>z.at>=cut);if(!live.length)return '';
+ let h='<p class="note" style="margin:0"><button class="linkbtn note" data-act="trashshow" aria-expanded="'+!!trashOpen[s]+'">'+tn('{n} deleted entry (undo within 7 days)','{n} deleted entries (undo within 7 days)',live.length)+'</button></p>';
+ if(trashOpen[s])h+='<div class="fullhist">'+live.map(z=>'<span class="row" style="gap:8px;flex-wrap:nowrap;align-items:baseline"><button class="btn sm" data-act="undellog" data-id="'+z.id+'">'+t('Undo')+'</button><span class="note">'+logWhen(z.e.t)+' — '+esc(logText(z.e))+' <i>'+t('erased {date}',{date:new Date(z.at+TRASH_DAYS*864e5).toLocaleDateString(I18N.locale,{month:'short',day:'numeric'})})+'</i></span></span>').join('')+'</div>';
+ return h;}
 // Everything this investigator has done, newest session first. Comes from the session history, which keeps every entry.
 function fullHistHtml(s){const f=fullHist[s];if(!f||!f.open)return '';
  if(f.loading)return '<p class="note" style="margin:0">'+t('Loading…')+'</p>';

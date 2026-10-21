@@ -1,3 +1,5 @@
+/* Phones (Safari especially) enlarge long paragraphs on their own; keep every text at the size we set. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 :root{
   --bg:#e9ebe4; --surface:#f7f7f2; --surface2:#dfe2d8; --ink:#1b2230; --muted:#4f5664; --line:#b8bcae;
   --brass:#7e5a12; --brass-soft:#efe3c6; --horror:#2f6b4f; --horror-soft:#d5e8dc;

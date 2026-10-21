@@ -341,3 +341,27 @@ exports.contactEmail = onDocumentCreated({document: 'contact/{id}', secrets: [GM
   });
   await snap.ref.update({sent: Date.now()}).catch(() => {});
 });
+
+// Copy a picture into a campaign, for an investigator brought over from another campaign: the copy survives
+// the old campaign being deleted. The caller must be in both campaigns (or own the picture), and the copy
+// lands in their own folder of the new campaign.
+exports.copyPicture = onCall({timeoutSeconds: 60, maxInstances: 5}, async (req) => {
+  const caller = req.auth && req.auth.uid;
+  if (!caller) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const cid = String((req.data && req.data.cid) || ''), url = String((req.data && req.data.url) || '');
+  if (!/^[A-Za-z0-9_-]{4,64}$/.test(cid)) throw new HttpsError('invalid-argument', 'No campaign given.');
+  const PREFIX = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET + '/o/';
+  if (!url.startsWith(PREFIX)) throw new HttpsError('invalid-argument', 'Not one of our pictures.');
+  const src = decodeURIComponent(url.slice(PREFIX.length).split('?')[0]);
+  const m = /^campaigns\/([A-Za-z0-9_-]+)\/([A-Za-z0-9]+)\/[A-Za-z0-9_-]+\.jpg$/.exec(src);
+  if (!m) throw new HttpsError('invalid-argument', 'Not a campaign picture.');
+  const isMember = async id => { const s = await db.doc('campaigns/' + id).get(); return s.exists && (s.data().memberIds || []).includes(caller); };
+  if (!(await isMember(cid))) throw new HttpsError('permission-denied', 'You are not in that campaign.');
+  if (m[2] !== caller && !(await isMember(m[1]))) throw new HttpsError('permission-denied', 'You can’t copy that picture.');
+  const bucket = admin.storage().bucket(BUCKET);
+  const dest = 'campaigns/' + cid + '/' + caller + '/' + require('crypto').randomUUID().replace(/-/g, '').slice(0, 20) + '.jpg';
+  const token = require('crypto').randomUUID();
+  await bucket.file(src).copy(bucket.file(dest));
+  await bucket.file(dest).setMetadata({contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000,immutable', metadata: {firebaseStorageDownloadTokens: token}});
+  return {url: PREFIX + encodeURIComponent(dest) + '?alt=media&token=' + token};
+});

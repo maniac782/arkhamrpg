@@ -28,7 +28,7 @@ async function bootCampaign(syncEl){
  if(!u||u.isAnonymous){location.replace('./');return;}
  authUid=u.uid;
  raw.doc('bans/'+u.uid).get().then(b=>{if(b.exists){halted=t('This account has been suspended, so it can’t open campaigns. If you think this is a mistake, use Contact at the bottom of the page.');render();}}).catch(()=>{});
- db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch()};
+ db={doc:p=>raw.doc(pre+p),collection:p=>raw.collection(pre+p),batch:()=>raw.batch(),raw};
  raw.doc('campaigns/'+CAMP).onSnapshot(snap=>{
   if(!snap.exists){halted=isLocal?t('There’s no campaign saved on this device yet. Start one from the home page.'):t('This campaign was deleted.');render();return;}
   camp=snap.data();

@@ -8,6 +8,42 @@ function crBlank(){return {name:'',player:'',trait:'',archetype:'',five:[],four:
 let cr=crBlank();
 // an unfinished character is kept as a draft on this device until it joins the party or is reset
 let crRestored=false;
+// ---- Bringing an investigator you play in another campaign into this one (a copy; the original stays put) ----
+let imp={};  // {loading, list:[{cid,camp,slot,c}], err, busy}
+async function impFind(){const raw=db&&db.raw;if(!raw||!authUid)return;imp={loading:true};render();
+ try{const cs=await raw.collection('campaigns').where('memberIds','array-contains',authUid).get();const list=[];const jobs=[];
+  cs.forEach(d=>{if(d.id===CAMP)return;const cname=(d.data()||{}).name||t('Untitled campaign');
+   jobs.push(raw.collection('campaigns/'+d.id+'/characters').where('ownerUid','==',authUid).get().then(qs=>qs.forEach(x=>{const c=x.data();if(c&&c.name)list.push({cid:d.id,camp:cname,slot:x.id,c});})).catch(()=>{}));});
+  await Promise.all(jobs);list.sort((a,b)=>String(a.c.name).localeCompare(String(b.c.name)));imp={list};}
+ catch(e){if(window.quotaHit)quotaHit(e);imp={err:true};}
+ render();}
+// Copies a picture into this campaign on the server, so it survives the old campaign being deleted; keeps the old link if that fails.
+async function impPicture(url){if(!isStoredImage(url)||IS_DEMO||!window.__campAuth||!window.__campAuth.currentUser)return url;
+ try{const tok=await window.__campAuth.currentUser.getIdToken();
+  const r=await fetch('https://us-central1-'+window.FIREBASE_CONFIG.projectId+'.cloudfunctions.net/copyPicture',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({data:{cid:CAMP,url}})});
+  const j=await r.json();return j&&j.result&&isStoredImage(j.result.url)?j.result.url:url;}catch(e){return url;}}
+// The copy carries everything over, starting a fresh session: pool refilled, insight full, session bonuses reset, new Recent.
+async function impBring(i){const it=imp.list&&imp.list[i];if(!it||imp.busy)return;if(!canAddSheet())return toast(t('You already have your investigator. Only the campaign owner can add more.'));
+ imp.busy=true;render();
+ const c=JSON.parse(JSON.stringify(it.c));
+ delete c.ownerUid;c.locked=false;c.trash=[];c.traumaMod=0;c.insight=c.insightLimit;
+ c.habitual={...(c.habitual||{}),used:false};c.lucky={...(c.lucky||{}),used:false};
+ const down=(c.injuries||[]).some(j=>j.name==='Comatose'||j.name==='Dire');if(!down)c.poolLimit=c.poolMax;
+ c.horror=Math.min(c.horrorLimit||0,c.poolLimit);c.regular=Math.max(0,c.poolLimit-c.horror);
+ if(camp&&camp.names&&camp.names[authUid])c.player=camp.names[authUid];
+ c.from={cid:it.cid,camp:it.camp,at:Date.now()};
+ c.log=[{t:Date.now(),...logm('Joined from {campaign}',{campaign:it.camp})}];
+ if(c.portrait){c.portrait=await impPicture(c.portrait);if(c.portraitFull)c.portraitFull=await impPicture(c.portraitFull);}
+ const id=await addSlot(c);imp={};
+ if(id){toast(t('{name} joined the party.',{name:c.name}));go(id);}else render();}
+function impHtml(){
+ if(!CAMP||(IS_LOCAL&&!IS_DEMO)||!canAddSheet()||!db||!db.raw)return '';
+ let h='<section class="sec"><h2>'+t('Bring an investigator you already have')+'</h2><p class="note" style="margin:0">'+t('Copy one of your investigators from another campaign, with their skills, knacks, XP, gear, money, injuries and portrait. They start a fresh session here. The original stays in its campaign.')+'</p>';
+ if(imp.loading)h+='<p class="note" style="margin:0">'+t('Loading…')+'</p>';
+ else if(imp.err)h+='<p class="note" style="margin:0">'+t('Couldn’t look through your campaigns. Try again.')+'</p><div class="row"><button class="btn" data-cact="impfind">'+t('Find my investigators')+'</button></div>';
+ else if(imp.list)h+=imp.list.length?'<div class="list">'+imp.list.map((x,i)=>'<div class="item" style="align-items:center">'+avatarHtml(x.c,'sm')+'<div class="grow"><b>'+esc(x.c.name)+'</b><span class="effect">'+esc([[x.c.archetype,x.c.mc&&x.c.mc.arch&&x.c.mc.arch!==x.c.archetype?x.c.mc.arch:''].filter(Boolean).map(a=>t(a)).join(' / '),t('{n} XP',{n:Number(x.c.xpTotal)||0}),t('from {campaign}',{campaign:x.camp})].filter(Boolean).join(' · '))+'</span></div><button class="btn sm pri" data-cact="impbring" data-n="'+i+'"'+(imp.busy?' disabled':'')+'>'+t('Bring over')+'</button></div>').join('')+'</div>':'<p class="note" style="margin:0">'+t('You don’t play any investigators in your other campaigns yet.')+'</p>';
+ else h+='<div class="row"><button class="btn" data-cact="impfind">'+t('Find my investigators')+'</button></div>';
+ return h+'</section>';}
 try{const t=JSON.parse(localStorage.getItem(CR_KEY)||'null');
  // a draft older than two weeks is dropped rather than resumed
  if(t&&(!t.savedAt||Date.now()-t.savedAt<14*86400000)){cr=Object.assign(crBlank(),t);crRestored=true;}else if(t)localStorage.removeItem(CR_KEY);}catch(e){}
@@ -74,6 +110,7 @@ function renderCreator(){
  const cf=(p,l,v,ph)=>'<label class="field"><span class="lbl">'+l+'</span><input class="f" id="cr-'+p.replace('.','-')+'" data-cf="'+p+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'></label>';
  const sname=k=>t(SKILLS.find(x=>x[0]===k)[1]);
  let h='<div class="banner">'+t('Build a new investigator step by step, following the {book}’s character creation. Costs come off the gear budget and XP as you choose. When it’s done, put them in a party slot or open a sheet to print.',{book:'<a href="https://store.asmodee.com/products/arkham-horror-rpg-core-rulebook" target="_blank" rel="noopener">'+t('Core Rulebook')+'</a>'})+'</div>';
+ h+=impHtml();
  if(crRestored&&(cr.name||cr.archetype))h+='<div class="roll" role="status"><span>'+(cr.name&&cr.savedAt?t('Picking up your unfinished investigator {name} from {date}.',{name:'<b>'+esc(cr.name)+'</b>',date:new Date(cr.savedAt).toLocaleDateString(I18N.locale, {month:'short',day:'numeric'})}):cr.name?t('Picking up your unfinished investigator {name}.',{name:'<b>'+esc(cr.name)+'</b>'}):cr.savedAt?t('Picking up your unfinished investigator from {date}.',{date:new Date(cr.savedAt).toLocaleDateString(I18N.locale, {month:'short',day:'numeric'})}):t('Picking up your unfinished investigator.'))+'</span><div class="row"><button class="btn sm" data-cact="reset">'+t('Start over')+'</button></div></div>';
  // 1
  h+='<section class="sec"><h2>'+t('1 · Background')+'</h2><div class="grid2">'+cf('name',t('Investigator name'),cr.name)+crPlayerField(cf)+cf('bg.origin',t('Place of origin'),cr.bg.origin)+cf('bg.family',t('Family & friends'),cr.bg.family)+cf('bg.employment',t('Employment'),cr.bg.employment)+cf('bg.salary',t('Weekly salary'),cr.bg.salary)+cf('bg.encounter',t('First supernatural encounter'),cr.bg.encounter)+cf('bg.enemies',t('Notable enemies'),cr.bg.enemies)+'</div></section>';
@@ -128,6 +165,8 @@ function renderCreator(){
 function creatorClick(b){
  const a=b.dataset.cact,k=b.dataset.k,n=b.dataset.n;
  switch(a){
+  case 'impfind':impFind();return;
+  case 'impbring':impBring(Number(n));return;
   case 'five':case 'four':{
    if(a==='five'&&!cr.five.includes(k)&&cr.five.length>=3)return toast(t('Only three skills start at 5+. Tap one to unselect it first.'));
    const touched=[k];if(a==='four'&&cr.four&&cr.four!==k)touched.push(cr.four);

@@ -104,7 +104,14 @@ function lockPanel(s){
  else h+='<div class="row"><button class="btn sm" data-act="lockoff">'+t('Remove passcode')+'</button>'+(keys[s]?'<button class="btn sm" data-act="forget">'+t('Lock this device')+'</button>':'')+'</div>';
  return h+'</section>';
 }
-function renderChar(s){ const body=renderCharBody(s); return turnBar()+lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>')+removePanel(s); }
+function renderChar(s){ const body=renderCharBody(s); return turnBar()+lockPanel(s)+(canEdit(s)?body:'<fieldset disabled style="border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:16px">'+body+'</fieldset>')+recentHtml(s)+removePanel(s); }
+// Recent sits outside the locked (disabled) part of a sheet, so anyone can read more of it;
+// only the buttons that change things are hidden from people who can't make them.
+function recentHtml(s){const c=chars[s];let h='';
+ const gm=fullEdit()&&!localMode;
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Recent')+'</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">'+t('Clear all')+'</button>':'')+(canEdit(s)||isGM()?'<button class="btn sm" data-act="session">'+t('New session')+'</button>':'')+'</div></div><div class="log">'+((c.log||[]).length?c.log.slice(0,logShown[s]||LOG_SHOW).map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="'+t('Remove this entry')+'">×</button>':'')+'<span>'+logWhen(l.t)+' — '+esc(logText(l))+(logBy(l)?' <span class="by">'+esc(logBy(l))+'</span>':'')+'</span></span>').join(''):t('Nothing yet.'))+'</div>'+recentMore(s,c)+(gm?'<p class="note" style="margin:0">'+(CAMP?t('As the campaign owner, you can remove entries.'):t('Master key: you can remove entries.'))+'</p>':'')+'</section>';
+ return h;
+}
 function removePanel(s){
  const can=(!db&&localMode)||!!keys.master;const c=chars[s];
  if(!can)return '<p class="note" style="margin:0">'+(CAMP?t('Only the campaign owner can remove an investigator from the party.'):t('Only the master key can remove an investigator from the party.'))+'</p>';
@@ -226,8 +233,6 @@ function renderCharBody(s){
 
  h+='<details class="sec"><summary><h2>'+t('Background')+'</h2></summary><div class="grid2">'+fld('bg.origin',t('Place of origin'),c.bg.origin)+fld('bg.family',t('Family & friends'),c.bg.family)+fld('bg.employment',t('Employment'),c.bg.employment)+fld('bg.salary',t('Weekly salary'),c.bg.salary)+fld('bg.encounter',t('First supernatural encounter'),c.bg.encounter)+fld('bg.enemies',t('Notable enemies'),c.bg.enemies)+'</div></details>';
 
- const gm=fullEdit()&&!localMode;
- h+='<section class="sec"><div class="sec-head"><h2>'+t('Recent')+'</h2><div class="row">'+(gm&&(c.log||[]).length?'<button class="btn sm dng" data-act="clearlog">'+t('Clear all')+'</button>':'')+'<button class="btn sm" data-act="session">'+t('New session')+'</button></div></div><div class="log">'+((c.log||[]).length?c.log.slice(0,logShown[s]||LOG_SHOW).map(l=>'<span class="row" style="gap:6px;flex-wrap:nowrap">'+(gm?'<button class="btn sm icon" style="min-height:24px;width:24px" data-act="dellog" data-n="'+l.t+'" aria-label="'+t('Remove this entry')+'">×</button>':'')+'<span>'+logWhen(l.t)+' — '+esc(logText(l))+(logBy(l)?' <span class="by">'+esc(logBy(l))+'</span>':'')+'</span></span>').join(''):t('Nothing yet.'))+'</div>'+recentMore(s,c)+(gm?'<p class="note" style="margin:0">'+(CAMP?t('As the campaign owner, you can remove entries.'):t('Master key: you can remove entries.'))+'</p>':'')+'</section>';
  return h;
 }
 // "Mon 9:14 PM" this week, "Oct 3, 9:14 PM" before that.

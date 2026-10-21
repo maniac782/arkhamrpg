@@ -16,8 +16,9 @@ async function impFind(){const raw=db&&db.raw;if(!raw||!authUid)return;imp={load
    jobs.push(raw.collection('campaigns/'+d.id+'/characters').where('ownerUid','==',authUid).get().then(qs=>qs.forEach(x=>{const c=x.data();if(c&&c.name)list.push({cid:d.id,camp:cname,slot:x.id,c});})).catch(()=>{}));});
   await Promise.all(jobs);
   // Leave out anyone already brought into this campaign.
-  const here=SLOTS.map(x=>chars[x]&&chars[x].from).filter(Boolean);
-  list=list.filter(x=>!here.some(f=>f.cid===x.cid&&String(f.name||'')===String(x.c.name||'')));
+  // (Matched on the original sheet; copies made before that was recorded are matched on the name.)
+  const here=SLOTS.map(x=>chars[x]).filter(c=>c&&c.from);
+  list=list.filter(x=>!here.some(c=>c.from.cid===x.cid&&(c.from.slot?c.from.slot===x.slot:String(c.from.name||c.name||'')===String(x.c.name||''))));
   list.sort((a,b)=>String(a.c.name).localeCompare(String(b.c.name)));imp={list};}
  catch(e){if(window.quotaHit)quotaHit(e);imp={err:true};}
  render();}
@@ -35,7 +36,7 @@ async function impBring(i){const it=imp.list&&imp.list[i];if(!it||imp.busy)retur
  const down=(c.injuries||[]).some(j=>j.name==='Comatose'||j.name==='Dire');if(!down)c.poolLimit=c.poolMax;
  c.horror=Math.min(c.horrorLimit||0,c.poolLimit);c.regular=Math.max(0,c.poolLimit-c.horror);
  if(camp&&camp.names&&camp.names[authUid])c.player=camp.names[authUid];
- c.from={cid:it.cid,camp:it.camp,name:it.c.name,at:Date.now()};
+ c.from={cid:it.cid,slot:it.slot,camp:it.camp,name:it.c.name,at:Date.now()};
  c.log=[{t:Date.now(),...logm('Joined from {campaign}',{campaign:it.camp})}];
  if(c.portrait){c.portrait=await impPicture(c.portrait);if(c.portraitFull)c.portraitFull=await impPicture(c.portraitFull);}
  const id=await addSlot(c);imp={};

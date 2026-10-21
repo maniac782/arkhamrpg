@@ -44,7 +44,7 @@ function renderParty(){
  const pic=partyBanner();
  let h=turnBar()+(pic?'<div class="partyhead">'+pic+'<div class="partyside">'+nextSessionBar()+tip+'</div></div>':nextSessionBar()+tip)+
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">'+t('You have your investigator. Only the campaign owner can add more.')+'</p>':'')+
-  (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?t('+ Create my investigator'):t('+ Add an investigator'))+'</button>'+(impAvailable()?'<button class="btn" data-act="impgo">'+t('Bring one from another campaign')+'</button>':'')+'<span class="note">'+(rosterLocked?t('Publish the updated Firestore rules (see README) to add or remove investigators.'):t('Adds a blank sheet. Use the New investigator tab to build one step by step.'))+'</span></div>':'')+
+  (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="addslot">'+(CAMP&&!keys.master?t('+ Create my investigator'):t('+ Add an investigator'))+'</button>'+'<span class="note">'+(rosterLocked?t('Publish the updated Firestore rules (see README) to add or remove investigators.'):t('Adds a blank sheet. Use the New investigator tab to build one step by step.'))+'</span></div>':'')+
   '<div class="party">';
  SLOTS.forEach(s=>{const c=chars[s];const lr=(c.log||[])[0];
   h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([archLabel(c),c.player&&t('played by {name}',{name:c.player==='You'?t('You'):c.player})].filter(Boolean).join(' · ')||t('Unassigned'))+'</div></div></div>'+statusChips(c)+'</div>'+

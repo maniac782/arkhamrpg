@@ -45,7 +45,6 @@ app.addEventListener('click',e=>{
   case 'picdel':save(s,{portrait:'',portraitFull:''},logm('Removed portrait'));break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast(on?t('House rules on for the party.'):t('House rules off for the party.'))).catch(()=>toast(CAMP?t('Only the campaign owner can change house rules.'):t('Only the master key can change house rules.')));break;}
   case 'gotogm':e.preventDefault();go('gm');break;
-  case 'impgo':go('create');break;
   case 'logmore':logShown[s]=(logShown[s]||LOG_SHOW)+LOG_SHOW;render();break;
   case 'logless':logShown[s]=LOG_SHOW;render();break;
   case 'logrestore':restoreLog(s);break;

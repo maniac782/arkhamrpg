@@ -35,6 +35,8 @@ const R={
   if(nm==='Mind Undone')p.traumaMod=c.traumaMod+1;
   if(nm==='Shocked'){if(c.regular+c.horror>0){if(c.regular>0)p.regular=c.regular-1;else p.horror=c.horror-1;}else p.traumaMod=c.traumaMod+1;}
   if(nm==='Stunned'){if(c.regular+c.horror>0){p.regular=0;p.horror=0;}else p.traumaMod=c.traumaMod+1;}
+  // Remember that this trauma raised the trauma-roll bonus, so removing it (say, added by mistake) takes the +1 back.
+  if(p.traumaMod>c.traumaMod)p.traumas[0].mod=1;
   save(s,p,logm('Trauma: {trauma}',{trauma:nm}));},
  lucky(s){const c=chars[s];if(c.lucky.used)return toast(t('Already used a lucky item this session.'));if(c.insight>=c.insightLimit)return toast(t('Insight is already full.'));
   save(s,{insight:c.insight+1,lucky:{name:c.lucky.name,used:true}},logm('Used {item}: recovered 1 insight',{item:c.lucky.name||tk('lucky item')}));},

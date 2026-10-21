@@ -1078,6 +1078,7 @@ I18N.add('ca',[
 [`Healed injury: {injury}`,`Va curar la ferida: {injury}`],
 [`Healed injury`,`Va curar una ferida`],
 [`Cleared trauma: {trauma}`,`Va treure el trauma: {trauma}`],
+[`Cleared the trauma roll bonus`,`Bonificació a les tirades de trauma esborrada`],
 [`Cleared trauma`,`Va treure un trauma`],
 [`You already have your investigator.`,`Ja tens el teu investigador.`],
 [`This investigator is yours now.`,`Ara aquest investigador és teu.`],

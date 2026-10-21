@@ -1078,6 +1078,7 @@ I18N.add('pt',[
 [`Healed injury: {injury}`,`Curou o ferimento: {injury}`],
 [`Healed injury`,`Curou um ferimento`],
 [`Cleared trauma: {trauma}`,`Removeu o trauma: {trauma}`],
+[`Cleared the trauma roll bonus`,`Bônus nas rolagens de trauma removido`],
 [`Cleared trauma`,`Removeu um trauma`],
 [`You already have your investigator.`,`Você já tem seu investigador.`],
 [`This investigator is yours now.`,`Este investigador agora é seu.`],

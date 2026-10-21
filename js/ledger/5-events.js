@@ -30,7 +30,8 @@ app.addEventListener('click',e=>{
   case 'lucky':R.lucky(s);break;
   case 'ins':R.insight(s,n);break;
   case 'healinj':{const x=c.injuries.find(j=>j.id===b.dataset.id);save(s,{injuries:c.injuries.filter(j=>j.id!==b.dataset.id)},x?logm('Healed injury: {injury}',{injury:x.name}):logm('Healed injury'));break;}
-  case 'deltra':{const x=c.traumas.find(j=>j.id===b.dataset.id);save(s,{traumas:c.traumas.filter(j=>j.id!==b.dataset.id)},x?logm('Cleared trauma: {trauma}',{trauma:x.name}):logm('Cleared trauma'));break;}
+  case 'traclear':if(!c.traumaMod)return;save(s,{traumaMod:0},logm('Cleared the trauma roll bonus'));break;
+  case 'deltra':{const x=c.traumas.find(j=>j.id===b.dataset.id);const p={traumas:c.traumas.filter(j=>j.id!==b.dataset.id)};if(x&&x.mod&&c.traumaMod>0)p.traumaMod=c.traumaMod-1;save(s,p,x?logm('Cleared trauma: {trauma}',{trauma:x.name}):logm('Cleared trauma'));break;}
   case 'imp':R.improve(s,b.dataset.k);break;
   case 'xpamt':{const el=document.getElementById('xpamt-'+s);const v=Math.round(Number(el&&el.value)||xpAmt[s]||1);xpAmt[s]=Math.max(1,Math.min(30,v+n));render();break;}
   case 'xpaward':{const el=document.getElementById('xpamt-'+s);const v=Math.max(1,Math.min(30,Math.round(Number(el&&el.value)||1)));xpAmt[s]=1;R.addXp(s,v);break;}

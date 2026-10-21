@@ -9,7 +9,7 @@ let cr=crBlank();
 // an unfinished character is kept as a draft on this device until it joins the party or is reset
 let crRestored=false;
 // ---- Bringing an investigator you play in another campaign into this one (a copy; the original stays put) ----
-let imp={};  // {loading, list:[{cid,camp,slot,c}], err, busy}
+let imp={},impOpen=false;  // {loading, list:[{cid,camp,slot,c}], err, busy}
 async function impFind(){const raw=db&&db.raw;if(!raw||!authUid)return;imp={loading:true};
  try{const cs=await raw.collection('campaigns').where('memberIds','array-contains',authUid).get();let list=[];const jobs=[];
   cs.forEach(d=>{if(d.id===CAMP)return;const cname=(d.data()||{}).name||t('Untitled campaign');
@@ -38,7 +38,7 @@ async function impBring(i){const it=imp.list&&imp.list[i];if(!it||imp.busy)retur
  c.pid=invKey(it.c,it.cid,it.slot);c.from={cid:it.cid,slot:it.slot,camp:it.camp,name:it.c.name,at:Date.now()};
  c.log=[{t:Date.now(),...logm('Joined from {campaign}',{campaign:it.camp})}];
  if(c.portrait){c.portrait=await impPicture(c.portrait);if(c.portraitFull)c.portraitFull=await impPicture(c.portraitFull);}
- const id=await addSlot(c);imp={};
+ const id=await addSlot(c);imp={};impOpen=false;
  if(id){toast(t('{name} joined the party.',{name:c.name}));go(id);}else render();}
 // Every copy of an investigator shares one identity: the campaign/sheet where they were first made.
 function invKey(c,cid,slot){return c.pid||(c.from&&c.from.cid&&c.from.slot?c.from.cid+'/'+c.from.slot:cid+'/'+slot);}
@@ -52,7 +52,9 @@ function impAvailable(){if(!CAMP||(IS_LOCAL&&!IS_DEMO)||!canAddSheet()||!db||!db
  return !!(imp.list&&imp.list.length);}
 function impHtml(){
  if(!impAvailable())return '';
- let h='<section class="sec"><h2>'+t('Bring an investigator you already have')+'</h2><p class="note" style="margin:0">'+t('Copy one of your investigators from another campaign, with their skills, knacks, XP, gear, money, injuries and portrait. They start a fresh session here. The original stays in its campaign.')+'</p>';
+ // Starts as one button; tapping it opens the list.
+ if(!impOpen)return '<div class="row"><button class="btn" data-cact="impopen" aria-expanded="false">'+t('Bring an investigator you already have')+' ('+imp.list.length+')</button></div>';
+ let h='<section class="sec"><div class="sec-head"><h2>'+t('Bring an investigator you already have')+'</h2><button class="btn sm" data-cact="impopen" aria-expanded="true">'+t('Close')+'</button></div><p class="note" style="margin:0">'+t('Copy one of your investigators from another campaign, with their skills, knacks, XP, gear, money, injuries and portrait. They start a fresh session here. The original stays in its campaign.')+'</p>';
  h+='<div class="list">'+imp.list.map((x,i)=>'<div class="item" style="align-items:center">'+avatarHtml(x.c,'sm')+'<div class="grow"><b>'+esc(x.c.name)+'</b><span class="effect">'+esc([[x.c.archetype,x.c.mc&&x.c.mc.arch&&x.c.mc.arch!==x.c.archetype?x.c.mc.arch:''].filter(Boolean).map(a=>t(a)).join(' / '),t('{n} XP',{n:Number(x.c.xpTotal)||0}),t('from {campaign}',{campaign:x.camp})].filter(Boolean).join(' · '))+'</span></div><button class="btn sm pri" data-cact="impbring" data-n="'+i+'"'+(imp.busy?' disabled':'')+'>'+t('Bring over')+'</button></div>').join('')+'</div>';
  return h+'</section>';}
 try{const t=JSON.parse(localStorage.getItem(CR_KEY)||'null');
@@ -177,6 +179,7 @@ function creatorClick(b){
  const a=b.dataset.cact,k=b.dataset.k,n=b.dataset.n;
  switch(a){
   case 'impbring':impBring(Number(n));return;
+  case 'impopen':impOpen=!impOpen;render();return;
   case 'five':case 'four':{
    if(a==='five'&&!cr.five.includes(k)&&cr.five.length>=3)return toast(t('Only three skills start at 5+. Tap one to unselect it first.'));
    const touched=[k];if(a==='four'&&cr.four&&cr.four!==k)touched.push(cr.four);

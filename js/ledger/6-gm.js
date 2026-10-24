@@ -8,7 +8,7 @@ const NPCS=BOOK_NPCS?(window.APL_NPCS||[]):[],NPC_TRAUMAS=window.APL_NPC_TRAUMAS
 let table={scene:'',fight:false,phase:'',round:0,first:'investigators',session:1,auto:true};
 try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(k&&k.table)table={...table,...k.table};}catch(e){}
 let enemies={},clues={},campaign={date:'',locations:[],npcs:[],threads:[]},gmNotes='',histLog=[],historySession=null;
-const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:BOOK_NPCS?'':'__custom',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
+const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:BOOK_NPCS?'':'__custom',addName:'',addType:'Minor',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
 let gmUnsubs=[],gmMasterState=null;
 // GM tools are off while the campaign is marked complete (it's a read-only record).
 const isGM=()=>localMode||(!!keys.gm&&gmClaimed&&!campDone());
@@ -82,13 +82,21 @@ function nextTurn(){let ph,round=table.round;
 
 // ---------- enemies ----------
 function npcProfile(n){return NPCS.find(x=>x.n===n);}
+const ENEMY_TYPES=['Minor','Major','Monstrous','Named'];
+// A picture for an enemy or a person met: small round one on the card, tap to see it whole.
+function picHtml(pic,full,name){return imgOk(pic)?'<img class="avatar sm" src="'+pic+'" alt="'+esc(name||'')+'" data-zoom'+(imgOk(full)?' data-full="'+full+'"':'')+' title="'+t('See the full picture')+'">':'';}
+function picPicker(kind,id,has){return '<label class="btn sm" for="pk-'+kind+'-'+id+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(has?t('Change picture'):t('Add a picture'))+'</label><input type="file" id="pk-'+kind+'-'+id+'" accept="image/*" data-gpic="'+kind+'" data-id="'+id+'" hidden>'+(has?'<button class="btn sm" data-gact="picdel" data-kind="'+kind+'" data-id="'+id+'">'+t('Remove picture')+'</button>':'');}
+// Crop a picture, upload it to the campaign, and hand back {pic, picFull}.
+function gmPicture(f,done){openCropper(f,{title:t('Position the picture'),shape:'circle',outW:320,outH:320,maxLen:120000,full:{side:1600,maxLen:900000},onError:toast,onSave:(d,full)=>{toast(t('Saving picture…'));const at='campaigns/'+CAMP+'/'+authUid;
+ Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(!isStoredImage(u)&&!IS_LOCAL)return toast(t('Couldn’t upload the picture. Check your connection and try again.'));done({pic:u,picFull:isStoredImage(fu)?fu:''});});}});}
 function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.min(12,Number(gm.addCount)||1));
  const base=p?p.pool:4;const pool=gm.addScale?Math.min(8,base+SLOTS.length):base;
  const existing=Object.values(enemies).filter(e=>e.base===(p?p.n:t('Custom enemy'))).length;
  for(let i=0;i<count;i++){const id=gmId()+i;const hl=(p&&p.horror)||0;
-  const e={id,base:p?p.n:t('Custom enemy'),n:(p?p.n:tk('Enemy'))+(count>1||existing?' '+(existing+i+1):''),type:p?p.type:'Minor',max:pool,limit:pool,regular:pool-Math.min(hl,pool),horror:Math.min(hl,pool),horrorLimit:hl,injuries:[],traumas:[],strained:false,out:false,shown:false,t:Date.now()+i,note:''};
+  const cn=String(gm.addName||'').trim().slice(0,60);
+  const e={id,base:p?p.n:t('Custom enemy'),n:(p?p.n:(cn||tk('Enemy')))+(count>1||existing?' '+(existing+i+1):''),type:p?p.type:(gm.addType||'Minor'),max:pool,limit:pool,regular:pool-Math.min(hl,pool),horror:Math.min(hl,pool),horrorLimit:hl,injuries:[],traumas:[],strained:false,out:false,shown:false,t:Date.now()+i,note:''};
   enemies[id]=e;gmSet('enemies/'+id,e);}
- gmLog(logm('Added {n} × {enemy}',{n:count,enemy:p?p.n:tk('custom enemy')}),false);gm.addCount=1;render();toast(t('Added {n} × {enemy}.',{n:count,enemy:p?t(p.n):t('enemy')}));}
+ const cn=String(gm.addName||'').trim();gmLog(logm('Added {n} × {enemy}',{n:count,enemy:p?p.n:(cn||tk('custom enemy'))}),false);gm.addCount=1;gm.addName='';render();toast(t('Added {n} × {enemy}.',{n:count,enemy:p?t(p.n):(cn||t('enemy'))}));}
 function updEnemy(id,p){const e=enemies[id];if(!e)return;Object.assign(e,p);render();gmSet('enemies/'+id,p,true);}
 function enemyClamp(e){e.limit=Math.max(0,Math.min(e.max,e.limit));let over=e.regular+e.horror-e.limit;while(over>0&&e.regular>0){e.regular--;over--;}while(over>0&&e.horror>0){e.horror--;over--;}}
 function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limit:e.limit,regular:e.regular,horror:e.horror};
@@ -109,7 +117,7 @@ function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();
  const pc={regular:e.regular,horror:e.horror,poolLimit:e.limit,poolMax:e.max,horrorLimit:e.horrorLimit||0};
  let h='<div class="enemy'+(e.out?' out':'')+'"><div class="row" style="justify-content:space-between;align-items:center"><div class="row" style="gap:8px;align-items:center">'+
-  (master?'<input class="f" id="en-'+e.id+'" data-gen="'+e.id+'" data-k="n" value="'+esc(nameT(e.n))+'" style="font-weight:700;max-width:220px">':'<b>'+esc(nameT(e.n))+'</b>')+
+  picHtml(e.pic,e.picFull,nameT(e.n))+(master?'<input class="f" id="en-'+e.id+'" data-gen="'+e.id+'" data-k="n" value="'+esc(nameT(e.n))+'" style="font-weight:700;max-width:220px">':'<b>'+esc(nameT(e.n))+'</b>')+
   (()=>{const st=enemyStatus(e);return st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'';})()+'<span class="note">'+esc(e.type==='Named'?t('Named'):t(e.type+' NPC'))+'</span>'+(master&&e.shown?'<span class="chip ok" title="'+t('Players can see this enemy')+'">'+t('Shown')+'</span>':'')+'</div>'+
   (master?'<div class="row" style="gap:6px"><button class="btn sm" data-gact="eshow" data-id="'+e.id+'">'+(e.shown?t('Hide from players'):t('Show to players'))+'</button><button class="btn sm icon" data-gact="edel" data-id="'+e.id+'" aria-label="'+t('Remove {name}',{name:esc(nameT(e.n))})+'">×</button></div>':'')+'</div>'+
   poolHtml(pc,true)+
@@ -123,7 +131,9 @@ function enemyHtml(e){
    (e.out?'<button class="btn sm" data-gact="eback" data-id="'+e.id+'">'+t('Back in the fight')+'</button>':'')+'</div>'+
    '<div class="row" style="gap:6px"><select class="maxsel" data-geinj="'+e.id+'" aria-label="'+t('Add an injury to {name}',{name:esc(nameT(e.n))})+'" style="flex:1;min-width:0"><option value="">'+t('Add an injury…')+'</option>'+injuryOptions()+'</select>'+
    '<select class="maxsel" data-getra="'+e.id+'" aria-label="'+t('Add a trauma to {name}',{name:esc(nameT(e.n))})+'" style="flex:1;min-width:0"><option value="">'+t('NPC trauma…')+'</option>'+NPC_TRAUMAS.map(x=>'<option value="'+esc(x[1])+'">'+x[0]+' · '+esc(t(x[1]))+'</option>').join('')+'</select>'+
-   ((e.injuries.length||e.traumas.length)?'<button class="btn sm" data-gact="eclear" data-id="'+e.id+'">'+t('Clear injuries &amp; traumas')+'</button>':'')+'</div>';
+   ((e.injuries.length||e.traumas.length)?'<button class="btn sm" data-gact="eclear" data-id="'+e.id+'">'+t('Clear injuries &amp; traumas')+'</button>':'')+'</div>'+
+   '<div class="row" style="gap:6px;align-items:flex-end"><label class="field" style="width:150px"><span class="lbl">'+t('Type')+'</span><select class="f" id="et-'+e.id+'" data-gen="'+e.id+'" data-k="type">'+ENEMY_TYPES.map(x=>'<option value="'+x+'"'+(e.type===x?' selected':'')+'>'+(x==='Named'?t('Named'):t(x+' NPC'))+'</option>').join('')+'</select></label>'+picPicker('e',e.id,imgOk(e.pic))+'</div>'+
+   '<label class="field"><span class="lbl">'+t('GM notes (attacks, special rules…)')+'</span><textarea class="f" id="enote-'+e.id+'" data-gen="'+e.id+'" data-k="note" rows="2">'+esc(e.note||'')+'</textarea></label>';
  }
  if(p&&master)h+='<button class="btn sm linkish" data-gact="eopen" data-id="'+e.id+'" aria-expanded="'+open+'">'+(open?t('Hide profile'):t('Show profile'))+'</button>';
  if(p&&open&&master)h+=npcProfileHtml(p,e);
@@ -167,8 +177,8 @@ async function addClue(show){const tt=(document.getElementById('cl-title')||{}).
 function saveCampaign(){render();gmSet('campaign/main',JSON.parse(JSON.stringify(campaign)));}
 function campaignHtml(master){
  const list=(key,label,fields,ph)=>{const a=campaign[key]||[];
-  let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item"><div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+'</div>'+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
-   :'<div class="item"><div class="grow"><b'+(x.done?' style="text-decoration:line-through;opacity:.6"':'')+'>'+esc(x.name||x.text||'')+'</b>'+(x.att?' <span class="chip">'+esc(x.att)+'</span>':'')+(x.note?'<span class="effect">'+esc(x.note)+'</span>':'')+'</div></div>').join(''):'<p class="note">'+ph+'</p>')+'</div>'+
+  let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+(key==='npcs'?'<div class="row" style="gap:6px">'+picPicker('n',x.id,imgOk(x.pic))+'</div>':'')+'</div>'+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
+   :'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow"><b'+(x.done?' style="text-decoration:line-through;opacity:.6"':'')+'>'+esc(x.name||x.text||'')+'</b>'+(x.att?' <span class="chip">'+esc(x.att)+'</span>':'')+(x.note?'<span class="effect">'+esc(x.note)+'</span>':'')+'</div></div>').join(''):'<p class="note">'+ph+'</p>')+'</div>'+
   (master?'<div class="row"><button class="btn sm" data-gact="cpadd" data-list="'+key+'">'+t('Add')+'</button></div>':'')+'</div>';return h;};
  return '<div class="grid2">'+
   list('threads',t('Open threads'),[['text',t('What’s unresolved?'),'font-weight:600']],t('Nothing yet.'))+
@@ -245,6 +255,7 @@ function renderGM(){
   '<div class="row"><label class="field" style="flex:2;min-width:200px"><span class="lbl">'+(BOOK_NPCS?t('Add from the book'):t('Add an enemy'))+'</span><select class="f" id="gm-add" data-gs="addN">'+(BOOK_NPCS?'<option value="">'+t('Choose an enemy…')+'</option>':'')+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+NPCS.filter(x=>x.cat===ct).map(x=>'<option value="'+esc(x.n)+'"'+(gm.addN===x.n?' selected':'')+'>'+esc(t(x.n))+'</option>').join('')+'</optgroup>').join('')+'<option value="__custom"'+(gm.addN==='__custom'?' selected':'')+'>'+t('Custom enemy')+'</option></select></label>'+
   '<label class="field" style="width:80px"><span class="lbl">'+t('How many')+'</span><input class="f" type="number" min="1" max="12" id="gm-count" data-gs="addCount" value="'+gm.addCount+'"></label>'+
   '<button class="btn" data-gact="eadd" '+(gm.addN?'':'disabled')+'>'+t('Add')+'</button></div>'+
+  (gm.addN==='__custom'?'<div class="row"><label class="field" style="flex:2;min-width:180px"><span class="lbl">'+t('Name')+'</span><input class="f" id="gm-addname" data-gs="addName" maxlength="60" value="'+esc(gm.addName||'')+'" placeholder="'+t('e.g. Swamp devil')+'"></label><label class="field" style="flex:1;min-width:140px"><span class="lbl">'+t('Type')+'</span><select class="f" id="gm-addtype" data-gs="addType">'+ENEMY_TYPES.map(x=>'<option value="'+x+'"'+((gm.addType||'Minor')===x?' selected':'')+'>'+(x==='Named'?t('Named'):t(x+' NPC'))+'</option>').join('')+'</select></label></div>':'')+
   (gm.addN?'<label class="row note" style="gap:6px"><input type="checkbox" data-gs="addScale"'+(gm.addScale?' checked':'')+'> '+(p?t('Scale to the party: +1 die per investigator (max 8), so {n} instead of {base}',{n:Math.min(8,p.pool+SLOTS.length),base:p.pool}):t('Scale to the party: +1 die per investigator (max 8)'))+'</label>':'')+
   (BOOK_NPCS?'':'<p class="note" style="margin:0">'+t('Add enemies and set their pools yourself. Campaigns saved to an account can also add enemies from the Core Rulebook’s profiles.')+'</p>')+
   (p?'<p class="note" style="margin:0">'+esc(p.type==='Named'?t('Named character'):t(p.type+' NPC'))+(p.size?' · '+t(p.size):'')+'. '+t('Starting pool {n} is a suggestion: the book prints each pool in the profile art, so check it and adjust with Max.',{n:p.pool})+'</p>':'')+
@@ -319,6 +330,7 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'cshow':{const c=clues[id];if(c){c.shown=!c.shown;clueLog(c);render();gmSet('clues/'+id,{shown:c.shown},true);}break;}
   case 'cdel':if(clues[id])gmLog(logm('Deleted clue “{clue}”',{clue:clueName(clues[id])}),false);delete clues[id];render();gmDel('clues/'+id);break;
   case 'climgdel':gm.clueImg='';render();break;
+  case 'picdel':{const id=b.dataset.id;if(b.dataset.kind==='e'){if(enemies[id])updEnemy(id,{pic:'',picFull:''});}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,pic:'',picFull:''}:x);saveCampaign();}break;}
   case 'cpadd':{const l=b.dataset.list;campaign[l]=[...(campaign[l]||[]),{id:gmId()}];saveCampaign();break;}
   case 'cpdel':{const l=b.dataset.list;campaign[l]=(campaign[l]||[]).filter(x=>x.id!==id);saveCampaign();break;}
   case 'cpdone':campaign.threads=(campaign.threads||[]).map(x=>x.id===id?{...x,done:!x.done}:x);saveCampaign();break;
@@ -336,13 +348,16 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
 }
 let notesT=null;
 function gmChange(el){
- if(!isGM()&&(el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
- if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
+ if(!isGM()&&(el.dataset.gpic||el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
+ // (Typing a custom enemy's name doesn't redraw, so tapping Add straight after still lands.)
+ if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;if(k!=='addName')render();return true;}
  if(el.dataset.gt){const k=el.dataset.gt;if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog(logm('Scene: {scene}',{scene:el.value.trim()}),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
  if(el.dataset.gen){updEnemy(el.dataset.gen,{[el.dataset.k]:el.value});return true;}
  if(el.dataset.geinj){const e=enemies[el.dataset.geinj];if(e&&el.value){gmLog(logm('{enemy} suffered injury: {injury}',{enemy:e.n,injury:el.value}),!!e.shown);const inj=[...e.injuries,el.value];const p={injuries:inj};if(isUniqueInjury(el.value)&&e.injuries.filter(x=>x===el.value).length>=2&&!e.out){p.out=true;toast(t('A third {injury} injury is fatal.',{injury:t(el.value)}));}if(el.value==='Comatose'||el.value==='Dire'){e.limit=0;enemyClamp(e);Object.assign(p,{limit:0,regular:e.regular,horror:e.horror});}updEnemy(e.id,p);}return true;}
  if(el.dataset.getra){const e=enemies[el.dataset.getra];if(e&&el.value)gmLog(logm('{enemy} suffered trauma: {trauma}',{enemy:e.n,trauma:el.value}),!!e.shown),updEnemy(e.id,{traumas:[...e.traumas,el.value]});return true;}
  if(el.dataset.gimg){pickClueImage(el.files&&el.files[0]);el.value='';return true;}
+ if(el.dataset.gpic){const kind=el.dataset.gpic,id=el.dataset.id,f=el.files&&el.files[0];el.value='';
+  gmPicture(f,v=>{if(kind==='e'){if(enemies[id])updEnemy(id,v);}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,...v}:x);saveCampaign();}toast(t('Picture saved.'));});return true;}
  if(el.dataset.gcp){const l=el.dataset.gcp;campaign[l]=(campaign[l]||[]).map(x=>x.id===el.dataset.id?{...x,[el.dataset.k]:el.value}:x);saveCampaign();return true;}
  if(el.dataset.gcpd){campaign.date=el.value;saveCampaign();return true;}
  if(el.dataset.gnotes){gmNotes=el.value;gmSet('gm/notes',{text:gmNotes});return true;}

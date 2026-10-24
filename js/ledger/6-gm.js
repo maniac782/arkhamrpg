@@ -91,7 +91,10 @@ function gmPicture(f,done){openCropper(f,{title:t('Position the picture'),shape:
  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(!isStoredImage(u)&&!IS_LOCAL)return toast(t('Couldn’t upload the picture. Check your connection and try again.'));done({pic:u,picFull:isStoredImage(fu)?fu:''});});}});}
 function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.min(12,Number(gm.addCount)||1));
  const base=p?p.pool:4;const pool=gm.addScale?Math.min(8,base+SLOTS.length):base;
- const existing=Object.values(enemies).filter(e=>e.base===(p?p.n:t('Custom enemy'))).length;
+ // Number them only when there's more than one of the same name: the first Swamp devil is just "Swamp devil".
+ const nm0=p?p.n:(String(gm.addName||'').trim().slice(0,60)||tk('Enemy'));
+ const same=new RegExp('^'+nm0.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'( \\d+)?$');
+ const existing=Object.values(enemies).filter(e=>same.test(e.n)).length;
  for(let i=0;i<count;i++){const id=gmId()+i;const hl=(p&&p.horror)||0;
   const cn=String(gm.addName||'').trim().slice(0,60);
   const e={id,base:p?p.n:t('Custom enemy'),n:(p?p.n:(cn||tk('Enemy')))+(count>1||existing?' '+(existing+i+1):''),type:p?p.type:(gm.addType||'Minor'),max:pool,limit:pool,regular:pool-Math.min(hl,pool),horror:Math.min(hl,pool),horrorLimit:hl,injuries:[],traumas:[],strained:false,out:false,shown:false,t:Date.now()+i,note:''};
@@ -363,7 +366,9 @@ function gmChange(el){
  if(!isGM()&&(el.dataset.gpic||el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
  if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
  if(el.dataset.gt){const k=el.dataset.gt;if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog(logm('Scene: {scene}',{scene:el.value.trim()}),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
- if(el.dataset.gen){updEnemy(el.dataset.gen,{[el.dataset.k]:el.value});return true;}
+ if(el.dataset.gen){const id=el.dataset.gen,k=el.dataset.k;updEnemy(id,{[k]:el.value});
+  // Keep its entry under Enemies defeated in step (name and type).
+  if((k==='n'||k==='type')&&(campaign.defeated||[]).some(x=>x.id===id)){campaign.defeated=campaign.defeated.map(x=>x.id===id?{...x,[k]:el.value}:x);saveCampaign();}return true;}
  if(el.dataset.geinj){const e=enemies[el.dataset.geinj];if(e&&el.value){gmLog(logm('{enemy} suffered injury: {injury}',{enemy:e.n,injury:el.value}),!!e.shown);const inj=[...e.injuries,el.value];const p={injuries:inj};if(isUniqueInjury(el.value)&&e.injuries.filter(x=>x===el.value).length>=2&&!e.out){p.out=true;toast(t('A third {injury} injury is fatal.',{injury:t(el.value)}));}if(el.value==='Comatose'||el.value==='Dire'){e.limit=0;enemyClamp(e);Object.assign(p,{limit:0,regular:e.regular,horror:e.horror});}updEnemy(e.id,p);}return true;}
  if(el.dataset.getra){const e=enemies[el.dataset.getra];if(e&&el.value)gmLog(logm('{enemy} suffered trauma: {trauma}',{enemy:e.n,trauma:el.value}),!!e.shown),updEnemy(e.id,{traumas:[...e.traumas,el.value]});return true;}
  if(el.dataset.gimg){pickClueImage(el.files&&el.files[0]);el.value='';return true;}

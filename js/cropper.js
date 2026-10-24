@@ -1,5 +1,5 @@
 /* Arkham Horror RPG Ledger — the picture positioner used for investigator portraits, profile photos and campaign pictures.
-   openCropper(file, {title, shape:'circle'|'wide', outW, outH, maxLen, button, full, onSave(dataUrl, fullDataUrl), onError(msg)})
+   openCropper(file, {title, shape:'circle'|'square'|'wide', outW, outH, maxLen, button, full, onSave(dataUrl, fullDataUrl), onError(msg)})
    With full:{side, maxLen}, onSave also gets the whole picture (uncropped, up to that many px on its longest side).
    Drag (or arrow keys) to move, wheel / pinch / slider to zoom; saves a JPEG of exactly what's in the frame. */
 (function(){
@@ -11,17 +11,17 @@ window.openCropper=function(file,o){
  const url=URL.createObjectURL(file),img=new Image();
  img.onerror=()=>{URL.revokeObjectURL(url);err(t('Couldn’t read that image. Try a JPG or PNG.'));};
  img.onload=()=>{
-  const wide=o.shape==='wide',VW=wide?Math.max(280,Math.min(560,window.innerWidth-80)):260,VH=wide?Math.round(VW*9/16):260,PX=2; // view size in CSS px, canvas drawn at 2x
+  const wide=o.shape==='wide',sq=o.shape==='square',VW=wide?Math.max(280,Math.min(560,window.innerWidth-80)):260,VH=wide?Math.round(VW*9/16):260,PX=2; // view size in CSS px, canvas drawn at 2x
   const OUTW=o.outW||(wide?800:320),OUTH=o.outH||(wide?450:320),MAX=o.maxLen||120000;
   const base=Math.max(VW/img.width,VH/img.height);let zoom=1,ox=0,oy=0;
   // Banners can zoom out until the whole picture fits; the space around it is filled with a soft, darkened blur of it.
   const MINZ=wide?Math.min(1,Math.min(VW/img.width,VH/img.height)/base):1;
   let soft=null;if(MINZ<1){soft=document.createElement('canvas');const k=24/Math.max(img.width,img.height);soft.width=Math.max(2,Math.round(img.width*k));soft.height=Math.max(2,Math.round(img.height*k));soft.getContext('2d').drawImage(img,0,0,soft.width,soft.height);}
   const bg=document.createElement('div');bg.className='crop-bg';bg.setAttribute('role','dialog');bg.setAttribute('aria-modal','true');bg.setAttribute('aria-label',o.title||t('Position picture'));
-  bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||t('Position your picture'))+'</h2><canvas class="'+(wide?'rect':'')+'" width="'+VW*PX+'" height="'+VH*PX+'"'+(wide?' style="width:'+VW+'px;height:'+VH+'px"':'')+' tabindex="0" aria-label="'+t('Drag to move the picture. Arrow keys also move it.')+'"></canvas>'+
+  bg.innerHTML='<div class="crop'+(wide?' wide':'')+'"><h2>'+(o.title||t('Position your picture'))+'</h2><canvas class="'+(wide?'rect':sq?'sq':'')+'" width="'+VW*PX+'" height="'+VH*PX+'"'+(wide?' style="width:'+VW+'px;height:'+VH+'px"':'')+' tabindex="0" aria-label="'+t('Drag to move the picture. Arrow keys also move it.')+'"></canvas>'+
    '<label class="field" style="width:100%"><span class="lbl">'+t('Zoom')+'</span><input type="range" class="crop-zoom" min="'+MINZ+'" max="4" step="0.01" value="1"></label>'+
    (MINZ<1?'<button class="btn sm" type="button" data-c="fit">'+t('Show the whole picture')+'</button>':'')+
-   '<p class="note" style="margin:0;text-align:center">'+(wide?t('Drag the picture to choose what shows in the banner.'):t('Drag the picture to center the face in the circle.'))+(o.full?' '+t('The whole picture is kept too, for viewing full size.'):'')+'</p>'+
+   '<p class="note" style="margin:0;text-align:center">'+(wide?t('Drag the picture to choose what shows in the banner.'):sq?t('Drag the picture to choose what shows in the square.'):t('Drag the picture to center the face in the circle.'))+(o.full?' '+t('The whole picture is kept too, for viewing full size.'):'')+'</p>'+
    '<div class="row" style="justify-content:flex-end;width:100%"><button class="btn" data-c="cancel" type="button">'+t('Cancel')+'</button><button class="btn pri" data-c="save" type="button">'+(o.button||t('Save picture'))+'</button></div></div>';
   document.body.appendChild(bg);
   const cv=bg.querySelector('canvas'),g=cv.getContext('2d'),zr=bg.querySelector('.crop-zoom');

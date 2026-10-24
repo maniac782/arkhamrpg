@@ -83,6 +83,7 @@ I18N.add('ca',[
 [`Drag to move the picture. Arrow keys also move it.`,`Arrossega per moure la imatge. També la pots moure amb les fletxes del teclat.`],
 [`Zoom`,`Zoom`],
 [`Show the whole picture`,`Mostra la imatge sencera`],
+[`Drag the picture to choose what shows in the square.`,`Arrossega la imatge per triar què es veu al quadrat.`],
 [`Drag the picture to choose what shows in the banner.`,`Arrossega la imatge per triar què es veu a la capçalera.`],
 [`Drag the picture to center the face in the circle.`,`Arrossega la imatge per centrar la cara al cercle.`],
 [`The whole picture is kept too, for viewing full size.`,`També es desa la imatge sencera, per veure-la a mida completa.`],

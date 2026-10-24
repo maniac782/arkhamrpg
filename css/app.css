@@ -59,6 +59,9 @@ input.f::-webkit-datetime-edit{padding:0}
 .crop canvas{width:260px;height:260px;max-width:100%;border-radius:50%;touch-action:none;cursor:grab;background:var(--surface2);box-shadow:0 0 0 2px var(--ink)}
 .crop.wide{width:min(620px,100%)}
 .crop canvas.rect{width:320px;height:180px;border-radius:8px}
+.crop canvas.sq{border-radius:8px}
+/* Square pictures for enemies and people met. */
+.sqpic{flex:none;width:56px;height:56px;border-radius:6px;object-fit:cover;border:1px solid var(--line);background:var(--surface2);cursor:zoom-in}
 .crop canvas:active{cursor:grabbing}
 .crop input[type=range]{width:100%;accent-color:var(--ink)}
 .pic-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}

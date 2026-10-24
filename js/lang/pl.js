@@ -83,6 +83,7 @@ I18N.add('pl',[
 [`Drag to move the picture. Arrow keys also move it.`,`Przeciągnij, aby przesunąć obraz. Można też użyć strzałek na klawiaturze.`],
 [`Zoom`,`Powiększenie`],
 [`Show the whole picture`,`Pokaż cały obraz`],
+[`Drag the picture to choose what shows in the square.`,`Przeciągnij obraz, aby wybrać, co widać w kwadracie.`],
 [`Drag the picture to choose what shows in the banner.`,`Przeciągnij obraz, aby wybrać, co będzie widać na banerze.`],
 [`Drag the picture to center the face in the circle.`,`Przeciągnij obraz, aby wyśrodkować twarz w kółku.`],
 [`The whole picture is kept too, for viewing full size.`,`Zachowywany jest też cały obraz, do oglądania w pełnym rozmiarze.`],

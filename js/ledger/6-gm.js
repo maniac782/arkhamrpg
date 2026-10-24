@@ -83,11 +83,11 @@ function nextTurn(){let ph,round=table.round;
 // ---------- enemies ----------
 function npcProfile(n){return NPCS.find(x=>x.n===n);}
 const ENEMY_TYPES=['Minor','Major','Monstrous','Named'];
-// A picture for an enemy or a person met: small round one on the card, tap to see it whole.
-function picHtml(pic,full,name){return imgOk(pic)?'<img class="avatar sm" src="'+pic+'" alt="'+esc(name||'')+'" data-zoom'+(imgOk(full)?' data-full="'+full+'"':'')+' title="'+t('See the full picture')+'">':'';}
+// A picture for an enemy or a person met: a small square on the card, tap to see it whole.
+function picHtml(pic,full,name){return imgOk(pic)?'<img class="sqpic" src="'+pic+'" alt="'+esc(name||'')+'" data-zoom'+(imgOk(full)?' data-full="'+full+'"':'')+' title="'+t('See the full picture')+'">':'';}
 function picPicker(kind,id,has){return '<label class="btn sm" for="pk-'+kind+'-'+id+'" style="display:inline-flex;align-items:center;cursor:pointer">'+(has?t('Change picture'):t('Add a picture'))+'</label><input type="file" id="pk-'+kind+'-'+id+'" accept="image/*" data-gpic="'+kind+'" data-id="'+id+'" hidden>'+(has?'<button class="btn sm" data-gact="picdel" data-kind="'+kind+'" data-id="'+id+'">'+t('Remove picture')+'</button>':'');}
 // Crop a picture, upload it to the campaign, and hand back {pic, picFull}.
-function gmPicture(f,done){openCropper(f,{title:t('Position the picture'),shape:'circle',outW:320,outH:320,maxLen:120000,full:{side:1600,maxLen:900000},onError:toast,onSave:(d,full)=>{toast(t('Saving picture…'));const at='campaigns/'+CAMP+'/'+authUid;
+function gmPicture(f,done){openCropper(f,{title:t('Position the picture'),shape:'square',outW:320,outH:320,maxLen:120000,full:{side:1600,maxLen:900000},onError:toast,onSave:(d,full)=>{toast(t('Saving picture…'));const at='campaigns/'+CAMP+'/'+authUid;
  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(!isStoredImage(u)&&!IS_LOCAL)return toast(t('Couldn’t upload the picture. Check your connection and try again.'));done({pic:u,picFull:isStoredImage(fu)?fu:''});});}});}
 function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.min(12,Number(gm.addCount)||1));
  const base=p?p.pool:4;const pool=gm.addScale?Math.min(8,base+SLOTS.length):base;

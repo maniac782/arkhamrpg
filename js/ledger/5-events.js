@@ -6,6 +6,12 @@ function go(t){active=t;try{if(!IS_DEMO)localStorage.setItem(TAB_KEY,t);}catch(e
 const app=document.getElementById('app');
 // Track taps so a redraw caused by leaving a text box doesn't swallow the button tap (see render()).
 document.addEventListener('pointerdown',()=>{tapAt=Date.now();tapDone=false;},true);
+const fileInputOf=t=>{if(!t||!t.closest)return null;if(t.matches&&t.matches('input[type=file]'))return t;const l=t.closest('label[for]');const i=l&&document.getElementById(l.htmlFor);return i&&i.type==='file'?i:null;};
+const fileDone=()=>{if(!fileAt)return;fileAt=0;setTimeout(()=>{if(pending)render();},0);};
+document.addEventListener('click',e=>{if(fileInputOf(e.target))fileAt=Date.now();},true);
+document.addEventListener('change',e=>{if(e.target&&e.target.type==='file')setTimeout(fileDone,0);},true);
+document.addEventListener('cancel',e=>{if(e.target&&e.target.type==='file')fileDone();},true);
+window.addEventListener('focus',()=>{if(fileAt)setTimeout(()=>{if(fileAt&&Date.now()-fileAt>1500)fileDone();},1500);});
 document.addEventListener('click',()=>{tapDone=true;setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input:not([type=checkbox]):not([type=radio]):not([type=file]),#app textarea')))render();},0);},true);
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{

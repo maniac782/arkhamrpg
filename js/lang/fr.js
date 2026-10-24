@@ -83,6 +83,7 @@ I18N.add('fr',[
 [`Drag to move the picture. Arrow keys also move it.`,`Faites glisser pour déplacer l’image. Les flèches du clavier la déplacent aussi.`],
 [`Zoom`,`Zoom`],
 [`Show the whole picture`,`Afficher l’image entière`],
+[`Drag the picture to choose what shows in the square.`,`Faites glisser l’image pour choisir ce qui apparaît dans le carré.`],
 [`Drag the picture to choose what shows in the banner.`,`Faites glisser l’image pour choisir ce qui apparaît dans la bannière.`],
 [`Drag the picture to center the face in the circle.`,`Faites glisser l’image pour centrer le visage dans le cercle.`],
 [`The whole picture is kept too, for viewing full size.`,`L’image entière est aussi conservée, pour la voir en grand.`],

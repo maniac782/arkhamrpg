@@ -361,8 +361,7 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
 let notesT=null;
 function gmChange(el){
  if(!isGM()&&(el.dataset.gpic||el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
- // (Typing a custom enemy's name doesn't redraw, so tapping Add straight after still lands.)
- if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;if(k!=='addName')render();return true;}
+ if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
  if(el.dataset.gt){const k=el.dataset.gt;if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog(logm('Scene: {scene}',{scene:el.value.trim()}),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
  if(el.dataset.gen){updEnemy(el.dataset.gen,{[el.dataset.k]:el.value});return true;}
  if(el.dataset.geinj){const e=enemies[el.dataset.geinj];if(e&&el.value){gmLog(logm('{enemy} suffered injury: {injury}',{enemy:e.n,injury:el.value}),!!e.shown);const inj=[...e.injuries,el.value];const p={injuries:inj};if(isUniqueInjury(el.value)&&e.injuries.filter(x=>x===el.value).length>=2&&!e.out){p.out=true;toast(t('A third {injury} injury is fatal.',{injury:t(el.value)}));}if(el.value==='Comatose'||el.value==='Dire'){e.limit=0;enemyClamp(e);Object.assign(p,{limit:0,regular:e.regular,horror:e.horror});}updEnemy(e.id,p);}return true;}

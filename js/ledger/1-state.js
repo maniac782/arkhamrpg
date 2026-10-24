@@ -97,6 +97,8 @@ function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});
 const legacyRel=new Set();
 
 let db=null, chars={}, active='party', pending=false, localMode=false, authUid=null;
+// A tap in progress: started at tapAt, finished (clicked) when tapDone. Redraws wait up to TAP_WAIT ms for it.
+let tapAt=0,tapDone=true,tapT=null;const TAP_WAIT=700;const tapOpen=()=>!tapDone&&Date.now()-tapAt<TAP_WAIT;
 const keys={};// slot, 'master' or 'gm' -> this device holds a key
 // fields the GM PIN may change on any sheet (XP awards, session start, pool refills)
 const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log'];

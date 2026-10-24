@@ -4,6 +4,9 @@
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;go(b.dataset.tab);});
 function go(t){active=t;try{if(!IS_DEMO)localStorage.setItem(TAB_KEY,t);}catch(e){}render();window.scrollTo(0,0);}
 const app=document.getElementById('app');
+// Track taps so a redraw caused by leaving a text box doesn't swallow the button tap (see render()).
+document.addEventListener('pointerdown',()=>{tapAt=Date.now();tapDone=false;},true);
+document.addEventListener('click',()=>{tapDone=true;setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input:not([type=checkbox]):not([type=radio]):not([type=file]),#app textarea')))render();},0);},true);
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{
  const gb=e.target.closest('[data-gact]');if(gb){if(!gb.disabled)gmClick(gb);return;}

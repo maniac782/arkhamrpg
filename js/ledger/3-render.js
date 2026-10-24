@@ -90,8 +90,8 @@ function applyRoles(){
  if(!CAMP||!camp)return;
  Object.keys(keys).forEach(k=>delete keys[k]);
  if(camp.ownerUid===authUid)keys.master=true;
- if(camp.gmUid&&camp.gmUid===authUid)keys.gm=true;
- gmClaimed=!!camp.gmUid;
+ if((camp.gmUid&&camp.gmUid===authUid)||ownerGM())keys.gm=true;
+ gmClaimed=!!camp.gmUid||ownerGM();
  SLOTS.forEach(x=>{if(chars[x]&&chars[x].ownerUid===authUid)keys[x]=true;});
  keysReady=true;gmFlagReady=true;gmMasterState=null;gmSubscribe();
 }

@@ -261,6 +261,7 @@ service cloud.firestore {
         (isOwner() && changedOnly(['name']) && goodName())
         || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
         || (isOwner() && changedOnly(['gmEdits']) && newC().gmEdits is bool)
+        || (isOwner() && changedOnly(['ownerGM']) && newC().ownerGM is bool)
         // The owner or the GM marks the campaign complete (or reopens it).
         || ((isOwner() || gmOf(oldC()) == me()) && changedOnly(['completed'])
           && (newC().completed == null || (newC().completed is map && newC().completed.keys().hasOnly(['at', 'by'])
@@ -285,7 +286,9 @@ service cloud.firestore {
       function C() { return get(/databases/$(database)/documents/campaigns/$(cid)).data; }
       function member() { return realUser() && request.auth.uid in C().memberIds; }
       function cOwner() { return realUser() && C().ownerUid == request.auth.uid; }
-      function cGM() { return realUser() && C().get('gmUid', null) == request.auth.uid; }
+      // The GM, or the owner while they've ticked "Let me use the GM tools" in Settings.
+      function cGM() { return realUser() && (C().get('gmUid', null) == request.auth.uid
+        || (C().ownerUid == request.auth.uid && C().get('ownerGM', false) == true)); }
       function gmSees() { return cGM(); }
       // Wiping a campaign: an admin, or the owner once the campaign is marked as being deleted.
       function cleaner() { return isAdmin() || (cOwner() && C().get('deleting', false) == true); }

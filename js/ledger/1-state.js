@@ -108,6 +108,8 @@ const ownerEditsOn=()=>!CAMP||!!(camp&&camp.ownerEdits===true); // off unless th
 const gmEditsOn=()=>!!(CAMP&&camp&&camp.gmEdits===true&&camp.gmUid&&camp.gmUid===authUid);
 // Owner or GM with full edit rights over other players' sheets.
 const fullEdit=()=>!campDone()&&((!!keys.master&&ownerEditsOn())||gmEditsOn());
+// The owner gets the GM tools too while "Let me use the GM tools" is ticked in Settings.
+const ownerGM=()=>!!(CAMP&&camp&&camp.ownerGM===true&&camp.ownerUid===authUid);
 // A completed campaign (marked by the owner or GM) is read-only until reopened.
 const campDone=()=>!!(CAMP&&camp&&camp.completed);
 function canEdit(s){if(!db&&localMode)return true;if(campDone())return false;if(CAMP){const c=chars[s];return fullEdit()||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}

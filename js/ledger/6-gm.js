@@ -107,6 +107,7 @@ function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limi
  updEnemy(e.id,p);}
 // An enemy's status, in the same words as investigators. Nothing shows while it is unhurt.
 function enemyStatus(e){
+ if(e.dead)return['bad',t('Dead')];
  if(e.out)return['bad',t('Out')];
  if(e.limit===0)return['bad',t('Wounded')];
  if(e.injuries.length)return['inj',t('Injured')];
@@ -128,7 +129,8 @@ function enemyHtml(e){
    ((e.type==='Major'||e.type==='Monstrous')&&!e.strained?'<button class="btn sm" data-gact="estrain" data-id="'+e.id+'" '+(e.limit<e.max&&!e.out?'':'disabled')+'>'+t('Strain (once)')+'</button>':'')+
    '<span class="stepper"><span class="note">'+t('Max')+'</span><button class="btn sm icon" data-gact="emax" data-n="-1" data-id="'+e.id+'" aria-label="'+t('Smaller pool')+'">−</button><b class="num">'+e.max+'</b><button class="btn sm icon" data-gact="emax" data-n="1" data-id="'+e.id+'" aria-label="'+t('Bigger pool')+'">+</button></span>'+
    '<span class="stepper"><span class="note">'+t('Horror limit')+'</span><button class="btn sm icon" data-gact="ehl" data-n="-1" data-id="'+e.id+'" aria-label="'+t('Lower horror limit')+'">−</button><b class="num">'+(e.horrorLimit||0)+'</b><button class="btn sm icon" data-gact="ehl" data-n="1" data-id="'+e.id+'" aria-label="'+t('Raise horror limit')+'">+</button></span>'+
-   (e.out?'<button class="btn sm" data-gact="eback" data-id="'+e.id+'">'+t('Back in the fight')+'</button>':'')+'</div>'+
+   (e.out&&!e.dead?'<button class="btn sm" data-gact="eback" data-id="'+e.id+'">'+t('Back in the fight')+'</button>':'')+
+   (e.dead?'<button class="btn sm" data-gact="eundead" data-id="'+e.id+'">'+t('Not dead after all')+'</button>':'<button class="btn sm dng" data-gact="edead" data-id="'+e.id+'">'+t('Mark dead')+'</button>')+'</div>'+
    '<div class="row" style="gap:6px"><select class="maxsel" data-geinj="'+e.id+'" aria-label="'+t('Add an injury to {name}',{name:esc(nameT(e.n))})+'" style="flex:1;min-width:0"><option value="">'+t('Add an injury…')+'</option>'+injuryOptions()+'</select>'+
    '<select class="maxsel" data-getra="'+e.id+'" aria-label="'+t('Add a trauma to {name}',{name:esc(nameT(e.n))})+'" style="flex:1;min-width:0"><option value="">'+t('NPC trauma…')+'</option>'+NPC_TRAUMAS.map(x=>'<option value="'+esc(x[1])+'">'+x[0]+' · '+esc(t(x[1]))+'</option>').join('')+'</select>'+
    ((e.injuries.length||e.traumas.length)?'<button class="btn sm" data-gact="eclear" data-id="'+e.id+'">'+t('Clear injuries &amp; traumas')+'</button>':'')+'</div>'+
@@ -201,12 +203,16 @@ function awardSession(){let n=0;SLOTS.forEach(s=>{const x=gm.wrap[s];const c=cha
 function recapText(){return t('Session {n} recap',{n:historySession})+'\n'+recapGroups().map(([n,a])=>'\n'+n+':\n'+a.map(x=>'- '+logText(x)).join('\n')).join('\n');}
 
 // ---------- pages ----------
+// Enemies the party has killed, newest session first (kept after the encounter is cleared).
+function defeatedHtml(){const d=campaign.defeated||[];if(!d.length)return '';const by={};d.forEach(x=>{(by[x.session||0]=by[x.session||0]||[]).push(x);});const gmv=isGM();
+ return '<section class="sec"><div class="sec-head"><h2>'+t('Enemies defeated')+'</h2><span class="note">'+tn('{n} so far','{n} so far',d.length)+'</span></div>'+Object.keys(by).map(Number).sort((a,b)=>b-a).map(n=>'<div><span class="lbl">'+(n?t('Session {n}',{n}):t('Earlier'))+'</span><div class="list">'+by[n].sort((a,b)=>a.at-b.at).map(x=>'<div class="item" style="align-items:center">'+picHtml(x.pic,x.picFull,nameT(x.n))+'<div class="grow"><b>'+esc(nameT(x.n))+'</b><span class="effect">'+esc(x.type==='Named'?t('Named'):t((x.type||'Minor')+' NPC'))+'</span></div>'+(gmv?'<button class="btn sm icon" data-gact="defdel" data-id="'+esc(x.id)+'" aria-label="'+t('Remove {name}',{name:esc(nameT(x.n))})+'">×</button>':'')+'</div>').join('')+'</div></div>').join('')+'</section>';}
 function renderJournal(){
  const shown=Object.values(clues).filter(c=>c.shown).sort((a,b)=>b.t-a.t);
  let h=turnBar()+'<section class="sec"><div class="sec-head"><h2>'+t('Clues &amp; handouts')+'</h2><span class="note">'+t('What the GM has revealed. Newest first.')+'</span></div>'+
   (shown.length?'<div class="clues">'+shown.map(c=>clueHtml(c,false)).join('')+'</div>':'<p class="note" style="margin:0">'+t('Nothing revealed yet.')+'</p>')+'</section>';
  const shownEn=Object.values(enemies).filter(e=>e.shown);
  if(shownEn.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+t('The GM is showing these.')+'</span></div>'+shownEn.sort((a,b)=>a.t-b.t).map(enemyHtml).join('')+'</section>';
+ h+=defeatedHtml();
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Campaign')+'</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false)+'</section>';
  // finished sessions only: the current one appears once the GM starts the next
  const done=(table.session||1)-1;
@@ -321,6 +327,10 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'edmg':if(e)enemyDamage(e,1);break;
   case 'eheal':if(e&&e.limit<e.max)gmLog(logm('{enemy} healed 1',{enemy:e.n}),false),updEnemy(id,{limit:e.limit+1});break;
   case 'estrain':if(e)gmLog(logm('{enemy} strained to fight on',{enemy:e.n}),!!e.shown),updEnemy(id,{limit:e.max,strained:true});break;
+  // Dead enemies go on the campaign's record (campaign/main), so the Journal keeps them after the encounter is cleared.
+  case 'edead':if(e&&!e.dead){updEnemy(id,{dead:true,out:true});campaign.defeated=[...(campaign.defeated||[]).filter(x=>x.id!==id),{id,n:e.n,type:e.type,pic:e.pic||'',picFull:e.picFull||'',session:table.session||1,at:Date.now()}];saveCampaign();gmStory(logm('Defeated {enemy}',{enemy:e.n}));toast(t('{enemy} is dead. It’s listed under Enemies defeated in the Journal.',{enemy:nameT(e.n)}));}break;
+  case 'eundead':if(e&&e.dead){updEnemy(id,{dead:false});campaign.defeated=(campaign.defeated||[]).filter(x=>x.id!==id);saveCampaign();gmLog(logm('{enemy} is not dead after all',{enemy:e.n}),false);}break;
+  case 'defdel':campaign.defeated=(campaign.defeated||[]).filter(x=>x.id!==id);saveCampaign();break;
   case 'eback':if(e)gmLog(logm('{enemy} is back in the fight',{enemy:e.n}),false),updEnemy(id,{out:false,limit:Math.max(1,e.limit)});break;
   case 'emax':if(e){const m=Math.max(1,Math.min(12,e.max+n));const lim=e.limit===e.max?m:Math.min(e.limit,m);e.max=m;e.limit=lim;enemyClamp(e);updEnemy(id,{max:m,limit:e.limit,regular:e.regular,horror:e.horror});}break;
   case 'ehl':if(e)updEnemy(id,{horrorLimit:Math.max(0,Math.min(e.max,(e.horrorLimit||0)+n))});break;
@@ -357,7 +367,7 @@ function gmChange(el){
  if(el.dataset.getra){const e=enemies[el.dataset.getra];if(e&&el.value)gmLog(logm('{enemy} suffered trauma: {trauma}',{enemy:e.n,trauma:el.value}),!!e.shown),updEnemy(e.id,{traumas:[...e.traumas,el.value]});return true;}
  if(el.dataset.gimg){pickClueImage(el.files&&el.files[0]);el.value='';return true;}
  if(el.dataset.gpic){const kind=el.dataset.gpic,id=el.dataset.id,f=el.files&&el.files[0];el.value='';
-  gmPicture(f,v=>{if(kind==='e'){if(enemies[id])updEnemy(id,v);}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,...v}:x);saveCampaign();}toast(t('Picture saved.'));});return true;}
+  gmPicture(f,v=>{if(kind==='e'){if(enemies[id])updEnemy(id,v);if((campaign.defeated||[]).some(x=>x.id===id)){campaign.defeated=campaign.defeated.map(x=>x.id===id?{...x,...v}:x);saveCampaign();}}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,...v}:x);saveCampaign();}toast(t('Picture saved.'));});return true;}
  if(el.dataset.gcp){const l=el.dataset.gcp;campaign[l]=(campaign[l]||[]).map(x=>x.id===el.dataset.id?{...x,[el.dataset.k]:el.value}:x);saveCampaign();return true;}
  if(el.dataset.gcpd){campaign.date=el.value;saveCampaign();return true;}
  if(el.dataset.gnotes){gmNotes=el.value;gmSet('gm/notes',{text:gmNotes});return true;}

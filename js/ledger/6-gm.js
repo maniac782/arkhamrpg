@@ -208,16 +208,16 @@ function awardSession(){let n=0;SLOTS.forEach(s=>{const x=gm.wrap[s];const c=cha
 function recapText(){return t('Session {n} recap',{n:historySession})+'\n'+recapGroups().map(([n,a])=>'\n'+n+':\n'+a.map(x=>'- '+logText(x)).join('\n')).join('\n');}
 
 // ---------- pages ----------
-// Enemies the party has killed, newest session first (kept after the encounter is cleared).
-function defeatedHtml(){const d=campaign.defeated||[];if(!d.length)return '';const by={};d.forEach(x=>{(by[x.session||0]=by[x.session||0]||[]).push(x);});const gmv=isGM();
- return '<section class="sec"><div class="sec-head"><h2>'+t('Enemies defeated')+'</h2><span class="note">'+tn('{n} so far','{n} so far',d.length)+'</span></div>'+Object.keys(by).map(Number).sort((a,b)=>b-a).map(n=>'<div><span class="lbl">'+(n?t('Session {n}',{n}):t('Earlier'))+'</span><div class="list">'+by[n].sort((a,b)=>a.at-b.at).map(x=>'<div class="item" style="align-items:center">'+picHtml(x.pic,x.picFull,nameT(x.n))+'<div class="grow"><b>'+esc(nameT(x.n))+'</b><span class="effect">'+esc(x.type==='Named'?t('Named'):t((x.type||'Minor')+' NPC'))+'</span></div>'+(gmv?'<button class="btn sm icon" data-gact="defdel" data-id="'+esc(x.id)+'" aria-label="'+t('Remove {name}',{name:esc(nameT(x.n))})+'">×</button>':'')+'</div>').join('')+'</div></div>').join('')+'</section>';}
+// An enemy killed earlier (kept on the campaign's record after the encounter is cleared). The GM can take it off.
+function pastBrief(x){return '<div class="item" style="align-items:center">'+picHtml(x.pic,x.picFull,nameT(x.n))+'<div class="grow"><b>'+esc(nameT(x.n))+'</b></div><span class="chip bad">'+t('Dead')+'</span>'+(isGM()?'<button class="btn sm icon" data-gact="defdel" data-id="'+esc(x.id)+'" aria-label="'+t('Remove {name}',{name:esc(nameT(x.n))})+'">×</button>':'')+'</div>';}
 function renderJournal(){
  const shown=Object.values(clues).filter(c=>c.shown).sort((a,b)=>b.t-a.t);
  let h=turnBar()+'<section class="sec"><div class="sec-head"><h2>'+t('Clues &amp; handouts')+'</h2><span class="note">'+t('What the GM has revealed. Newest first.')+'</span></div>'+
   (shown.length?'<div class="clues">'+shown.map(c=>clueHtml(c,false)).join('')+'</div>':'<p class="note" style="margin:0">'+t('Nothing revealed yet.')+'</p>')+'</section>';
- const shownEn=Object.values(enemies).filter(e=>e.shown);
- if(shownEn.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+t('The GM is showing these.')+'</span></div>'+'<div class="list">'+shownEn.sort((a,b)=>a.t-b.t).map(enemyBrief).join('')+'</div>'+'</section>';
- h+=defeatedHtml();
+ // One list: enemies the GM is showing now, then ones killed earlier that are no longer on show (newest first).
+ const shownEn=Object.values(enemies).filter(e=>e.shown).sort((a,b)=>a.t-b.t);
+ const past=(campaign.defeated||[]).filter(x=>!(enemies[x.id]&&enemies[x.id].shown)).sort((a,b)=>b.at-a.at);
+ if(shownEn.length||past.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+(past.length?t('Shown by the GM, and enemies defeated so far.'):t('The GM is showing these.'))+'</span></div><div class="list">'+shownEn.map(enemyBrief).join('')+past.map(pastBrief).join('')+'</div></section>';
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Campaign')+'</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false)+'</section>';
  // finished sessions only: the current one appears once the GM starts the next
  const done=(table.session||1)-1;
@@ -333,7 +333,7 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'eheal':if(e&&e.limit<e.max)gmLog(logm('{enemy} healed 1',{enemy:e.n}),false),updEnemy(id,{limit:e.limit+1});break;
   case 'estrain':if(e)gmLog(logm('{enemy} strained to fight on',{enemy:e.n}),!!e.shown),updEnemy(id,{limit:e.max,strained:true});break;
   // Dead enemies go on the campaign's record (campaign/main), so the Journal keeps them after the encounter is cleared.
-  case 'edead':if(e&&!e.dead){updEnemy(id,{dead:true,out:true});campaign.defeated=[...(campaign.defeated||[]).filter(x=>x.id!==id),{id,n:e.n,type:e.type,pic:e.pic||'',picFull:e.picFull||'',session:table.session||1,at:Date.now()}];saveCampaign();gmStory(logm('Defeated {enemy}',{enemy:e.n}));toast(t('{enemy} is dead. It’s listed under Enemies defeated in the Journal.',{enemy:nameT(e.n)}));}break;
+  case 'edead':if(e&&!e.dead){updEnemy(id,{dead:true,out:true});campaign.defeated=[...(campaign.defeated||[]).filter(x=>x.id!==id),{id,n:e.n,type:e.type,pic:e.pic||'',picFull:e.picFull||'',session:table.session||1,at:Date.now()}];saveCampaign();gmStory(logm('Defeated {enemy}',{enemy:e.n}));toast(t('{enemy} is dead. The Journal keeps it in the list of enemies.',{enemy:nameT(e.n)}));}break;
   case 'eundead':if(e&&e.dead){updEnemy(id,{dead:false});campaign.defeated=(campaign.defeated||[]).filter(x=>x.id!==id);saveCampaign();gmLog(logm('{enemy} is not dead after all',{enemy:e.n}),false);}break;
   case 'defdel':campaign.defeated=(campaign.defeated||[]).filter(x=>x.id!==id);saveCampaign();break;
   case 'eback':if(e)gmLog(logm('{enemy} is back in the fight',{enemy:e.n}),false),updEnemy(id,{out:false,limit:Math.max(1,e.limit)});break;

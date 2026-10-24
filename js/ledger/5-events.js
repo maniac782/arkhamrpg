@@ -46,6 +46,9 @@ app.addEventListener('click',e=>{
   case 'picdel':save(s,{portrait:'',portraitFull:''},logm('Removed portrait'));break;
   case 'house':{const on=!house.on;if(!db){house.on=on;render();break;}db.doc('settings/house').set({on},{merge:true}).then(()=>toast(on?t('House rules on for the party.'):t('House rules off for the party.'))).catch(()=>toast(CAMP?t('Only the campaign owner can change house rules.'):t('Only the master key can change house rules.')));break;}
   case 'gotogm':e.preventDefault();go('gm');break;
+  case 'campdone':if(!canFinish())return;if(edit.done!==true){edit.done=true;render();return;}edit.done=false;setCampDone(true);break;
+  case 'campdoneno':edit.done=false;render();break;
+  case 'campreopen':if(!canFinish())return;setCampDone(false);break;
   case 'logmore':logShown[s]=(logShown[s]||LOG_SHOW)+LOG_SHOW;render();break;
   case 'logless':logShown[s]=LOG_SHOW;render();break;
   case 'logrestore':restoreLog(s);break;
@@ -112,7 +115,11 @@ app.addEventListener('change',e=>{
   if(p==='xpTotal'||p==='xpUnused'){v=Math.max(0,parseInt(v)||0);const old=Number(c[p])||0;if(v===old)return;save(s,{[p]:v},p==='xpTotal'?logm('Fixed total XP: {from} → {to}',{from:old,to:v}):logm('Fixed unused XP: {from} → {to}',{from:old,to:v}));return;}
   if(p==='archetype'&&v){const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([k])=>{sks[k].max=archMax(c,k,v);});save(s,{archetype:v,skills:sks});return;}
   if(/^(habitual|lucky)\.name$/.test(p))v=I18N.back(v);
-  if(p.includes('.')){const [a,k]=p.split('.');const o={...c[a],[k]:v};save(s,{[a]:o});}else save(s,{[p]:v});return;}
+  if(p.includes('.')){const [a,k]=p.split('.');const o={...c[a],[k]:v};
+   // Typing in a lucky or habitual item counts as adding it.
+   const was=String((c[a]||{})[k]||'').trim(),now=String(v||'').trim();let msg=null;
+   if((a==='lucky'||a==='habitual')&&k==='name'&&now&&now!==was)msg=a==='lucky'?logm('Lucky item: {item}',{item:now}):logm('Habitual item: {item}',{item:now});
+   save(s,{[a]:o},msg);}else save(s,{[p]:v});return;}
  if(el.dataset.skmax){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skmax].max=el.value;save(s,{skills:sks});return;}
  if(el.dataset.skr){const sks=JSON.parse(JSON.stringify(c.skills));sks[el.dataset.skr].r=Number(el.value);save(s,{skills:sks});return;}
  if(el.dataset.list){const l=el.dataset.list;const arr=c[l].map(x=>({...x}));const it=arr.find(x=>x.id===el.dataset.id);if(!it)return;let v=el.value;
@@ -121,7 +128,11 @@ app.addEventListener('change',e=>{
   if(el.dataset.key==='ammoMax'){v=Math.max(0,Math.min(12,parseInt(v)||0));it.ammo=Math.min(it.ammo,v);if(it.ammoMax===0)it.ammo=v;}
   // a name or note shown translated and then edited goes back to the book's English if it still matches one
   if(/^(name|text|note|skill|range|special)$/.test(el.dataset.key))v=I18N.back(v);
-  it[el.dataset.key]=v;if(l==='knacks'&&el.dataset.key==='name'&&!it.text)it.text=A.knackText(v);save(s,{[l]:arr});}
+  // Naming something added by hand (or renaming it) goes in Recent, like picking it from a list does.
+  let msg=null;if(el.dataset.key==='name'){const was=String(it.name||'').trim(),now=String(v||'').trim();
+   if(!was&&now)msg=l==='knacks'?logm('Added knack {knack}',{knack:now}):logm('Added {item}',{item:now});
+   else if(was&&now&&was!==now)msg=logm('Renamed {from} to {to}',{from:was,to:now});}
+  it[el.dataset.key]=v;if(l==='knacks'&&el.dataset.key==='name'&&!it.text)it.text=A.knackText(v);save(s,{[l]:arr},msg);}
 });
 
 // ---------- passcodes ----------
@@ -194,3 +205,11 @@ function untrashLog(s,id){const c=chars[s];const z=(c.trash||[]).find(x=>x.id===
 function purgeTrash(s){const c=chars[s];if(trashPurged[s]||!fullEdit()||!c||!(c.trash||[]).length)return;trashPurged[s]=true;
  const cut=Date.now()-TRASH_DAYS*864e5,old=c.trash.filter(z=>z.at<cut);if(!old.length)return;
  save(s,{trash:c.trash.filter(z=>z.at>=cut)});histMark(s,old.map(z=>z.e),'erase');}
+
+// Mark the campaign complete (a read-only record) or reopen it. Owner or GM.
+async function setCampDone(on){if(!canFinish()||!db||!db.raw)return;
+ const v=on?{at:Date.now(),by:authUid}:null;
+ try{await db.raw.doc('campaigns/'+CAMP).update({completed:v});camp.completed=v;render();
+  toast(on?t('Campaign marked complete.'):t('Campaign reopened.'));
+  if(on&&typeof gmStory==='function'&&isGM())gmStory(logm('Campaign completed'));}
+ catch(e){if(window.quotaHit&&quotaHit(e))return;toast(t('Couldn’t save that. Try again.'));}}

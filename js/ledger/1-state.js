@@ -107,8 +107,10 @@ const ownerEditsOn=()=>!CAMP||!!(camp&&camp.ownerEdits===true); // off unless th
 // The GM edits every sheet only while the owner has ticked "Let the GM edit every investigator" in Settings.
 const gmEditsOn=()=>!!(CAMP&&camp&&camp.gmEdits===true&&camp.gmUid&&camp.gmUid===authUid);
 // Owner or GM with full edit rights over other players' sheets.
-const fullEdit=()=>(!!keys.master&&ownerEditsOn())||gmEditsOn();
-function canEdit(s){if(!db&&localMode)return true;if(CAMP){const c=chars[s];return fullEdit()||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
+const fullEdit=()=>!campDone()&&((!!keys.master&&ownerEditsOn())||gmEditsOn());
+// A completed campaign (marked by the owner or GM) is read-only until reopened.
+const campDone=()=>!!(CAMP&&camp&&camp.completed);
+function canEdit(s){if(!db&&localMode)return true;if(campDone())return false;if(CAMP){const c=chars[s];return fullEdit()||!!(c&&c.ownerUid&&c.ownerUid===authUid);}const c=chars[s];return !(c&&c.locked)||!!keys[s]||!!keys.master;}
 let lastRoll={};
 let kpickSel={},pickSel={},xpAmt={};
 // Last-seen party, kept on this device so a refresh shows the sheets right away while Firebase reconnects.
@@ -132,7 +134,7 @@ const fillEn=(s,v)=>String(s).replace(/\|[^|]*$/,'').replace(/\{(\w+)\}/g,(x,k)=
 function logm(k,v){v=v||{};return {m:fillEn(k,v),k,v};}
 function logn(one,other,n,v){v={...(v||{}),n};return {m:fillEn(n===1?one:other,v),k:other,o:one,v};}
 // values that name something from the book (a skill, knack, injury, item…) are translated too
-const LOG_NAMES=['skill','knack','injury','trauma','item','weapon','src','trait','who','clue'];
+const LOG_NAMES=['skill','knack','injury','trauma','item','weapon','src','trait','who','clue','from','to'];
 // "Cultist 2": a name from the book with a number after it
 function nameT(s){const m=/^(.+?)( \d+)$/.exec(String(s||''));return m?t(m[1])+m[2]:t(String(s||''));}
 // "by Dan (GM)" for Recent entries the GM or campaign owner made on someone else's investigator.

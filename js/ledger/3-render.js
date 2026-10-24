@@ -26,10 +26,10 @@ function poolHtml(c,mini){
 }
 function renderTabs(){
  const tb=document.getElementById('tabs');
- tb.innerHTML=['party',...SLOTS,'journal',...(CAMP&&!isGM()?[]:['gm']),'create'].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?t('Party'):s==='create'?t('+ New investigator'):s==='journal'?t('Journal'):s==='gm'?t('GM'):(chars[s].name||t('Investigator')))+'</button>').join('');
+ tb.innerHTML=['party',...SLOTS,'journal',...(campDone()?[]:[...(CAMP&&!isGM()?[]:['gm']),'create'])].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?t('Party'):s==='create'?t('+ New investigator'):s==='journal'?t('Journal'):s==='gm'?t('GM'):(chars[s].name||t('Investigator')))+'</button>').join('');
 }
 // The next meetup, set by the owner or GM in the campaign's Settings.
-function nextSessionBar(){
+function nextSessionBar(){if(campDone())return '';
  if(!CAMP||!camp||!window.sessionShown)return '';
  const ts=camp.nextSession,gmMe=camp.gmUid===authUid,can=camp.ownerUid===authUid||gmMe,set=gmMe||IS_LOCAL?'#gm':'./?settings='+encodeURIComponent(CAMP),go=gmMe?' data-act="gotogm"':'';
  if(!sessionShown(ts))return '';
@@ -71,13 +71,14 @@ function openCrop(file,slot){const big=!!CAMP&&!IS_LOCAL,S=big?800:320;
  openCropper(file,{title:t('Position the face in the circle'),shape:'circle',outW:S,outH:S,maxLen:big?500000:120000,full:big?{side:2000,maxLen:1000000}:null,onError:toast,onSave:(d,full)=>{toast(t('Saving portrait…'));const at='campaigns/'+CAMP+'/'+authUid;
   Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(big&&!isStoredImage(u))return toast(t('Couldn’t upload the portrait. Check your connection and try again.'));save(slot,{portrait:u,portraitFull:isStoredImage(fu)?fu:''},logm('Changed portrait'));if(full&&!isStoredImage(fu))setTimeout(()=>toast(t('The head shot saved, but the full picture didn’t upload. Try adding it again.')),2700);});}});}
 function ownerPanel(s){
- const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp,gone=!!own&&!names[own];
+ const c=chars[s],names=(camp&&camp.names)||{},own=c.ownerUid||null,mine=!!own&&own===authUid,boss=!!keys.master&&!!camp&&!campDone(),gone=!!own&&!names[own];
  const who=own&&!gone?names[own]:null;
  // The owner picks the player right in the header; everyone else just sees who plays it.
  const head=boss?'<label class="row" style="gap:8px;align-items:center;flex-wrap:nowrap" for="assign-'+s+'"><span class="lbl" style="margin:0">'+t('Played by')+'</span><select class="maxsel" id="assign-'+s+'" data-assign="'+s+'" data-fit="1" aria-label="'+t('Who plays this investigator')+'" style="width:auto;font-weight:600"><option value="">'+t('Nobody yet')+'</option>'+(camp.memberIds||[]).map(u=>'<option value="'+esc(u)+'"'+(u===own?' selected':'')+'>'+esc(names[u]||t('Member'))+(u===authUid?' '+t('(you)'):'')+'</option>').join('')+'</select></label>'
   :'<span class="chip '+(mine?'ok':who?'':'warn')+'">'+(mine?t('Your investigator'):who?t('Played by {name}',{name:esc(who)}):t('Unclaimed'))+'</span>';
  const oe=!!(camp&&camp.ownerEdits===true);
- const note=mine?(oe?t('Only you, the campaign owner and the GM can change it.'):t('Only you and the GM can change it.')):boss?(oe?t('You can edit any investigator as the campaign owner.'):gmEditsOn()?t('You can edit any investigator as the GM.'):t('Locked to its player. You can change this in Settings.')):gmEditsOn()?t('You can edit any investigator as the GM.'):who?t('Only its player can change it.'):t('Nobody plays this investigator yet.');
+
+ const note=campDone()?t('Read-only: this campaign is complete.'):mine?(oe?t('Only you, the campaign owner and the GM can change it.'):t('Only you and the GM can change it.')):boss?(oe?t('You can edit any investigator as the campaign owner.'):gmEditsOn()?t('You can edit any investigator as the GM.'):t('Locked to its player. You can change this in Settings.')):gmEditsOn()?t('You can edit any investigator as the GM.'):who?t('Only its player can change it.'):t('Nobody plays this investigator yet.');
  let h='<section class="sec" style="gap:10px"><div class="sec-head"><div class="row" style="align-items:center">'+head+'<span class="note">'+note+'</span></div><button class="btn sm" data-act="printc">'+t('Open printable sheet')+'</button></div>';
  let row='';
  if(!boss&&(!own||gone)&&canAddSheet())row+='<button class="btn sm pri" data-act="claim">'+t('This is my investigator')+'</button>';
@@ -120,7 +121,7 @@ function removePanel(s){
 }
 const ownsSheet=()=>SLOTS.some(x=>chars[x]&&chars[x].ownerUid===authUid);
 // In a campaign the owner can add any number of investigators; everyone else gets one of their own.
-const canAddSheet=()=>!CAMP||!!keys.master||!ownsSheet();
+const canAddSheet=()=>!campDone()&&(!CAMP||!!keys.master||!ownsSheet());
 function freeSlot(){for(let i=1;i<=MAX_SLOTS;i++){const id='p'+i;if(!SLOTS.includes(id))return id;}return null;}
 async function addSlot(data){
  if(rosterLocked)return toast(t('Publish the updated Firestore rules first (see README).')),null;
@@ -363,6 +364,10 @@ function fitSelects(root){
   el.style.width=Math.ceil(w+parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth)+2)+'px';});
 }
 document.addEventListener('change',e=>{if(e.target.matches&&e.target.matches('select[data-fit]'))fitSelects(e.target.parentNode);});
+// Who can mark the campaign complete or reopen it: the owner or the GM.
+const canFinish=()=>!!(CAMP&&camp&&authUid&&(camp.ownerUid===authUid||camp.gmUid===authUid));
+function doneBanner(){if(!campDone())return '';const d=camp.completed,who=(camp.names||{})[d.by];
+ return '<div class="banner done"><span>'+t('This campaign was completed on {date}. Everything is kept as a read-only record.',{date:'<b>'+new Date(d.at).toLocaleDateString(I18N.locale,{year:'numeric',month:'long',day:'numeric'})+'</b>'})+(who?' '+t('Marked by {name}.',{name:esc(who)}):'')+'</span>'+(canFinish()?' <button class="btn sm" data-act="campreopen">'+t('Reopen campaign')+'</button>':'')+'</div>';}
 function render(){
  const ae=document.activeElement;
  const inApp=ae&&ae.closest&&ae.closest('#app');
@@ -375,7 +380,8 @@ function render(){
  if(halted){document.getElementById('tabs').innerHTML='';document.getElementById('app').innerHTML='<section class="sec"><h2>'+t('Can’t open this campaign')+'</h2><p class="note" style="margin:0">'+esc(halted)+'</p><div class="row"><a class="btn pri" href="./">'+t('Go to My campaigns')+'</a></div></section>';return;}
  renderTabs();
  const app=document.getElementById('app');
- app.innerHTML=active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty();
+ if(campDone()&&(active==='gm'||active==='create'))active='party';
+ app.innerHTML=doneBanner()+(active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty());
  if(keepId){const el=document.getElementById(keepId);if(el)try{el.focus({preventScroll:true});}catch(e){}}
  fitSelects(app);
  if(typeof focusPendingClue==='function')focusPendingClue();

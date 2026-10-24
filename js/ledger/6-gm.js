@@ -10,7 +10,8 @@ try{const k=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(k&&k.table)ta
 let enemies={},clues={},campaign={date:'',locations:[],npcs:[],threads:[]},gmNotes='',histLog=[],historySession=null;
 const gm={open:{},roll:null,rollN:4,rollT:4,rollH:0,rollMod:0,fightFirst:'investigators',fightSurprise:'none',addN:BOOK_NPCS?'':'__custom',addCount:1,addScale:false,clueImg:'',clueTo:'all',recap:null,wrap:{}};
 let gmUnsubs=[],gmMasterState=null;
-const isGM=()=>localMode||(!!keys.gm&&gmClaimed);
+// GM tools are off while the campaign is marked complete (it's a read-only record).
+const isGM=()=>localMode||(!!keys.gm&&gmClaimed&&!campDone());
 let keysReady=false,gmFlagReady=false;
 const isGMView=()=>CAMP?isGM():(isGM()||!!keys.master);
 const gmId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -60,7 +61,7 @@ async function loadRecap(n){historySession=n;histLog=[];render();
  if(!db)return;try{const qs=await db.collection('history').where('session','==',n).get();const a=[];qs.forEach(d=>{const x=d.data();if(histAlive(x))a.push(x);});histLog=a.sort((x,y)=>x.t-y.t);render();}catch(e){toast(t('Couldn’t load that session. Publish the updated rules (see README).'));}}
 
 // ---------- turn tracker ----------
-function turnBar(){
+function turnBar(){if(campDone())return '';
  if(!table.scene&&!table.fight)return '';
  const ph=table.phase==='surprise'?t('Surprise round'):table.phase==='investigators'?t('Investigators’ turn'):table.phase==='adversaries'?t('Adversaries’ turn'):'';
  return '<div class="turnbar'+(table.phase==='adversaries'?' adv':'')+'" role="status"><span>'+(table.scene?'<b>'+esc(table.scene)+'</b>':'')+(table.fight?' <span class="chip warn">'+(table.phase==='surprise'?t('Fight · surprise round'):t('Fight · round {n}',{n:Math.max(1,table.round)}))+'</span>':' <span class="chip">'+t('Narrative scene')+'</span>')+'</span>'+(ph?'<span class="ph">'+ph+'</span>':'')+'</div>';
@@ -207,6 +208,8 @@ function renderJournal(){
    (jLog.length?'<div class="grid2">'+recapGroups(jLog).map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(logText(x))+'</li>').join('')+'</ul></div>').join('')+'</div>':(sm?'':'<p class="note" style="margin:0">'+t('Nothing was logged for session {n}.',{n:jSession})+'</p>'))+'</section>';
  }
  h+=galleryHtml();
+ // Finishing the campaign: the owner or the GM marks it complete, and everything becomes a read-only record.
+ if(canFinish()&&!campDone())h+='<section class="sec"><h2>'+t('Finish the campaign')+'</h2>'+(edit.done?'<div class="roll" role="status"><span>'+t('Mark {name} complete? Investigators, the journal and the GM tools become read-only until it’s reopened.',{name:'<b>'+esc(camp.name||'')+'</b>'})+'</span><div class="row"><button class="btn sm pri" data-act="campdone">'+t('Mark complete')+'</button><button class="btn sm" data-act="campdoneno">'+t('Cancel')+'</button></div></div>':'<p class="note" style="margin:0">'+t('When the story is over, mark the campaign complete. It moves to Completed on your campaigns page with its finish date, and everything stays readable. Investigators can still be brought into new campaigns.')+'</p><div class="row"><button class="btn" data-act="campdone">'+t('Mark campaign complete')+'</button></div>')+'</section>';
  return h;
 }
 // Next session (campaigns): the GM can set the next meetup right here; the owner can also set it in Settings.

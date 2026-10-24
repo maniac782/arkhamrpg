@@ -153,7 +153,7 @@ exports.sessionReminders = onSchedule({schedule: 'every 60 minutes', secrets: [G
 
   for (const doc of qs.docs) {
     const c = doc.data();
-    if (c.deleting || c.remindedFor === c.nextSession) continue;
+    if (c.deleting || c.completed || c.remindedFor === c.nextSession) continue;
     // Mark first, so a slow or failed run never sends the same reminder twice.
     await doc.ref.update({remindedFor: c.nextSession});
 

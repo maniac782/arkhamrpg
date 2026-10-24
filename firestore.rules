@@ -261,6 +261,10 @@ service cloud.firestore {
         (isOwner() && changedOnly(['name']) && goodName())
         || (isOwner() && changedOnly(['ownerEdits']) && newC().ownerEdits is bool)
         || (isOwner() && changedOnly(['gmEdits']) && newC().gmEdits is bool)
+        // The owner or the GM marks the campaign complete (or reopens it).
+        || ((isOwner() || gmOf(oldC()) == me()) && changedOnly(['completed'])
+          && (newC().completed == null || (newC().completed is map && newC().completed.keys().hasOnly(['at', 'by'])
+            && newC().completed.at is int && newC().completed.by == me())))
         || ((isOwner() || gmOf(oldC()) == me()) && changedOnly(['nextSession', 'nextWhere', 'nextHours'])
           && (!('nextSession' in newC()) || newC().nextSession is int)
           && (!('nextWhere' in newC()) || (newC().nextWhere is string && newC().nextWhere.size() <= 80))
@@ -300,7 +304,8 @@ service cloud.firestore {
         function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
         allow read: if (member()) || cleaner();
         allow create: if isSlot(slot) && (cOwner() || (member() && newOwner() == request.auth.uid && takesOnly(slot)));
-        allow update: if member() && isSlot(slot) && (
+        // A completed campaign is a read-only record until the owner or GM reopens it.
+        allow update: if member() && isSlot(slot) && C().get('completed', null) == null && (
           cOwner()
           || (oldOwner() == request.auth.uid && (newOwner() == request.auth.uid || newOwner() == null))
           // GM with "Let the GM edit every investigator" ticked in Settings: anything except who plays it.

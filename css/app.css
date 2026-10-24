@@ -350,3 +350,4 @@ img[data-zoom]{cursor:zoom-in}
 .linkbtn:hover,.linkbtn:focus-visible{color:var(--ink);text-decoration-color:currentColor}
 .log .by{color:var(--brass);font-style:italic;white-space:nowrap}
 .fullhist{display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow:auto;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface2)}
+.banner.done{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;justify-content:space-between;margin-bottom:16px}

@@ -376,7 +376,7 @@ function render(){
  if(typing){pending=true;renderTabs();return;}
  // Mid-tap (a touch or press whose click hasn't happened yet): leaving a text box saves and would redraw now,
  // replacing the button being tapped so the tap is lost. Wait until the tap has gone through instead.
- if(fileOpen()){pending=true;return;}
+ if(fileOpen()||selOpen()){pending=true;return;}
  if(tapOpen()){pending=true;clearTimeout(tapT);tapT=setTimeout(()=>{if(pending)render();},TAP_WAIT);return;}
  // Don't refocus dropdowns: on phones that reopens the picker right after a choice.
  const keepId=inApp&&ae.id&&ae.tagName!=='SELECT'?ae.id:null;

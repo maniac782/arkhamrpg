@@ -102,6 +102,8 @@ let tapAt=0,tapDone=true,tapT=null;const TAP_WAIT=700;const tapOpen=()=>!tapDone
 // A photo chooser is open (since fileAt): don't redraw, or the file box it reports back to would be replaced
 // and the chosen picture lost. Ends when a photo is picked, the chooser is cancelled, or after a minute.
 let fileAt=0;const fileOpen=()=>!!fileAt&&Date.now()-fileAt<60000;
+// Same for a dropdown whose list is open (selAt): a redraw would replace it and the choice would be lost.
+let selAt=0;const selOpen=()=>!!selAt&&Date.now()-selAt<60000;
 const keys={};// slot, 'master' or 'gm' -> this device holds a key
 // fields the GM PIN may change on any sheet (XP awards, session start, pool refills)
 const GM_FIELDS=['xpTotal','xpUnused','insightChance','insight','habitual','lucky','traumaMod','regular','horror','log'];

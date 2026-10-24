@@ -9,6 +9,12 @@ document.addEventListener('pointerdown',()=>{tapAt=Date.now();tapDone=false;},tr
 const fileInputOf=t=>{if(!t||!t.closest)return null;if(t.matches&&t.matches('input[type=file]'))return t;const l=t.closest('label[for]');const i=l&&document.getElementById(l.htmlFor);return i&&i.type==='file'?i:null;};
 const fileDone=()=>{if(!fileAt)return;fileAt=0;setTimeout(()=>{if(pending)render();},0);};
 document.addEventListener('click',e=>{if(fileInputOf(e.target))fileAt=Date.now();},true);
+// Dropdowns: hold redraws from the moment one is opened until a choice is made (its own change handler then redraws)
+// or it's closed without one.
+const isSel=t=>t&&t.tagName==='SELECT'&&t.closest&&t.closest('#app');
+['pointerdown','focusin'].forEach(ev=>document.addEventListener(ev,e=>{if(isSel(e.target))selAt=Date.now();},true));
+document.addEventListener('change',e=>{if(isSel(e.target))selAt=0;},true);
+document.addEventListener('focusout',e=>{if(isSel(e.target)){selAt=0;setTimeout(()=>{if(pending)render();},0);}},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.type==='file')setTimeout(fileDone,0);},true);
 document.addEventListener('cancel',e=>{if(e.target&&e.target.type==='file')fileDone();},true);
 window.addEventListener('focus',()=>{if(fileAt)setTimeout(()=>{if(fileAt&&Date.now()-fileAt>1500)fileDone();},1500);});

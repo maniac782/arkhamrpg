@@ -112,8 +112,8 @@ function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limi
 // An enemy card can stand for a group: qty encountered, killed defeated (older cards: 1, and all of them if marked dead).
 const eQty=e=>Math.max(1,Number(e.qty)||1);
 const eKilled=e=>Math.min(eQty(e),Math.max(0,e.killed!=null?Number(e.killed)||0:(e.dead?eQty(e):0)));
-// "3 encountered · 2 defeated" (nothing for a single enemy that's still alive).
-function tallyText(qty,killed){qty=Math.max(1,qty||1);if(qty<2&&!killed)return '';return [qty>1?tn('{n} encountered','{n} encountered',qty):'',killed?tn('{n} defeated','{n} defeated',killed):''].filter(Boolean).join(' · ');}
+// "3 encountered · 2 defeated" for a group (a single enemy just gets its Dead tag).
+function tallyText(qty,killed){qty=Math.max(1,qty||1);if(qty<2)return '';return [qty>1?tn('{n} encountered','{n} encountered',qty):'',killed?tn('{n} defeated','{n} defeated',killed):''].filter(Boolean).join(' · ');}
 // Set how many there are and how many are dead; keeps the campaign's record (and the Journal) in step.
 function setTally(id,qty,killed){const e=enemies[id];if(!e)return;qty=Math.max(1,Math.min(99,qty));killed=Math.max(0,Math.min(qty,killed));
  const was=eKilled(e),dead=killed>=qty;updEnemy(id,{qty,killed,dead,out:dead?true:(e.dead&&!dead?false:e.out)});

@@ -147,7 +147,6 @@ details.sec[open]>summary::after{content:"–"}
 .turnbar.adv{border-color:var(--danger);background:var(--danger-soft)}
 .turnbar .ph{font-weight:700;font-family:var(--display);font-size:18px}
 .enemy{border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
-.enemy.out{opacity:.55}
 .npcp{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:8px}
 .skgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
 .skgrid span{display:flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:4px;padding:3px 2px}

@@ -114,6 +114,8 @@ function enemyStatus(e){
  if(e.limit<e.max)return['warn',t('Damaged')];
  return null;
 }
+// What everyone sees in the Journal: just the picture, the name and whether it's down. The GM tab has the rest.
+function enemyBrief(e){const st=enemyStatus(e);return '<div class="item" style="align-items:center">'+picHtml(e.pic,e.picFull,nameT(e.n))+'<div class="grow"><b>'+esc(nameT(e.n))+'</b></div>'+(st&&(e.dead||e.out)?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+'</div>';}
 function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();
  const pc={regular:e.regular,horror:e.horror,poolLimit:e.limit,poolMax:e.max,horrorLimit:e.horrorLimit||0};
@@ -211,7 +213,7 @@ function renderJournal(){
  let h=turnBar()+'<section class="sec"><div class="sec-head"><h2>'+t('Clues &amp; handouts')+'</h2><span class="note">'+t('What the GM has revealed. Newest first.')+'</span></div>'+
   (shown.length?'<div class="clues">'+shown.map(c=>clueHtml(c,false)).join('')+'</div>':'<p class="note" style="margin:0">'+t('Nothing revealed yet.')+'</p>')+'</section>';
  const shownEn=Object.values(enemies).filter(e=>e.shown);
- if(shownEn.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+t('The GM is showing these.')+'</span></div>'+shownEn.sort((a,b)=>a.t-b.t).map(enemyHtml).join('')+'</section>';
+ if(shownEn.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+t('The GM is showing these.')+'</span></div>'+'<div class="list">'+shownEn.sort((a,b)=>a.t-b.t).map(enemyBrief).join('')+'</div>'+'</section>';
  h+=defeatedHtml();
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Campaign')+'</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false)+'</section>';
  // finished sessions only: the current one appears once the GM starts the next

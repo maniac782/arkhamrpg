@@ -6,13 +6,16 @@ function go(t){active=t;try{if(!IS_DEMO)localStorage.setItem(TAB_KEY,t);}catch(e
 const app=document.getElementById('app');
 // Track taps so a redraw caused by leaving a text box doesn't swallow the button tap (see render()).
 document.addEventListener('pointerdown',()=>{tapAt=Date.now();tapDone=false;},true);
-const fileInputOf=t=>{if(!t||!t.closest)return null;if(t.matches&&t.matches('input[type=file]'))return t;const l=t.closest('label[for]');const i=l&&document.getElementById(l.htmlFor);return i&&i.type==='file'?i:null;};
+const fileInputOf=t=>{if(!t||!t.closest)return null;let i=null;if(t.matches&&t.matches('input[type=file]'))i=t;else{const l=t.closest('label[for]');i=l&&document.getElementById(l.htmlFor);}return i&&i.type==='file'&&!i.disabled&&!(i.matches&&i.matches(':disabled'))?i:null;};
 const fileDone=()=>{if(!fileAt)return;fileAt=0;setTimeout(()=>{if(pending)render();},0);};
 document.addEventListener('click',e=>{if(fileInputOf(e.target))fileAt=Date.now();},true);
 // Dropdowns: hold redraws from the moment one is opened until a choice is made (its own change handler then redraws)
 // or it's closed without one.
-const isSel=t=>t&&t.tagName==='SELECT'&&t.closest&&t.closest('#app');
-['pointerdown','focusin'].forEach(ev=>document.addEventListener(ev,e=>{if(isSel(e.target))selAt=Date.now();},true));
+// (Only a dropdown that can actually open: a disabled one, like those on a sheet you can't edit, never closes either.)
+const isSel=t=>t&&t.tagName==='SELECT'&&!t.disabled&&!(t.matches&&t.matches(':disabled'))&&t.closest&&t.closest('#app');
+['pointerdown','focusin'].forEach(ev=>document.addEventListener(ev,e=>{if(isSel(e.target))selAt=Date.now();
+ // Touching anything else while a hold is on, with no dropdown actually focused, ends the hold.
+ else if(ev==='pointerdown'&&selAt&&!isSel(document.activeElement)){selAt=0;setTimeout(()=>{if(pending)render();},0);}},true));
 document.addEventListener('change',e=>{if(isSel(e.target))selAt=0;},true);
 document.addEventListener('focusout',e=>{if(isSel(e.target)){selAt=0;setTimeout(()=>{if(pending)render();},0);}},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.type==='file')setTimeout(fileDone,0);},true);

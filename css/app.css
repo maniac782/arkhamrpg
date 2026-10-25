@@ -46,6 +46,8 @@ main{max-width:980px;margin:0 auto;padding-block:18px 60px;padding-inline:16px;d
 .btn.hor{color:var(--horror);border-color:var(--horror)}
 .btn.sm{min-height:32px;padding:4px 9px;font-size:13px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+/* Dropdowns, checkboxes and radio buttons you can't use (say, on someone else's sheet) look it, like buttons do. */
+select:disabled,input[type=checkbox]:disabled,input[type=radio]:disabled{opacity:.45;cursor:not-allowed}
 .icon{width:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 input.f,select.f,textarea.f{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 2px;border-radius:0}
 input.f[type=datetime-local],input.f[type=date],input.f[type=time]{-webkit-appearance:none;appearance:none;text-align:left;min-height:2.3em;color:var(--ink)}

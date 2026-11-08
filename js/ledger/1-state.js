@@ -80,7 +80,7 @@ function blank(i){
  const skills={};SKILLS.forEach(([k])=>skills[k]={r:6,max:''});
  return {name:t('Investigator {n}',{n:i}),player:'',archetype:'',personality:'',positive:'',negative:'',xpTotal:0,xpUnused:0,skills,
   poolMax:6,poolLimit:6,regular:6,horror:0,horrorLimit:0,insightLimit:1,insight:1,
-  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],mc:null,trash:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
+  injuries:[],traumas:[],traumaMod:0,knacks:[],weapons:[],kits:[],mc:null,trash:[],plan:[],money:0,items:[],habitual:{name:'',used:false,uses:0},lucky:{name:'',used:false},reloads:0,
   bg:{origin:'',family:'',employment:'',salary:'',encounter:'',enemies:'',vehicle:'',lodging:''},tomes:'',relics:'',debts:'',log:[]};
 }
 function norm(c,i){const b=blank(i);const o=Object.assign(b,c||{});
@@ -139,14 +139,14 @@ const toastEl=document.getElementById('toast');let toastT;
 // Saves that buy, add or improve something remember what they changed; the undo bar puts it back.
 const UNDO_KEYS=['xpUnused','money','items','weapons','kits','knacks','skills','insightLimit','insight','habitual','lucky','poolMax','poolLimit','regular','horror','mc','reloads'];
 const UNDO_TRIGGER=['xpUnused','money','items','weapons','kits','knacks','skills','insightLimit','mc'];
-let undoState=null,undoT=null;const undoEl=document.createElement('div');undoEl.className='undobar';undoEl.hidden=true;undoEl.setAttribute('role','status');document.body.appendChild(undoEl);
-function offerUndo(slot,prev,entry){undoState={slot,prev,entry};
- undoEl.innerHTML='<span>'+esc(logText(entry))+'</span><button class="btn sm" type="button" data-undo="1">'+t('Undo')+'</button>';undoEl.hidden=false;
+let undoState=null,undoT=null,undoMute=false;const undoEl=document.createElement('div');undoEl.className='undobar';undoEl.hidden=true;undoEl.setAttribute('role','status');document.body.appendChild(undoEl);
+function offerUndo(slot,prev,entry,label){if(undoMute)return;undoState={slot,prev,entry,ts:entry&&entry.ts?entry.ts:[entry.t]};
+ undoEl.innerHTML='<span>'+esc(label||logText(entry))+'</span><button class="btn sm" type="button" data-undo="1">'+t('Undo')+'</button>';undoEl.hidden=false;
  clearTimeout(undoT);undoT=setTimeout(()=>{undoEl.hidden=true;undoState=null;},10000);}
 undoEl.addEventListener('click',e=>{if(!e.target.closest('[data-undo]')||!undoState)return;const u=undoState;undoState=null;undoEl.hidden=true;clearTimeout(undoT);
- if(!chars[u.slot])return;save(u.slot,u.prev);toast(t('Undone: {what}',{what:logText(u.entry)}));
+ if(!chars[u.slot])return;save(u.slot,u.prev);toast(t('Undone: {what}',{what:u.entry.label||logText(u.entry)}));
  // Take its line out of the session history too, so it's as if it never happened.
- if(db)db.collection('history').where('slot','==',u.slot).get().then(qs=>qs.forEach(d=>{const x=d.data();if(x&&x.t===u.entry.t)d.ref.delete().catch(()=>{});})).catch(()=>{});});
+ if(db)db.collection('history').where('slot','==',u.slot).get().then(qs=>qs.forEach(d=>{const x=d.data();if(x&&u.ts.includes(x.t))d.ref.delete().catch(()=>{});})).catch(()=>{});});
 function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 
 // Recent-list entries are saved in English (m) along with their wording and values (k, v; o is a plural's singular),

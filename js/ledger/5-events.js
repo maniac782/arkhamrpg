@@ -67,6 +67,15 @@ app.addEventListener('click',e=>{
   case 'campdone':if(!canFinish())return;if(edit.done!==true){edit.done=true;render();return;}edit.done=false;setCampDone(true);break;
   case 'campdoneno':edit.done=false;render();break;
   case 'campreopen':if(!canFinish())return;setCampDone(false);break;
+  case 'planopen':planOpen[s]=true;render();setTimeout(()=>{const el=document.getElementById('plan-'+s);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},50);break;
+  case 'planclose':planOpen[s]=false;render();break;
+  case 'planadd':{const ids={g:'gpick-',w:'wpick-',k:'kitpick-',kn:'kpick-'},sel=document.getElementById((ids[b.dataset.kind]||'')+s);if(!sel||!sel.value)return toast(t('Choose something to add first.'));
+   planAdd(s,{k:b.dataset.kind==='kn'?'kn':'g',v:sel.value});break;}
+  case 'planskill':{const sel=document.getElementById('planskill-'+s);if(!sel||!sel.value)return toast(t('Choose a skill first.'));planAdd(s,{k:'sk',v:sel.value});break;}
+  case 'planins':planAdd(s,{k:'ins',v:1});break;
+  case 'planrm':save(s,{plan:(c.plan||[]).filter(x=>x.id!==b.dataset.id)});break;
+  case 'planclear':save(s,{plan:[]});break;
+  case 'planbuy':planBuy(s);break;
   case 'logmore':logShown[s]=(logShown[s]||LOG_SHOW)+LOG_SHOW;render();break;
   case 'logless':logShown[s]=LOG_SHOW;render();break;
   case 'logrestore':restoreLog(s);break;
@@ -80,12 +89,7 @@ app.addEventListener('click',e=>{
   case 'gmclearno':edit.gmclear=false;render();break;
   case 'multiclass':{const sel=document.getElementById('mcpick-'+s);R.multiclass(s,sel&&sel.value);break;}
   case 'unmulticlass':if(!fullEdit())return;R.unMulticlass(s);break;
-  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast(t('Choose a knack first.'));const [ka,kn]=sel.value.includes('|')?sel.value.split('|'):[c.archetype,sel.value];const k=A.knacksFor(ka).find(x=>x.name===kn);if(!k)return;
-   if(a==='kgrant'){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name),arch:ka}]},logm('Added knack {knack}',{knack:k.name}));break;}
-   const have=c.knacks.filter(x=>Number(x.tier)===k.tier&&knackArch(c,x)===ka).length,cap=knackCap(c,k.tier,ka);if(have>=cap)return toast(tn('Limit reached: {n} tier {tier} knack.','Limit reached: {n} tier {tier} knacks.',cap,{tier:k.tier}));
-   for(let lo=1;lo<k.tier;lo++)if(!c.knacks.some(x=>Number(x.tier)===lo))return toast(t('You need a tier {tier} knack first.',{tier:lo}));
-   if(c.xpUnused<KNACK_COST[k.tier])return toast(t('Needs {n} XP.',{n:KNACK_COST[k.tier]}));
-   save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name),arch:ka}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},logm('Bought {knack} ({n} XP)',{knack:k.name,n:KNACK_COST[k.tier]}));break;}
+  case 'kbuy':case 'kgrant':{const sel=document.getElementById('kpick-'+s);if(!sel||!sel.value)return toast(t('Choose a knack first.'));buyKnack(s,sel.value,a==='kgrant');break;}
   case 'vbuy':case 'vfree':{const sel=document.getElementById('vpick-'+s);if(!sel||!sel.value)return toast(t('Choose a vehicle first.'));pickSel['v'+s]='';addGear(s,sel.value,a==='vbuy');break;}
   case 'gbuy':case 'gfree':{const sel=document.getElementById('gpick-'+s);if(!sel||!sel.value)return toast(t('Choose something to add first.'));pickSel['g'+s]='';addGear(s,sel.value,a==='gbuy');break;}
   case 'wbuy':case 'wfree':{const sel=document.getElementById('wpick-'+s);if(!sel||!sel.value)return toast(t('Choose a weapon first.'));pickSel['w'+s]='';addGear(s,sel.value,a==='wbuy');break;}
@@ -231,3 +235,25 @@ async function setCampDone(on){if(!canFinish()||!db||!db.raw)return;
   toast(on?t('Campaign marked complete.'):t('Campaign reopened.'));
   if(on&&typeof gmStory==='function'&&isGM())gmStory(logm('Campaign completed'));}
  catch(e){if(window.quotaHit&&quotaHit(e))return;toast(t('Couldn’t save that. Try again.'));}}
+
+// Buy (or, with grant, add free) a knack picked as "Archetype|Name" or just its name. True when it went through.
+function buyKnack(s,val,grant){const c=chars[s];const [ka,kn]=String(val).includes('|')?String(val).split('|'):[c.archetype,val];const k=A.knacksFor(ka).find(x=>x.name===kn);if(!k)return false;
+ if(grant){save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name),arch:ka}]},logm('Added knack {knack}',{knack:k.name}));return true;}
+ const have=c.knacks.filter(x=>Number(x.tier)===k.tier&&knackArch(c,x)===ka).length,cap=knackCap(c,k.tier,ka);if(have>=cap){toast(tn('Limit reached: {n} tier {tier} knack.','Limit reached: {n} tier {tier} knacks.',cap,{tier:k.tier}));return false;}
+ for(let lo=1;lo<k.tier;lo++)if(!c.knacks.some(x=>Number(x.tier)===lo)){toast(t('You need a tier {tier} knack first.',{tier:lo}));return false;}
+ if(c.xpUnused<KNACK_COST[k.tier]){toast(t('Needs {n} XP.',{n:KNACK_COST[k.tier]}));return false;}
+ save(s,{knacks:[...c.knacks,{id:uid(),tier:k.tier,name:k.name,text:A.knackText(k.name),arch:ka}],xpUnused:c.xpUnused-KNACK_COST[k.tier]},logm('Bought {knack} ({n} XP)',{knack:k.name,n:KNACK_COST[k.tier]}));return true;}
+
+function planAdd(s,item){const c=chars[s];planOpen[s]=true;save(s,{plan:[...(c.plan||[]),{id:uid(),...item}]});toast(t('Added to the shopping list.'));}
+// Buy everything on the list in order, stopping at the first thing that can't go through; one Undo for the lot.
+function planBuy(s){const c=chars[s];const P=planInfo(c);if(!P.ok)return;
+ const prev=JSON.parse(JSON.stringify(Object.fromEntries([...UNDO_KEYS,'log','plan','bg'].map(k=>[k,c[k]===undefined?null:c[k]]))));
+ const start=Date.now()-1,items=(c.plan||[]).slice();let done=0;undoMute=true;
+ try{for(const p of items){let ok=false;
+  if(p.k==='g')ok=addGear(s,p.v,true)!==false;else if(p.k==='kn')ok=buyKnack(s,p.v,false);else if(p.k==='sk')ok=R.improve(s,p.v)===true;else if(p.k==='ins')ok=R.buyInsight(s)===true;
+  if(!ok)break;done++;}}finally{undoMute=false;}
+ save(s,{plan:items.slice(done)});
+ if(!done)return;
+ const ts=(chars[s].log||[]).filter(l=>l.t>=start).map(l=>l.t),label=tn('Bought {n} thing from the shopping list','Bought {n} things from the shopping list',done);
+ offerUndo(s,prev,{t:ts[0],ts,label},label);
+ if(done<items.length)toast(t('Stopped partway; the rest is still on the list.'));else planOpen[s]=false;}

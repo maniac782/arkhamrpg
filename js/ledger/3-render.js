@@ -216,7 +216,7 @@ function renderCharBody(s){
  '<div class="list">'+(c.traumas.length?c.traumas.map(j=>'<div class="item"><div class="grow"><b>'+esc(t(j.name))+'</b><span class="effect">'+esc(t(traumaFor(TRAUMA_AT[j.name]||1)[1]))+'</span></div><button class="btn sm" data-act="deltra" data-id="'+j.id+'">'+t('Clear')+'</button></div>').join(''):'<p class="note">'+t('None.')+'</p>')+'</div></div></div></section>';
 
  // resources
- h+='<section class="sec"><div class="sec-head"><h2>'+t('Money &amp; equipment')+'</h2></div><div class="row"><div class="stat"><span class="lbl">'+t('Money')+'</span><b class="num">'+money(c.money)+'</b></div>'+
+ h+=planHtml(s,c);h+='<section class="sec"><div class="sec-head"><h2>'+t('Money &amp; equipment')+'</h2></div><div class="row"><div class="stat"><span class="lbl">'+t('Money')+'</span><b class="num">'+money(c.money)+'</b></div>'+
  [-1,-0.25,0.25,1,5].map(d=>'<button class="btn sm" data-act="cash" data-n="'+d+'">'+(d<0?'−':'+')+money(Math.abs(d))+'</button>').join('')+
  '</div>'+gearPicker(s)+'<div class="row"><label class="row note" for="cash-'+s+'">'+t('Amount')+' <input id="cash-'+s+'" class="maxsel" style="width:80px" type="number" step="0.01" min="0" placeholder="0.00"></label><button class="btn sm" data-act="cashin">'+t('Add')+'</button><button class="btn sm" data-act="cashout">'+t('Spend')+'</button><button class="btn sm" data-act="cashset" title="'+t('Replace the current money with this amount')+'">'+t('Set to this')+'</button></div>'+
  '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(t(it.name||''))+'" placeholder="'+t('Item')+'" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(t(it.note||''))+'" placeholder="'+t('Notes or rules')+'"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="'+t('Remove item')+'">×</button></div>').join(''):'<p class="note">'+t('No equipment.')+'</p>')+
@@ -230,7 +230,7 @@ function renderCharBody(s){
  '<div class="row"><div class="stat"><span class="lbl">'+t('Total XP')+'</span><b class="num">'+c.xpTotal+'</b></div><div class="stat"><span class="lbl">'+t('Unused XP')+'</span><b class="num">'+c.xpUnused+'</b></div><div class="row" style="gap:6px;align-items:center"><span class="note">'+t('Award XP')+'</span><div class="stepper"><button class="btn sm icon" data-act="xpamt" data-n="-1" aria-label="'+t('One less XP')+'">−</button><input id="xpamt-'+s+'" data-xpamt="1" class="maxsel num" type="number" inputmode="numeric" min="1" max="30" value="'+(xpAmt[s]||1)+'" aria-label="'+t('XP to award')+'" style="width:56px;text-align:center"><button class="btn sm icon" data-act="xpamt" data-n="1" aria-label="'+t('One more XP')+'">+</button></div><button class="btn sm pri" data-act="xpaward">'+t('Add')+'</button><button class="btn sm" data-act="xpfix">'+t('Fix XP…')+'</button></div></div>'+'<p class="note" style="margin:4px 0 0">'+t('The book suggests 1 XP per hour played, plus 1–3 for big moments.')+'</p>'+
  (edit.xp?'<div class="row">'+fld('xpTotal',t('Total XP'),c.xpTotal,'number','min="0" style="width:110px"')+fld('xpUnused',t('Unused XP'),c.xpUnused,'number','min="0" style="width:110px"')+'</div>':'')+
  '<div class="costs"><span>'+t('Skill 6+ → 5+')+'</span><span>'+t('2 XP')+'</span><span>'+t('Skill 5+ → 4+')+'</span><span>'+t('4 XP')+'</span><span>'+t('Skill 4+ → 3+ (archetype skills)')+'</span><span>'+t('7 XP')+'</span><span>'+t('Skill 3+ → 2+ (archetype skills)')+'</span><span>'+t('12 XP')+'</span><span>'+t('+1 insight limit (after a momentous session)')+'</span><span>'+t('1 XP')+'</span></div>'+
- '<div class="row"><button class="btn sm" data-act="buyins">'+t('Raise insight limit · 1 XP')+'</button></div>'+mcPanel(s,c)+'</section>';
+ '<div class="row"><button class="btn sm" data-act="buyins">'+t('Raise insight limit · 1 XP')+'</button>'+(canEdit(s)&&!(c.plan||[]).length&&!planOpen[s]?'<button class="linkbtn note" data-act="planopen">'+t('Plan purchases…')+'</button>':'')+'</div>'+mcPanel(s,c)+'</section>';
 
  h+='<details class="sec"><summary><h2>'+t('Background')+'</h2></summary><div class="grid2">'+fld('bg.origin',t('Place of origin'),c.bg.origin)+fld('bg.family',t('Family & friends'),c.bg.family)+fld('bg.employment',t('Employment'),c.bg.employment)+fld('bg.salary',t('Weekly salary'),c.bg.salary)+fld('bg.encounter',t('First supernatural encounter'),c.bg.encounter)+fld('bg.enemies',t('Notable enemies'),c.bg.enemies)+'</div></details>';
 
@@ -323,16 +323,16 @@ function knackPicker(c){
  if(!kn.length)return '<p class="note" style="margin:0">'+t('Choose an archetype (under Player, archetype &amp; XP) to pick knacks from its list.')+'</p><div class="row"><button class="btn sm" data-act="addfree" data-list="knacks">'+t('Add a knack by hand')+'</button></div>';
  const owned=c.knacks.map(k=>k.name);
  const opts=m?[c.archetype,m].map(a=>[1,2,3,4].map(tier=>'<optgroup label="'+t('{archetype} · tier {n} · {xp} XP',{archetype:t(a),n:tier,xp:KNACK_COST[tier]})+'">'+A.knacksFor(a).filter(k=>k.tier===tier&&!owned.includes(k.name)).map(k=>'<option value="'+esc(a+'|'+k.name)+'"'+(kpickSel[active]===a+'|'+k.name?' selected':'')+'>'+(k.unique?'★ ':'')+esc(t(k.name))+'</option>').join('')+'</optgroup>').join('')).join(''):null;
- return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+t('{archetype} knacks (★ unique)',{archetype:esc(archLabel(c))})+'</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">'+t('Add a knack…')+'</option>'+(opts||[1,2,3,4].map(tier=>'<optgroup label="'+t('Tier {n} · {xp} XP',{n:tier,xp:KNACK_COST[tier]})+'">'+kn.filter(k=>k.tier===tier&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'★ ':'')+esc(t(k.name))+'</option>').join('')+'</optgroup>').join(''))+'</select></label><button class="btn" data-act="kbuy">'+t('Buy with XP')+'</button><button class="btn" data-act="kgrant">'+t('Add free')+'</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+t('{archetype} knacks (★ unique)',{archetype:esc(archLabel(c))})+'</span><select class="f" id="kpick-'+active+'" data-kpick="1"><option value="">'+t('Add a knack…')+'</option>'+(opts||[1,2,3,4].map(tier=>'<optgroup label="'+t('Tier {n} · {xp} XP',{n:tier,xp:KNACK_COST[tier]})+'">'+kn.filter(k=>k.tier===tier&&!owned.includes(k.name)).map(k=>'<option value="'+esc(k.name)+'"'+(kpickSel[active]===k.name?' selected':'')+'>'+(k.unique?'★ ':'')+esc(t(k.name))+'</option>').join('')+'</optgroup>').join(''))+'</select></label><button class="btn" data-act="kbuy">'+t('Buy with XP')+'</button><button class="btn" data-act="planadd" data-kind="kn">'+t('Plan')+'</button><button class="btn" data-act="kgrant">'+t('Add free')+'</button></div>';
 }
 function gearPicker(s){
  const cats=['Protection','Useful items','Tools and personal','Outdoors','Fares and fuel','Around town'];
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct&&!g.u?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>'+pickDesc('g'+s);
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Buy equipment')+'</span><select class="f" id="gpick-'+s+'" data-pick="g"><option value="">'+t('Add equipment…')+'</option>'+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+GR().map((g,i)=>g.cat===ct&&!g.u?'<option value="g:'+i+'"'+(pickSel['g'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</optgroup>').join('')+'</select></label><button class="btn" data-act="gbuy">'+t('Buy')+'</button><button class="btn" data-act="planadd" data-kind="g">'+t('Plan')+'</button><button class="btn" data-act="gfree">'+t('Add free')+'</button></div>'+pickDesc('g'+s);
 }
 // the chosen item's description, under its picker
 function pickDesc(key){const v=pickSel[key];if(!v)return '';const g=GR()[Number(v.split(':')[1])];return g&&g.note?'<p class="note pickdesc">'+esc(t(g.note))+'</p>':'';}
 function kitPicker(s){
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a kit or supply')+'</span><select class="f" id="kitpick-'+s+'" data-pick="k"><option value="">'+t('Choose one…')+'</option>'+GR().map((g,i)=>g.u?'<option value="g:'+i+'"'+(pickSel['k'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="kitbuy">'+t('Buy')+'</button><button class="btn" data-act="kitadd">'+t('Add free')+'</button></div>'+pickDesc('k'+s);
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a kit or supply')+'</span><select class="f" id="kitpick-'+s+'" data-pick="k"><option value="">'+t('Choose one…')+'</option>'+GR().map((g,i)=>g.u?'<option value="g:'+i+'"'+(pickSel['k'+s]==='g:'+i?' selected':'')+'>'+esc(t(g.n))+' — '+money(g.c)+'</option>':'').join('')+'</select></label><button class="btn" data-act="kitbuy">'+t('Buy')+'</button><button class="btn" data-act="planadd" data-kind="k">'+t('Plan')+'</button><button class="btn" data-act="kitadd">'+t('Add free')+'</button></div>'+pickDesc('k'+s);
 }
 function vehiclePicker(s){
  const c=chars[s];
@@ -340,20 +340,44 @@ function vehiclePicker(s){
 }
 function weaponPicker(s){
  const grp=(lab,sk)=>'<optgroup label="'+lab+'">'+W().map((w,i)=>w.s===sk?'<option value="w:'+i+'"'+(pickSel['w'+s]==='w:'+i?' selected':'')+'>'+esc(t(w.n))+(w.house?' '+t('(house rule)'):'')+' — '+money(w.c)+'</option>':'').join('')+'</optgroup>';
- return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a weapon')+'</span><select class="f" id="wpick-'+s+'" data-pick="w"><option value="">'+t('Add a weapon…')+'</option>'+grp(t('Ranged'),'Ranged Combat')+grp(t('Melee'),'Melee Combat')+'</select></label><button class="btn" data-act="wbuy">'+t('Buy')+'</button><button class="btn" data-act="wfree">'+t('Add free')+'</button></div>';
+ return '<div class="row"><label class="field" style="flex:1;min-width:220px"><span class="lbl">'+t('Get a weapon')+'</span><select class="f" id="wpick-'+s+'" data-pick="w"><option value="">'+t('Add a weapon…')+'</option>'+grp(t('Ranged'),'Ranged Combat')+grp(t('Melee'),'Melee Combat')+'</select></label><button class="btn" data-act="wbuy">'+t('Buy')+'</button><button class="btn" data-act="planadd" data-kind="w">'+t('Plan')+'</button><button class="btn" data-act="wfree">'+t('Add free')+'</button></div>';
 }
+// ---- Shopping list: things planned on a sheet (c.plan), with what they'd cost before buying any ----
+// Items: {id, k:'g' (gear, kit or weapon value from a picker) | 'kn' (knack) | 'sk' (one skill step) | 'ins' (insight limit +1), v}.
+let planOpen={};
+function planInfo(c){let mon=0,xp=0;const sim={},owned=new Set(c.knacks.map(k=>k.name));let ins=c.insightLimit;
+ const rows=(c.plan||[]).map(p=>{let label='',cm=0,cx=0,why='';
+  if(p.k==='g'){const [ty,i]=String(p.v).split(':');const it=ty==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return null;label=t(it.n);cm=it.c||0;}
+  else if(p.k==='kn'){const [ka,kn]=String(p.v).includes('|')?String(p.v).split('|'):[c.archetype,p.v];const k=A.knacksFor(ka).find(x=>x.name===kn);if(!k)return null;label=t(k.name)+' · '+t('tier {n}',{n:k.tier});cx=KNACK_COST[k.tier];if(owned.has(k.name))why=t('Already have it');owned.add(k.name);}
+  else if(p.k==='sk'){const sk=c.skills[p.v];if(!sk)return null;const r=sim[p.v]!=null?sim[p.v]:sk.r,floor=sk.max?Number(sk.max):4;cx=SKILL_COST[r]||0;sim[p.v]=r-1;label=t(SKILLS.find(x=>x[0]===p.v)[1])+' → '+(r-1)+'+';if(!cx||r-1<floor)why=t('Past its max');}
+  else if(p.k==='ins'){ins++;cx=1;label=t('Insight limit → {n}',{n:ins});if(ins>10)why=t('Can’t go above 10');}
+  else return null;
+  mon+=cm;xp+=cx;return {id:p.id,label,cm,cx,why};}).filter(Boolean);
+ const lm=Math.round(((Number(c.money)||0)-mon)*100)/100,lx=(Number(c.xpUnused)||0)-xp;
+ return {rows,mon:Math.round(mon*100)/100,xp,lm,lx,ok:rows.length&&lm>=0&&lx>=0&&!rows.some(r=>r.why)};}
+function planHtml(s,c){if(!canEdit(s)||(!(c.plan||[]).length&&!planOpen[s]))return '';const P=planInfo(c);
+ const steps=SKILLS.filter(([k])=>{const sk=c.skills[k];return sk&&SKILL_COST[sk.r];});
+ let h='<section class="sec" id="plan-'+s+'"><div class="sec-head"><h2>'+t('Shopping list')+'</h2>'+(P.rows.length?'':'<button class="btn sm" data-act="planclose">'+t('Close')+'</button>')+'</div>'+
+  '<p class="note" style="margin:0">'+t('Plan what to buy and see what it costs before spending anything. Use Plan next to Buy on the pickers below, or add skill steps and insight here.')+'</p>';
+ h+=P.rows.length?'<div class="list">'+P.rows.map(r=>'<div class="item" style="align-items:center"><div class="grow"><b>'+esc(r.label)+'</b>'+(r.why?'<span class="effect" style="color:var(--danger)">'+esc(r.why)+'</span>':'')+'</div><span class="num">'+[r.cm?money(r.cm):'',r.cx?t('{n} XP',{n:r.cx}):''].filter(Boolean).join(' + ')+'</span><button class="btn sm icon" data-act="planrm" data-id="'+r.id+'" aria-label="'+t('Remove {name}',{name:esc(r.label)})+'">×</button></div>').join('')+'</div>':'<p class="note" style="margin:0">'+t('Nothing planned yet.')+'</p>';
+ h+='<div class="row"><label class="field" style="flex:1;min-width:180px"><span class="lbl">'+t('Plan a skill step')+'</span><select class="f" id="planskill-'+s+'"><option value="">'+t('Choose a skill…')+'</option>'+steps.map(([k,n])=>'<option value="'+k+'">'+esc(t(n))+'</option>').join('')+'</select></label><button class="btn" data-act="planskill">'+t('Plan')+'</button><button class="btn" data-act="planins">'+t('Plan +1 insight limit')+'</button></div>';
+ if(P.rows.length){const bad=x=>x<0?' style="color:var(--danger)"':'';
+  h+='<div class="planfoot"><span>'+t('Total')+': <b>'+money(P.mon)+'</b> · <b>'+t('{n} XP',{n:P.xp})+'</b></span><span class="note">'+t('Leaves')+' <b'+bad(P.lm)+'>'+money(P.lm)+'</b> · <b'+bad(P.lx)+'>'+t('{n} XP',{n:P.lx})+'</b></span></div>'+
+   '<div class="row"><button class="btn pri" data-act="planbuy"'+(P.ok?'':' disabled')+'>'+t('Buy all')+'</button><button class="btn" data-act="planclear">'+t('Clear the list')+'</button></div>'+
+   (P.ok?'':'<p class="note" style="margin:0;color:var(--danger)">'+(P.lm<0?t('Not enough money for all of it.')+' ':'')+(P.lx<0?t('Not enough XP for all of it.')+' ':'')+(P.rows.some(r=>r.why)?t('Take off the items marked in red.'):'')+'</p>');}
+ return h+'</section>';}
 function addGear(s,val,pay){
- const c=chars[s];const [ty,i]=val.split(':');const it=ty==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return;
- const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0)return toast(t('Not enough money. {item} costs {price}.',{item:t(it.n),price:money(it.c)}));
+ const c=chars[s];const [ty,i]=val.split(':');const it=ty==='w'?W()[Number(i)]:GR()[Number(i)];if(!it)return false;
+ const m=Math.round(((Number(c.money)||0)-(pay?it.c:0))*100)/100;if(m<0){toast(t('Not enough money. {item} costs {price}.',{item:t(it.n),price:money(it.c)}));return false;}
  const p={money:m};
  // fares, meals and drinks are spent, not kept: just take the money and note it
- if(it.x){if(!pay)return toast(t('That’s paid for, not kept, so there’s nothing to add free.'));save(s,p,logm('Paid {price} for {item}',{item:it.n,price:money(it.c)}));return;}
+ if(it.x){if(!pay){toast(t('That’s paid for, not kept, so there’s nothing to add free.'));return false;}save(s,p,logm('Paid {price} for {item}',{item:it.n,price:money(it.c)}));return true;}
  if(ty==='w')p.weapons=[...c.weapons,{id:uid(),name:it.n,skill:it.s,range:it.r,dmg:it.d,inj:it.i,ammoMax:it.a,ammo:it.a,reloads:0,rc:it.rc,fr:!!it.fr,special:it.sp}];
  else if(it.cat==='Transport'){const v=(c.bg.vehicle||'').trim();p.bg={...c.bg,vehicle:v?v+', '+it.n:it.n};}
  else if(it.u)p.kits=[...c.kits,{id:uid(),name:it.n,note:it.note,uses:it.u,left:it.u,rp:it.rp||0,c:it.c,once:!it.rp}];
  else if(it.n==='Habitual Item')p.habitual={name:c.habitual.name||tk('Habitual item'),used:!!c.habitual.used,uses:(c.habitual.uses||0)+1};
  else p.items=[...c.items,{id:uid(),name:it.n,note:it.note}];
- save(s,p,pay?logm('Bought {item} for {price}',{item:it.n,price:money(it.c)}):logm('Added {item}',{item:it.n}));
+ save(s,p,pay?logm('Bought {item} for {price}',{item:it.n,price:money(it.c)}):logm('Added {item}',{item:it.n}));return true;
 }
 // A dropdown is as wide as its longest option; size marked ones (data-fit) to the chosen option instead.
 function fitSelects(root){

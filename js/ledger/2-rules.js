@@ -41,12 +41,12 @@ const R={
  lucky(s){const c=chars[s];if(c.lucky.used)return toast(t('Already used a lucky item this session.'));if(c.insight>=c.insightLimit)return toast(t('Insight is already full.'));
   save(s,{insight:c.insight+1,lucky:{name:c.lucky.name,used:true}},logm('Used {item}: recovered 1 insight',{item:c.lucky.name||tk('lucky item')}));},
  newSession(s,quiet){const c=chars[s];save(s,{insight:c.insightLimit,habitual:{...c.habitual,used:false},lucky:{name:c.lucky.name,used:false},traumaMod:0},quiet?null:logm('New session: insight refilled'));},
- improve(s,k){const c=chars[s];const sk=c.skills[k];const cost=SKILL_COST[sk.r];if(!cost)return;
+ improve(s,k){const c=chars[s];const sk=c.skills[k];const cost=SKILL_COST[sk.r];if(!cost)return false;
   const floor=sk.max?Number(sk.max):4;if(sk.r-1<floor)return toast(sk.max?t('This skill is already at its max.'):t('Set this skill’s max (from your archetype) to go past 4+.'));
   if(c.xpUnused<cost)return toast(t('Needs {n} XP.',{n:cost}));const sks=JSON.parse(JSON.stringify(c.skills));sks[k].r=sk.r-1;
-  save(s,{skills:sks,xpUnused:c.xpUnused-cost},logm('{skill} improved to {r}+ ({n} XP)',{skill:SKILLS.find(x=>x[0]===k)[1],r:sk.r-1,n:cost}));},
+  save(s,{skills:sks,xpUnused:c.xpUnused-cost},logm('{skill} improved to {r}+ ({n} XP)',{skill:SKILLS.find(x=>x[0]===k)[1],r:sk.r-1,n:cost}));return true;},
  buyInsight(s){const c=chars[s];if(c.xpUnused<1)return toast(t('Needs 1 XP.'));if(c.insightLimit>=10)return toast(t('Insight limit can’t go above 10.'));
-  save(s,{insightLimit:c.insightLimit+1,xpUnused:c.xpUnused-1,insightChance:false},logm('Insight limit raised to {n} (1 XP)',{n:c.insightLimit+1}));},
+  save(s,{insightLimit:c.insightLimit+1,xpUnused:c.xpUnused-1,insightChance:false},logm('Insight limit raised to {n} (1 XP)',{n:c.insightLimit+1}));return true;},
  addXp(s,n){const c=chars[s];save(s,{xpTotal:c.xpTotal+n,xpUnused:c.xpUnused+n},logm('Earned {n} XP',{n}));},
  multiclass(s,arch){const c=chars[s];if(c.mc)return;if(!arch||!A.ARCH[arch])return toast(t('Choose an archetype first.'));
   if(xpSpent(c)<MC_AT)return toast(t('Multiclassing opens once {n} XP has been spent.',{n:MC_AT}));

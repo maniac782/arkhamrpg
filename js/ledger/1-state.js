@@ -135,6 +135,18 @@ try{const t=IS_DEMO?null:localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='
 SLOTS.forEach(s=>{if(!chars[s])chars[s]=blank(slotNum(s));});
 
 const toastEl=document.getElementById('toast');let toastT;
+// ---- Undo for the last purchase or addition (10 seconds) ----
+// Saves that buy, add or improve something remember what they changed; the undo bar puts it back.
+const UNDO_KEYS=['xpUnused','money','items','weapons','kits','knacks','skills','insightLimit','insight','habitual','lucky','poolMax','poolLimit','regular','horror','mc','reloads'];
+const UNDO_TRIGGER=['xpUnused','money','items','weapons','kits','knacks','skills','insightLimit','mc'];
+let undoState=null,undoT=null;const undoEl=document.createElement('div');undoEl.className='undobar';undoEl.hidden=true;undoEl.setAttribute('role','status');document.body.appendChild(undoEl);
+function offerUndo(slot,prev,entry){undoState={slot,prev,entry};
+ undoEl.innerHTML='<span>'+esc(logText(entry))+'</span><button class="btn sm" type="button" data-undo="1">'+t('Undo')+'</button>';undoEl.hidden=false;
+ clearTimeout(undoT);undoT=setTimeout(()=>{undoEl.hidden=true;undoState=null;},10000);}
+undoEl.addEventListener('click',e=>{if(!e.target.closest('[data-undo]')||!undoState)return;const u=undoState;undoState=null;undoEl.hidden=true;clearTimeout(undoT);
+ if(!chars[u.slot])return;save(u.slot,u.prev);toast(t('Undone: {what}',{what:logText(u.entry)}));
+ // Take its line out of the session history too, so it's as if it never happened.
+ if(db)db.collection('history').where('slot','==',u.slot).get().then(qs=>qs.forEach(d=>{const x=d.data();if(x&&x.t===u.entry.t)d.ref.delete().catch(()=>{});})).catch(()=>{});});
 function toast(m){toastEl.textContent=m;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 
 // Recent-list entries are saved in English (m) along with their wording and values (k, v; o is a plural's singular),
@@ -169,12 +181,16 @@ async function save(slot,patch,logMsg){
  if(!canEdit(slot)&&!(isGM()&&Object.keys(patch).every(k=>GM_FIELDS.includes(k)))){toast(CAMP?t('Only {name}’s player can change that.',{name:chars[slot].name||t('this investigator')}):t('{name}’s sheet is locked. Unlock it to make changes.',{name:chars[slot].name}));return;}
  const c=chars[slot];
  if(patch.weapons&&legacyRel.has(slot)){patch.reloads=0;legacyRel.delete(slot);}
+ // Something bought, added or improved (and logged): remember what it replaced so it can be undone.
+ const undoable=!!logMsg&&Object.keys(patch).some(k=>UNDO_TRIGGER.includes(k));
+ const prev=undoable?JSON.parse(JSON.stringify(Object.fromEntries([...new Set([...Object.keys(patch).filter(k=>UNDO_KEYS.includes(k)),'log'])].map(k=>[k,c[k]===undefined?null:c[k]])))):null;
  Object.assign(c,patch);
  if(Array.isArray(logMsg))logMsg=logMsg.length?{m:logMsg.map(x=>x.m).join(' · '),p:logMsg}:null;else if(typeof logMsg==='string')logMsg=logMsg?{m:logMsg}:null;
  // In a campaign, an entry made by someone other than the investigator's player says who: the GM or the owner.
  if(logMsg&&CAMP&&camp&&authUid&&c.ownerUid!==authUid){const r=camp.gmUid===authUid?'gm':camp.ownerUid===authUid?'owner':null;
   if(r)logMsg={...logMsg,by:{r,n:String(((camp.names||{})[authUid])||'').slice(0,40)}};}
  if(logMsg){const now=Date.now();c.log=[{t:now,...logMsg},...(c.log||[])].slice(0,LOG_KEEP);patch.log=c.log;logHistory(slot,{...logMsg,t:now});}
+ if(prev&&logMsg)offerUndo(slot,prev,c.log[0]);
  render();
  if(!db)return;
  try{await db.doc('characters/'+slot).update(patch);}

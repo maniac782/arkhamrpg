@@ -1136,6 +1136,7 @@ I18N.add('ca',[
 [`One more`,`Un més`],
 [`Defeated`,`Derrotats`],
 [`Mark all dead`,`Marca'ls tots com a morts`],
+[`Undone: {what}`,`Desfet: {what}`],
 [`Show {n} more`,`Mostra'n {n} més`],
 [`Show fewer`,`Mostra'n menys`],
 [`Bring back older entries`,`Recupera entrades anteriors`],

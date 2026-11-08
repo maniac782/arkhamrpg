@@ -374,7 +374,10 @@ service cloud.firestore {
         allow create: if member() && request.resource.data.slot is string
           && ((request.resource.data.slot == 'gm' && cGM())
             || (isSlot(request.resource.data.slot) && (cOwner() || cGM() || plays(request.resource.data.slot))));
-        allow delete: if (gmSees()) || cOwner() || cleaner();
+        allow delete: if (gmSees()) || cOwner() || cleaner()
+          // Undo: a player takes back their own investigator's entry within ten minutes.
+          || (isSlot(resource.data.get('slot', '')) && plays(resource.data.slot)
+            && resource.data.get('t', 0) is int && request.time.toMillis() - resource.data.t < 600000);
       }
       // Gallery: pictures anyone in the campaign posts. Delete your own; the owner and GM can delete any.
       match /gallery/{id} {

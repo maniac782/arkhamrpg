@@ -1136,6 +1136,7 @@ I18N.add('es',[
 [`One more`,`Uno más`],
 [`Defeated`,`Derrotados`],
 [`Mark all dead`,`Marcar todos como muertos`],
+[`Undone: {what}`,`Deshecho: {what}`],
 [`Show {n} more`,`Mostrar {n} más`],
 [`Show fewer`,`Mostrar menos`],
 [`Bring back older entries`,`Recuperar entradas anteriores`],

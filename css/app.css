@@ -125,6 +125,10 @@ select.maxsel{appearance:none;-webkit-appearance:none;padding-right:22px;backgro
 .pip.spent{background:transparent;border-color:var(--line)}
 .note{font-size:13px;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:6px;font-size:14px;max-width:calc(100% - 32px);z-index:9}
+/* The undo bar sits just above where messages pop up. */
+.undobar{position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.35);padding:8px 8px 8px 14px;border-radius:8px;font-size:14px;width:min(460px,calc(100% - 32px));justify-content:space-between;z-index:9}
+.undobar>span{flex:1;min-width:0}
+.undobar[hidden]{display:none}
 .roll{border:1px solid var(--brass);background:var(--brass-soft);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
 details.sec>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
 details.sec>summary::-webkit-details-marker{display:none}

@@ -1136,6 +1136,7 @@ I18N.add('fr',[
 [`One more`,`Un de plus`],
 [`Defeated`,`Vaincus`],
 [`Mark all dead`,`Tous morts`],
+[`Undone: {what}`,`Annulé : {what}`],
 [`Show {n} more`,`Afficher {n} de plus`],
 [`Show fewer`,`Afficher moins`],
 [`Bring back older entries`,`Récupérer les entrées plus anciennes`],

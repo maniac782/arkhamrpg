@@ -2387,5 +2387,22 @@ I18N.add('pl',[
 [`Night at Motel`,`Noc w motelu`],
 [`A bed and breakfast or a cheap roadside motel.`,`Pensjonat lub tani przydrożny motel.`],
 [`Night at Hotel`,`Noc w hotelu`],
-[`A clean, respectable hotel; meals included.`,`Czysty, porządny hotel; posiłki wliczone.`]
+[`A clean, respectable hotel; meals included.`,`Czysty, porządny hotel; posiłki wliczone.`],
+[`Shopping list and Undo`,`Lista zakupów i Cofnij`],
+[`New: plan purchases with a shopping list, and undo any purchase.`,`Nowość: planuj zakupy na liście zakupów i cofaj dowolny zakup.`],
+[`Tap Plan next to Buy on the equipment, kit, weapon and knack pickers (or Plan purchases… in the XP section) to collect what you want and see the total in money and XP, and what you’d have left, before spending anything. Buy all buys the lot. After any purchase, a bar at the bottom offers Undo for a few seconds.`,`Stuknij Zaplanuj obok Kup w wyborze ekwipunku, zestawów, broni i talentów (albo Zaplanuj zakupy… w sekcji PD), aby zebrać to, czego chcesz, i zobaczyć łączny koszt w pieniądzach i PD oraz ile ci zostanie, zanim cokolwiek wydasz. Kup wszystko kupuje całość. Po każdym zakupie pasek na dole przez kilka sekund oferuje Cofnij.`],
+[`Custom enemies, pictures and groups`,`Własni wrogowie, obrazy i grupy`],
+[`GMs can add their own enemies with a name, type, notes and a picture, give pictures to the people the party meets, and let one enemy card stand for a group with Encountered and Defeated counters. Enemies marked dead stay in the Journal.`,`MG może dodawać własnych wrogów z nazwą, typem, notatkami i obrazem, dawać obrazy osobom, które spotyka drużyna, i sprawić, by jedna karta wroga oznaczała grupę z licznikami Napotkani i Pokonani. Wrogowie oznaczeni jako martwi zostają w Dzienniku.`],
+[`Finish a campaign, and GM tools for the owner`,`Zakończ kampanię, a właściciel z narzędziami MG`],
+[`When the story is over, the owner or GM can mark the campaign complete from the bottom of the Journal: it becomes a read-only record under Completed on your campaigns page. In Settings, owners can also turn on the GM tools for themselves and let the GM edit every investigator.`,`Gdy historia się skończy, właściciel lub MG może oznaczyć kampanię jako zakończoną na dole Dziennika: staje się zapisem tylko do odczytu w sekcji Zakończone na stronie twoich kampanii. W Ustawieniach właściciele mogą też włączyć sobie narzędzia MG i pozwolić MG edytować każdego badacza.`],
+[`Bring an investigator to a new campaign`,`Przenieś badacza do nowej kampanii`],
+[`On the New investigator tab, copy an investigator you play in another campaign, with their skills, knacks, XP, gear, injuries and portrait. Recent now keeps 100 entries, and Full history shows everything an investigator has done, session by session.`,`Na karcie Nowy badacz skopiuj badacza, którym grasz w innej kampanii, z jego umiejętnościami, talentami, PD, ekwipunkiem, obrażeniami i portretem. Ostatnie zmiany przechowują teraz 100 wpisów, a Pełna historia pokazuje wszystko, co badacz zrobił, sesja po sesji.`],
+[`Multiclassing and unique injuries`,`Wieloklasowość i unikalne obrażenia`],
+[`Once an investigator has spent 125 XP, the XP section offers multiclassing: +1 dice pool maximum and a second archetype or more knacks. The injury pickers now include the book’s unique injuries: Burned, Choking and Sickened.`,`Gdy badacz wyda 125 PD, sekcja PD oferuje wieloklasowość: +1 do maksymalnej puli kości oraz drugi archetyp lub więcej talentów. Wybór obrażeń obejmuje teraz unikalne obrażenia z podręcznika: Poparzenie, Duszenie się i Choroba.`],
+[`New`,`Nowość`],
+[`See what’s new`,`Zobacz nowości`],
+[`Dismiss`,`Zamknij`],
+[`What’s new`,`Nowości`],
+[`The bigger changes to the ledger, newest first. Smaller fixes happen all the time and aren’t listed.`,`Większe zmiany w rejestrze, od najnowszych. Drobne poprawki pojawiają się stale i nie są tu wymieniane.`],
+[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Nowości:</b> większe aktualizacje są wymienione na stronie <a href="whatsnew.html">Nowości</a>. Gdy pojawi się nowa, baner u góry informuje o tym raz, a mała etykieta <b>Nowość</b> widnieje przy nowej funkcji przez około dwa tygodnie lub do pierwszego użycia.`]
 ]);

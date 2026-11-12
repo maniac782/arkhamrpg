@@ -2387,5 +2387,22 @@ I18N.add('ca',[
 [`Night at Motel`,`Nit en motel`],
 [`A bed and breakfast or a cheap roadside motel.`,`Una pensió o un motel barat de carretera.`],
 [`Night at Hotel`,`Nit en hotel`],
-[`A clean, respectable hotel; meals included.`,`Un hotel net i respectable; àpats inclosos.`]
+[`A clean, respectable hotel; meals included.`,`Un hotel net i respectable; àpats inclosos.`],
+[`Shopping list and Undo`,`Llista de la compra i Desfés`],
+[`New: plan purchases with a shopping list, and undo any purchase.`,`Novetat: planifica compres amb una llista de la compra i desfés qualsevol compra.`],
+[`Tap Plan next to Buy on the equipment, kit, weapon and knack pickers (or Plan purchases… in the XP section) to collect what you want and see the total in money and XP, and what you’d have left, before spending anything. Buy all buys the lot. After any purchase, a bar at the bottom offers Undo for a few seconds.`,`Toca Planifica al costat de Compra als selectors d’equip, kits, armes i talents (o Planifica compres… a la secció de PX) per reunir el que vols i veure el total en diners i PX, i el que et quedaria, abans de gastar res. Compra-ho tot ho compra tot alhora. Després de qualsevol compra, una barra a baix ofereix Desfés durant uns segons.`],
+[`Custom enemies, pictures and groups`,`Enemics propis, imatges i grups`],
+[`GMs can add their own enemies with a name, type, notes and a picture, give pictures to the people the party meets, and let one enemy card stand for a group with Encountered and Defeated counters. Enemies marked dead stay in the Journal.`,`Els DJ poden afegir els seus propis enemics amb nom, tipus, notes i imatge, posar imatges a les persones que coneix el grup i fer que una targeta d’enemic representi un grup amb comptadors de Trobats i Derrotats. Els enemics marcats com a morts es queden al Diari.`],
+[`Finish a campaign, and GM tools for the owner`,`Acaba una campanya, i eines de DJ per al propietari`],
+[`When the story is over, the owner or GM can mark the campaign complete from the bottom of the Journal: it becomes a read-only record under Completed on your campaigns page. In Settings, owners can also turn on the GM tools for themselves and let the GM edit every investigator.`,`Quan la història s’acaba, el propietari o el DJ pot marcar la campanya com a acabada des del final del Diari: esdevé un registre només de lectura a Acabades, a la teva pàgina de campanyes. A Configuració, els propietaris també poden activar per a ells les eines de DJ i deixar que el DJ editi tots els investigadors.`],
+[`Bring an investigator to a new campaign`,`Porta un investigador a una nova campanya`],
+[`On the New investigator tab, copy an investigator you play in another campaign, with their skills, knacks, XP, gear, injuries and portrait. Recent now keeps 100 entries, and Full history shows everything an investigator has done, session by session.`,`A la pestanya Nou investigador, copia un investigador que jugues en una altra campanya, amb les seves habilitats, talents, PX, equip, ferides i retrat. Activitat recent ara guarda 100 entrades, i Historial complet mostra tot el que ha fet un investigador, sessió a sessió.`],
+[`Multiclassing and unique injuries`,`Multiclasse i ferides úniques`],
+[`Once an investigator has spent 125 XP, the XP section offers multiclassing: +1 dice pool maximum and a second archetype or more knacks. The injury pickers now include the book’s unique injuries: Burned, Choking and Sickened.`,`Quan un investigador ha gastat 125 PX, la secció de PX ofereix la multiclasse: +1 al màxim de la reserva de daus i un segon arquetip o més talents. Els selectors de ferides ara inclouen les ferides úniques del llibre: Cremat, Asfíxia i Malalt.`],
+[`New`,`Nou`],
+[`See what’s new`,`Mira les novetats`],
+[`Dismiss`,`Descarta`],
+[`What’s new`,`Novetats`],
+[`The bigger changes to the ledger, newest first. Smaller fixes happen all the time and aren’t listed.`,`Els canvis més grans del registre, primer els més recents. Els arranjaments petits són constants i no hi surten.`],
+[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Novetats:</b> les actualitzacions més grans surten a la pàgina de <a href="whatsnew.html">Novetats</a>. Quan n’arriba una, un avís a dalt ho diu una vegada, i una petita etiqueta <b>Nou</b> apareix al costat de la funció nova durant un parell de setmanes o fins que la facis servir.`]
 ]);

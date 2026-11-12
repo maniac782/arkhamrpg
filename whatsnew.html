@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Arkham Horror RPG Ledger">
+<meta name="theme-color" content="#1b2230">
+<script src="js/i18n.js"></script>
+<title>What’s new · Arkham Horror RPG Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/home.css">
+<style>
+.policy{max-width:760px}
+.policy p{margin:0;line-height:1.6}
+.policy a{color:var(--ink);text-decoration-color:var(--muted)}
+.wnlist{display:flex;flex-direction:column;gap:16px}
+.wnitem{display:flex;flex-direction:column;gap:6px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.wnitem:last-child{border-bottom:0;padding-bottom:0}
+.wnitem h3{margin:0;font-family:var(--display);font-size:18px}
+.wnitem time{font-size:13px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+</style>
+<script src="js/whatsnew.js"></script>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="brand"><h1><a href="./" style="color:inherit;text-decoration:none">Arkham Horror RPG Ledger</a> <span class="beta">Beta</span></h1></div>
+</div></div>
+<main class="policy">
+<p data-t><a href="./">← Back to the ledger</a></p>
+<section class="sec">
+<h2 data-t>What’s new</h2>
+<p class="note" data-t>The bigger changes to the ledger, newest first. Smaller fixes happen all the time and aren’t listed.</p>
+<div class="wnlist" id="wnlist"></div>
+</section>
+</main>
+<footer class="foot"><span>Arkham Horror RPG Ledger</span><span data-t>Unofficial fan project, not affiliated with Edge Studio or Fantasy Flight Games</span><a href="help.html" data-t>How it works</a></footer>
+<script>
+(function(){var el=document.getElementById('wnlist'),esc=function(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});};
+ el.innerHTML=WHATSNEW.map(function(e){var d=new Date(e.date+'T12:00:00');return '<article class="wnitem" id="'+e.id+'"><time datetime="'+e.date+'">'+d.toLocaleDateString(I18N.locale,{year:'numeric',month:'long',day:'numeric'})+'</time><h3>'+esc(t(e.title))+'</h3><p>'+esc(t(e.body))+'</p></article>';}).join('');
+ WN.markSeen();})();
+</script>
+</body>
+</html>

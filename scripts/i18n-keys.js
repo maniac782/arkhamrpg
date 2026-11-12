@@ -7,9 +7,9 @@
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const SCRIPTS=['js/i18n.js','js/config.js','js/avatar.js','js/cropper.js','js/picker.js','js/localdb.js','js/upload.js','js/demo.js',
-  'js/home.js','js/admin.js','js/catalog.js','js/npcs.js','js/house-rules.js',
+  'js/home.js','js/admin.js','js/whatsnew.js','js/catalog.js','js/npcs.js','js/house-rules.js',
   ...fs.readdirSync(path.join(root,'js/ledger')).filter(f=>f.endsWith('.js')).map(f=>'js/ledger/'+f),'print.html'];
-const PAGES=['index.html','play.html','admin.html','help.html','privacy.html','print.html'];
+const PAGES=['index.html','play.html','admin.html','help.html','privacy.html','print.html','whatsnew.html'];
 function unescape(s){return s.replace(/\\u\{([0-9a-fA-F]+)\}/g,(m,h)=>String.fromCodePoint(parseInt(h,16))).replace(/\\u([0-9a-fA-F]{4})/g,(m,h)=>String.fromCharCode(parseInt(h,16))).replace(/\\n/g,'\n').replace(/\\(.)/g,'$1');}
 // Game content, loaded the way the pages load it.
 function content(){

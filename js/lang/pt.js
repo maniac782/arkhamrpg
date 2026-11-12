@@ -2387,5 +2387,22 @@ I18N.add('pt',[
 [`Night at Motel`,`Noite em motel`],
 [`A bed and breakfast or a cheap roadside motel.`,`Uma pensão ou um motel barato de beira de estrada.`],
 [`Night at Hotel`,`Noite em hotel`],
-[`A clean, respectable hotel; meals included.`,`Um hotel limpo e respeitável; refeições incluídas.`]
+[`A clean, respectable hotel; meals included.`,`Um hotel limpo e respeitável; refeições incluídas.`],
+[`Shopping list and Undo`,`Lista de compras e Desfazer`],
+[`New: plan purchases with a shopping list, and undo any purchase.`,`Novidade: planeje compras com uma lista de compras e desfaça qualquer compra.`],
+[`Tap Plan next to Buy on the equipment, kit, weapon and knack pickers (or Plan purchases… in the XP section) to collect what you want and see the total in money and XP, and what you’d have left, before spending anything. Buy all buys the lot. After any purchase, a bar at the bottom offers Undo for a few seconds.`,`Toque em Planejar ao lado de Comprar nos seletores de equipamento, kits, armas e talentos (ou Planejar compras… na seção de XP) para reunir o que você quer e ver o total em dinheiro e XP, e o que sobraria, antes de gastar qualquer coisa. Comprar tudo compra o conjunto. Depois de qualquer compra, uma barra embaixo oferece Desfazer por alguns segundos.`],
+[`Custom enemies, pictures and groups`,`Inimigos próprios, imagens e grupos`],
+[`GMs can add their own enemies with a name, type, notes and a picture, give pictures to the people the party meets, and let one enemy card stand for a group with Encountered and Defeated counters. Enemies marked dead stay in the Journal.`,`Mestres podem adicionar seus próprios inimigos com nome, tipo, notas e imagem, dar imagens às pessoas que o grupo conhece e fazer um cartão de inimigo representar um grupo com contadores de Encontrados e Derrotados. Inimigos marcados como mortos continuam no Diário.`],
+[`Finish a campaign, and GM tools for the owner`,`Concluir uma campanha, e ferramentas de Mestre para o dono`],
+[`When the story is over, the owner or GM can mark the campaign complete from the bottom of the Journal: it becomes a read-only record under Completed on your campaigns page. In Settings, owners can also turn on the GM tools for themselves and let the GM edit every investigator.`,`Quando a história termina, o dono ou o Mestre pode marcar a campanha como concluída no fim do Diário: ela vira um registro somente leitura em Concluídas, na sua página de campanhas. Em Configurações, os donos também podem ativar para si as ferramentas de Mestre e deixar o Mestre editar todos os investigadores.`],
+[`Bring an investigator to a new campaign`,`Leve um investigador para uma nova campanha`],
+[`On the New investigator tab, copy an investigator you play in another campaign, with their skills, knacks, XP, gear, injuries and portrait. Recent now keeps 100 entries, and Full history shows everything an investigator has done, session by session.`,`Na aba Novo investigador, copie um investigador que você joga em outra campanha, com perícias, talentos, XP, equipamento, ferimentos e retrato. Atividade recente agora guarda 100 entradas, e Histórico completo mostra tudo o que um investigador fez, sessão a sessão.`],
+[`Multiclassing and unique injuries`,`Multiclasse e ferimentos únicos`],
+[`Once an investigator has spent 125 XP, the XP section offers multiclassing: +1 dice pool maximum and a second archetype or more knacks. The injury pickers now include the book’s unique injuries: Burned, Choking and Sickened.`,`Quando um investigador gasta 125 XP, a seção de XP oferece multiclasse: +1 no máximo da reserva de dados e um segundo arquétipo ou mais talentos. Os seletores de ferimentos agora incluem os ferimentos únicos do livro: Queimado, Sufocando e Doente.`],
+[`New`,`Novo`],
+[`See what’s new`,`Ver novidades`],
+[`Dismiss`,`Dispensar`],
+[`What’s new`,`Novidades`],
+[`The bigger changes to the ledger, newest first. Smaller fixes happen all the time and aren’t listed.`,`As maiores mudanças do registro, das mais novas para as mais antigas. Pequenas correções acontecem o tempo todo e não aparecem aqui.`],
+[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Novidades:</b> as atualizações maiores ficam na página de <a href="whatsnew.html">Novidades</a>. Quando sai uma, um aviso no topo informa uma vez, e uma pequena etiqueta <b>Novo</b> aparece ao lado do recurso novo por umas duas semanas ou até você usá-lo.`]
 ]);

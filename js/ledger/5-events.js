@@ -109,6 +109,8 @@ app.addEventListener('click',e=>{
   case 'reload':R.reload(s,b.dataset.id);break;
   case 'wrel':R.wrel(s,b.dataset.id,n);break;
   case 'cash':R.money(s,n);break;
+  case 'tomeadd':{const sel=document.getElementById('tomepick-'+s);if(!sel||!sel.value)return toast(t('Choose one first.'));const L=c.tomeList||[];if(L.some(x=>x.n===sel.value))return;save(s,{tomeList:[...L,{id:uid(),n:sel.value,read:false}]},logm('Added a tome: {tome}',{tome:sel.value}));break;}
+  case 'tomedel':{const L=c.tomeList||[],x=L.find(y=>y.id===b.dataset.id);if(!x)break;save(s,{tomeList:L.filter(y=>y.id!==x.id)},logm('Removed a tome: {tome}',{tome:x.n}));break;}
   case 'cashset':{const el=document.getElementById('cash-'+s);if(el.value==='')return toast(t('Enter an amount first.'));const v=Math.round(Math.max(0,Number(el.value)||0)*100)/100;const old=Number(c.money)||0;if(v===old)return toast(t('Money is already {amount}.',{amount:money(v)}));save(s,{money:v},logm('Set money: {from} → {to}',{from:money(old),to:money(v)}));break;}
   case 'cashin':case 'cashout':{const el=document.getElementById('cash-'+s);const v=Math.abs(Number(el.value)||0);if(!v)return toast(t('Enter an amount first.'));R.money(s,a==='cashin'?v:-v);break;}
   case 'session':R.newSession(s);toast(t('New session: insight refilled, habitual and lucky items ready.'));break;
@@ -132,6 +134,7 @@ app.addEventListener('change',e=>{
  }
  if(el.dataset.addinj||el.dataset.addtra){const v=el.value;if(!v||!chars[s])return;if(el.dataset.addinj)R.addInjury(s,v);else R.addTrauma(s,v);el.value='';return;}
  const c=chars[s];if(!c)return;
+ if(el.dataset.tomeread){const L=c.tomeList||[],x=L.find(y=>y.id===el.dataset.tomeread);if(!x)return;save(s,{tomeList:L.map(y=>y.id===x.id?{...y,read:el.checked}:y)},el.checked?logm('Can now read {tome}',{tome:x.n}):logm('Can no longer read {tome}',{tome:x.n}));return;}
  if(el.dataset.trait){const t=el.value;if(c.personality&&A.TRAITS[c.personality]&&t&&t!==c.personality){edit.trait={s,t};render();}else setTrait(s,t,0);return;}
  if(el.dataset.f){const p=el.dataset.f;let v=el.value;
   if(p==='xpTotal'||p==='xpUnused'){v=Math.max(0,parseInt(v)||0);const old=Number(c[p])||0;if(v===old)return;save(s,{[p]:v},p==='xpTotal'?logm('Fixed total XP: {from} → {to}',{from:old,to:v}):logm('Fixed unused XP: {from} → {to}',{from:old,to:v}));return;}

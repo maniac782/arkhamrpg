@@ -18,6 +18,10 @@ const FRENZY = ['Corpse Frenzy','While it can see a corpse, may reroll one die o
 const DEEP = ['Creatures of the Deep','Won’t willingly come within 5 ft of open flame. If burned or damaged by fire, it flees the scene.'];
 const FORMLESS = ['Formless Form','Reduces all damage by 3 (to a minimum of 0). Heals 1 damage at the start of its turn.'];
 const AMORPH = ['Amorphous','Never slowed by terrain or doors. Can’t be injured.'];
+const SHADE = ['Minor NPC','Fades into smoke and vanishes as soon as it’s wounded.'];
+const RENEWED = ['Pain Renewed','Heals 2 damage at the start of each investigator turn.'];
+const FOLLY = ['Ambition’s Folly','Attacks against it that spend 2 dice or fewer are made with disadvantage.'];
+const COOP = ['Repulsed by Cooperation','An attack someone helped with (such as Aid Another) deals 2 extra damage.'];
 const TOUGH = 'Tough hide: −1 damage from attacks (minimum 1).';
 return [
 // ---------- Generic NPCs ----------
@@ -160,6 +164,26 @@ return [
   ['Flesh Reaping','Heals 1 damage whenever it inflicts an injury.'],FLYER,SWARM],
  wk:[['Sonic Sensitivity','A very loud noise within 20 ft (bell, gong, foghorn) scatters it: it discards up to half its dice and must pass a Resolve action before doing anything else.']],
  atk:[['Many Chewing Mandibles','Melee',1,3,'Engaged','+1 damage per success; mundane armor doesn’t reduce it']],gear:'Titanic: takes up a 30×30 ft space.'},
+// ---------- The book's adventure (Terror at the Tick-Tock Club) ----------
+{n:'Heads of the Shadow Worm',cat:'Terror at the Tick-Tock Club',type:'Minor',pool:4,sk:[5,5,5,4,4,5,4,4,5,4],
+ ab:[SHADE,RENEWED,FOLLY,['Leeching Longing','Once per scene, a simple action against any number of characters within 30 ft: each who skips or fails a Resolve reaction takes 1 horror, and 1 more at the start of each of their turns until they take any damage.']],
+ wk:[COOP],atk:[['Constricting Guilt','Melee',3,4,'Engaged','Only magic can prevent or reduce its damage and injuries']],
+ gear:'A three-headed shadow of Crothoaka born of Talullah’s ambition, longing and guilt. To match the party, raise its pool max by 1 per investigator (up to 8).'},
+{n:'Shadows of the Labyrinth',cat:'Terror at the Tick-Tock Club',type:'Minor',pool:4,sk:[5,5,5,4,4,5,4,4,5,4],
+ ab:[SHADE,RENEWED,['Psyche knacks','Each shadow takes Psyche knacks matched to the investigators’ personality traits: three investigators, one shadow with three; four, two shadows with two each; five, two shadows with two and three. Pick from the list below (roll 2d6 for repeats). They work on anyone.'],
+  ['Optimistic · Unseen Coils','Once per scene, complex Lore action on someone within 30 ft: they suffer a trauma, rolling two dice and keeping the higher.'],
+  ['Cautious · Creeping Fear','Adds a Spike ranged attack (damage 2, injury 5, 20 ft). Anyone it damages who skips or fails a Resolve reaction spends their whole next turn moving away from it by the safest route.'],
+  ['Skeptical · Leeching Doubt','Once per scene, a simple action against any number of characters within 30 ft: each who skips or fails a Resolve reaction takes 1 horror, and 1 more at the start of each of their turns until they take any damage.'],
+  ['Stubborn · Whispers of Uncertainty','Once per turn, one opponent within 20 ft makes a Wits reaction; on a failure, during their next turn they’re sure another investigator is a shadow about to kill them.'],
+  ['Thrifty · Writhing Body','Once per scene, a simple action on someone within 30 ft: on a failed Resolve reaction their weapons, relics and tomes look like oozing worms until the adversaries’ next turn. Keeping hold of them costs 1d6 horror.'],
+  ['Selfless · Bitter Bite','Replaces Writhing Tendrils with a melee attack (damage 3, injury 3, 10 ft). If it injures someone, they choose another ally to take the injury instead, then suffer 1 horror.'],
+  ['Ambitious · Ambition’s Folly',FOLLY[1]],
+  ['Reserved · Crushing Loneliness','Once per scene, a simple action on any number within 100 ft: each who fails a Presence reaction can’t aid, talk to or coordinate with allies until the next NPC turn; those who pass take 1 horror.'],
+  ['Analytical · Analysis Paralysis','Once per scene, complex Lore action on someone within 100 ft: for the scene, any 1 on their complex actions means the action doesn’t happen (the dice are still spent).'],
+  ['Imaginative · Trick of the Light','Its tendril or bite attacks roll extra dice equal to the target’s current horror dice.'],
+  ['Outgoing · Aura of Shame','Once per scene, complex Presence action on someone within 100 ft: for the scene, allies within 10 ft of them have disadvantage on everything.']],
+ wk:[COOP],atk:[['Writhing Tendrils','Melee',3,4,'Engaged','']],
+ gear:'Shadows of Crothoaka shaped by the investigators’ own minds. Three investigators: one shadow, pool 6. Four: two shadows, pool 4 each. Five: two shadows, pool 5 each.'},
 ];
 })();
 /* The book's NPC trauma table (Table 8–1): roll 1d6, +1 per 1 on a horror die. */

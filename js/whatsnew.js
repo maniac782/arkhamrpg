@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-12-tomes',date:'2026-11-12',tags:['tomes'],
+  title:tk('Tomes from the book, and the adventure’s creatures'),
+  banner:tk('New: add the Core Rulebook’s tomes to a sheet, with their spells in short.'),
+  body:tk('In Tomes, relics & debts, pick any of the Core Rulebook’s tomes to see its rarity, knowledge bonus and spells in short, and mark when the investigator can read it. Tomes appear on the printable sheet too. GMs also get the creatures from the book’s adventure in the enemy list.')},
  {id:'2026-11-12-recap',date:'2026-11-12',tags:[],
   title:tk('Longer session summaries'),
   body:tk('The GM’s summary for each session can now run to 10,000 characters, so there’s room for the whole story, not just the highlights.')},

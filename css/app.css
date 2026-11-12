@@ -371,3 +371,11 @@ img[data-zoom]{cursor:zoom-in}
 .wnbar a{color:var(--ink);font-weight:600}
 .wnbar .wnx{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 4px}
 .wnpill,.newtag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:1px 7px;background:var(--brass);color:var(--bg);vertical-align:middle}
+.tomes{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.tome{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.tome .note{margin:0}
+.tome-head{display:flex;align-items:center;gap:8px}
+.tome-head b{flex:1;font-family:var(--display);font-size:17px}
+.tome-read{gap:6px;align-items:center}
+.tome-sp summary{cursor:pointer;font-size:14px;color:var(--muted)}
+.tome-sp ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}

@@ -222,7 +222,7 @@ function renderCharBody(s){
  '<div class="list">'+(c.items.length?c.items.map(it=>'<div class="item"><div class="grow"><input class="f" id="in-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="name" value="'+esc(t(it.name||''))+'" placeholder="'+t('Item')+'" style="font-weight:600"><input class="f" id="io-'+it.id+'" data-list="items" data-id="'+it.id+'" data-key="note" value="'+esc(t(it.note||''))+'" placeholder="'+t('Notes or rules')+'"></div><button class="btn sm icon" data-act="del" data-list="items" data-id="'+it.id+'" aria-label="'+t('Remove item')+'">×</button></div>').join(''):'<p class="note">'+t('No equipment.')+'</p>')+
  '</div><div class="row"><button class="btn sm" data-act="addi">'+t('Add item')+'</button></div>'+vehiclePicker(s)+'<div class="grid2">'+fld('bg.vehicle',t('Vehicle'),c.bg.vehicle)+fld('bg.lodging',t('Lodging'),c.bg.lodging)+'</div></section>';
 
- h+='<details class="sec"><summary><h2>'+t('Tomes, relics &amp; debts')+'</h2></summary><div class="grid2"><label class="field"><span class="lbl">'+t('Tomes')+'</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">'+t('Relics')+'</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">'+t('Eldritch debts or favors')+'</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
+ h+='<details class="sec"'+((c.tomeList||[]).length?' open':'')+'><summary><h2>'+t('Tomes, relics &amp; debts')+'</h2></summary>'+tomesHtml(s,c)+'<div class="grid2"><label class="field"><span class="lbl">'+((c.tomeList||[]).length||TOMES.length?t('Other tomes and notes'):t('Tomes'))+'</span><textarea class="f" id="tomes-'+s+'" data-f="tomes">'+esc(c.tomes)+'</textarea></label><label class="field"><span class="lbl">'+t('Relics')+'</span><textarea class="f" id="relics-'+s+'" data-f="relics">'+esc(c.relics)+'</textarea></label></div><label class="field"><span class="lbl">'+t('Eldritch debts or favors')+'</span><textarea class="f" id="debts-'+s+'" data-f="debts">'+esc(c.debts)+'</textarea></label></details>';
 
  // player, archetype & experience
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Player, archetype &amp; XP')+'</h2></div>'+
@@ -414,3 +414,20 @@ function render(){
  fitSelects(app);
  if(typeof focusPendingClue==='function')focusPendingClue();
 }
+
+// ---- Tomes from the book (c.tomeList: [{id, n, read}]), with their spells in short ----
+const TOMES=window.APL_TOMES||[];
+const tomeOf=n=>TOMES.find(x=>x.n===n);
+function tomesHtml(s,c){if(!TOMES.length)return '';const L=c.tomeList||[],ed=canEdit(s);
+ let h='';
+ if(L.length)h+='<div class="tomes">'+L.map(x=>{const b=tomeOf(x.n);if(!b)return '';
+  return '<div class="tome"><div class="tome-head"><b>'+esc(x.n)+'</b><span class="chip">'+t(b.r)+'</span>'+(ed?'<button class="btn sm icon" data-act="tomedel" data-id="'+x.id+'" aria-label="'+t('Remove tome')+'">×</button>':'')+'</div>'+
+   (b.alt?'<div class="note">'+t('Also known as')+': '+esc(t(b.alt))+'</div>':'')+
+   '<div class="note">'+t(b.d)+'</div>'+
+   '<label class="row note tome-read"><input type="checkbox" data-tomeread="'+x.id+'"'+(x.read?' checked':'')+(ed?'':' disabled')+'> '+t('Can read it')+'</label>'+
+   '<div class="note"><b>'+t('Knowledge bonus')+':</b> '+t(b.kb)+'</div>'+
+   '<details class="tome-sp"><summary>'+tn('{n} spell','{n} spells',b.sp.length)+'</summary><ul>'+b.sp.map(([nm,tx])=>'<li><b>'+t(nm)+'.</b> '+t(tx)+'</li>').join('')+'</ul></details></div>';}).join('')+'</div>';
+ if(ed){const have=new Set(L.map(x=>x.n));
+  h+='<div class="row"><select class="f" id="tomepick-'+s+'" aria-label="'+t('Add a tome from the book')+'" style="flex:1;min-width:0"><option value="">'+t('Add a tome from the book…')+'</option>'+TOMES.filter(x=>!have.has(x.n)).map(x=>'<option value="'+esc(x.n)+'">'+esc(x.n)+' · '+t(x.r)+'</option>').join('')+'</select><button class="btn" data-act="tomeadd">'+t('Add')+'</button>'+WN.tag('tomes')+'</div>';}
+ if(L.length||ed)h+='<p class="note" style="margin:0">'+t('To use a tome, an investigator must first read it: a difficult Knowledge or Lore action (very difficult if it’s in an ancient language or code). After that they can cast its spells while holding it open and reading aloud. On Lore or Knowledge actions about its topics, each die gets +1.')+'</p>';
+ return h;}

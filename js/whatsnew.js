@@ -6,6 +6,9 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-12-encounter',date:'2026-11-12',tags:[],
+  title:tk('Encounters on the Party page'),
+  body:tk('When the GM shows enemies, they now appear at the top of the Party page with their pictures and state, right under the scene and turn tracker, so the whole fight is in one place. The GM can also let players see the enemies’ dice pools.')},
  {id:'2026-11-12-tomes',date:'2026-11-12',tags:['tomes'],
   title:tk('Tomes from the book, and the adventure’s creatures'),
   banner:tk('New: add the Core Rulebook’s tomes to a sheet, with their spells in short.'),

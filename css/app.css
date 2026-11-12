@@ -379,3 +379,11 @@ img[data-zoom]{cursor:zoom-in}
 .tome-read{gap:6px;align-items:center}
 .tome-sp summary{cursor:pointer;font-size:14px;color:var(--muted)}
 .tome-sp ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}
+.encgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.enccard{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--line);border-radius:8px}
+.enccard .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.enccard .grow>.chip{align-self:flex-start}
+.enccard .sqpic{width:40px;height:40px;flex:none}
+.enccard .die{width:18px;height:18px}
+.encini{cursor:default;display:flex;align-items:center;justify-content:center;background:var(--brass-soft);color:var(--ink);font-family:var(--display);font-size:18px;border-radius:6px}
+.encpool{display:flex;flex-wrap:wrap;align-items:center;gap:6px}

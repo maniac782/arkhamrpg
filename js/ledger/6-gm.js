@@ -129,6 +129,18 @@ function enemyStatus(e){
  return null;
 }
 // What everyone sees in the Journal: just the picture, the name and whether it's down. The GM tab has the rest.
+// The Party page's encounter panel: every enemy the GM is showing, with its picture, name and state (and its dice
+// when the GM lets players see them; the GM always does).
+function encounterPanel(){if(campDone())return '';
+ const en=Object.values(enemies).filter(e=>e.shown).sort((a,b)=>a.t-b.t);if(!en.length)return '';
+ const pools=isGMView()||!!table.showPools;
+ return '<section class="sec encsec"><div class="sec-head"><h2>'+t('Encounter')+'</h2>'+(isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'')+'</div><div class="encgrid">'+en.map(e=>{
+  const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e)),pic=picHtml(e.pic,e.picFull,nameT(e.n));
+  const pc={regular:e.regular,horror:e.horror,poolLimit:e.limit,poolMax:e.max,horrorLimit:e.horrorLimit||0};
+  return '<div class="enccard'+(e.dead||e.out?' down':'')+'">'+(pic||'<span class="sqpic encini" aria-hidden="true">'+esc((nameT(e.n).trim()[0]||'?').toUpperCase())+'</span>')+
+   '<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+
+   (st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+
+   (pools&&!e.dead?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div></section>';}
 function enemyBrief(e){const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e));return '<div class="item" style="align-items:center">'+picHtml(e.pic,e.picFull,nameT(e.n))+'<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+'</div>'+(st&&(e.dead||e.out)?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+'</div>';}
 function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();
@@ -275,7 +287,7 @@ function renderGM(){
  else h+='<div class="row"><button class="btn pri" data-gact="next">'+(table.phase==='surprise'?t('Start round 1'):table.phase==='investigators'?t('Adversaries’ turn'):t('Investigators’ turn'))+'</button><button class="btn" data-gact="endfight">'+t('End fight')+'</button></div>';
  h+='<label class="row note" style="gap:6px"><input type="checkbox" data-gt="auto"'+(table.auto?' checked':'')+'> '+t('Refill each side’s pools automatically when their turn starts (surprise round: the side that isn’t surprised adds 1 die)')+'</label></section>';
  // encounter
- h+='<section class="sec"><div class="sec-head"><h2>'+t('Encounter')+'</h2><span class="note">'+t('Enemies are hidden from players unless you show them.')+'</span></div>'+
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Encounter')+'</h2><span class="note">'+t('Enemies are hidden from players unless you show them.')+'</span></div>'+'<label class="row note" style="gap:6px"><input type="checkbox" data-gt="showPools"'+(table.showPools?' checked':'')+'> '+t('Let players see the dice pools of enemies you show')+'</label>'+
   '<div class="row"><label class="field" style="flex:2;min-width:200px"><span class="lbl">'+(BOOK_NPCS?t('Add from the book'):t('Add an enemy'))+'</span><select class="f" id="gm-add" data-gs="addN">'+(BOOK_NPCS?'<option value="">'+t('Choose an enemy…')+'</option>':'')+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+NPCS.filter(x=>x.cat===ct).map(x=>'<option value="'+esc(x.n)+'"'+(gm.addN===x.n?' selected':'')+'>'+esc(t(x.n))+'</option>').join('')+'</optgroup>').join('')+'<option value="__custom"'+(gm.addN==='__custom'?' selected':'')+'>'+t('Custom enemy')+'</option></select></label>'+
   '<label class="field" style="width:80px"><span class="lbl">'+t('How many')+'</span><input class="f" type="number" min="1" max="12" id="gm-count" data-gs="addCount" value="'+gm.addCount+'"></label>'+
   '<button class="btn" data-gact="eadd" '+(gm.addN?'':'disabled')+'>'+t('Add')+'</button></div>'+

@@ -387,3 +387,8 @@ img[data-zoom]{cursor:zoom-in}
 .enccard .die{width:18px;height:18px}
 .encini{cursor:default;display:flex;align-items:center;justify-content:center;background:var(--brass-soft);color:var(--ink);font-family:var(--display);font-size:18px;border-radius:6px}
 .encpool{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.jfilter{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.segs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg{background:none;border:0;padding:7px 12px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.seg+.seg{border-left:1px solid var(--line)}
+.seg.on{background:var(--ink);color:var(--bg)}

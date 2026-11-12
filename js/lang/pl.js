@@ -2548,5 +2548,20 @@ I18N.add('pl',[
 [`Players see names, pictures and state; only you see the dice.`,`Gracze widzą nazwy, obrazy i stan; tylko ty widzisz kości.`],
 [`<b>Encounter on the Party page:</b> while the GM is showing enemies, the Party page lists them at the top with their pictures and state, under the scene and turn tracker. The GM always sees their dice there; tick <b>Let players see the dice pools of enemies you show</b> in the GM tab to show them to everyone.`,`<b>Starcie na stronie Drużyny:</b> gdy MG pokazuje wrogów, strona Drużyny wyświetla ich na górze z obrazami i stanem, pod sceną i licznikiem tur. MG zawsze widzi tam ich kości; zaznacz <b>Pozwól graczom widzieć pule kości pokazanych wrogów</b> w karcie MG, by pokazać je wszystkim.`],
 [`Encounters on the Party page`,`Starcia na stronie Drużyny`],
-[`When the GM shows enemies, they now appear at the top of the Party page with their pictures and state, right under the scene and turn tracker, so the whole fight is in one place. The GM can also let players see the enemies’ dice pools.`,`Gdy MG pokazuje wrogów, pojawiają się teraz na górze strony Drużyny z obrazami i stanem, tuż pod sceną i licznikiem tur, więc cała walka jest w jednym miejscu. MG może też pozwolić graczom widzieć pule kości wrogów.`]
+[`When the GM shows enemies, they now appear at the top of the Party page with their pictures and state, right under the scene and turn tracker, so the whole fight is in one place. The GM can also let players see the enemies’ dice pools.`,`Gdy MG pokazuje wrogów, pojawiają się teraz na górze strony Drużyny z obrazami i stanem, tuż pod sceną i licznikiem tur, więc cała walka jest w jednym miejscu. MG może też pozwolić graczom widzieć pule kości wrogów.`],
+[`Journal by adventure and session`,`Dziennik według przygody i sesji`],
+[`New: the GM can name the current adventure, and the Journal can show just this adventure or this session.`,`Nowość: MG może nazwać bieżącą przygodę, a Dziennik może pokazywać tylko tę przygodę lub tę sesję.`],
+[`In the GM tab, name the current adventure next to the scene. Clues you reveal, enemies you show and people the party meets are then filed under that adventure and the session, and the top of the Journal lets everyone switch between This session, This adventure and Everything.`,`W karcie MG nazwij bieżącą przygodę obok sceny. Ujawnione wskazówki, pokazani wrogowie i osoby spotkane przez drużynę trafiają wtedy pod tę przygodę i sesję, a na górze Dziennika każdy może przełączać między Ta sesja, Ta przygoda i Wszystko.`],
+[`What’s in the Journal so far is now filed under {name}.`,`To, co jest dotąd w Dzienniku, trafiło pod {name}.`],
+[`Show`,`Pokaż`],
+[`This session`,`Ta sesja`],
+[`This adventure`,`Ta przygoda`],
+[`Everything`,`Wszystko`],
+[`Adventure: {name}`,`Przygoda: {name}`],
+[`Nothing revealed in this part of the story. Choose Everything to see the rest.`,`W tej części historii nic nie ujawniono. Wybierz Wszystko, by zobaczyć resztę.`],
+[`Current adventure`,`Bieżąca przygoda`],
+[`e.g. The Witch House`,`np. Dom Czarownicy`],
+[`Clues you reveal, enemies you show and people the party meets are marked with the adventure and session, so the Journal can show just this adventure or this session.`,`Ujawnione wskazówki, pokazani wrogowie i osoby spotkane przez drużynę są oznaczane przygodą i sesją, by Dziennik mógł pokazać tylko tę przygodę lub tę sesję.`],
+[`Began the adventure “{adventure}”`,`Rozpoczęto przygodę „{adventure}”`],
+[`<b>Adventures:</b> name the current adventure in the GM tab, next to the scene. Clues revealed, enemies shown and people met from then on are filed under it and the session, and the Journal can show <b>This session</b>, <b>This adventure</b> or <b>Everything</b>. The first time you name one, everything already in the Journal is filed under it.`,`<b>Przygody:</b> nazwij bieżącą przygodę w karcie MG, obok sceny. Od tej pory ujawnione wskazówki, pokazani wrogowie i spotkane osoby trafiają pod nią i sesję, a Dziennik może pokazać <b>Ta sesja</b>, <b>Ta przygoda</b> lub <b>Wszystko</b>. Gdy nazwiesz przygodę pierwszy raz, wszystko, co już jest w Dzienniku, trafia pod nią.`]
 ]);

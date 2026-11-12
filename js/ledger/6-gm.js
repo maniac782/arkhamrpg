@@ -89,6 +89,14 @@ function picPicker(kind,id,has){return '<label class="btn sm" for="pk-'+kind+'-'
 // Crop a picture, upload it to the campaign, and hand back {pic, picFull}.
 function gmPicture(f,done){openCropper(f,{title:t('Position the picture'),shape:'square',outW:320,outH:320,maxLen:120000,full:{side:1600,maxLen:900000},onError:toast,onSave:(d,full)=>{toast(t('Saving picture…'));const at='campaigns/'+CAMP+'/'+authUid;
  Promise.all([storeImage(d,at),full?storeImage(full,at):null]).then(([u,fu])=>{if(!isStoredImage(u)&&!IS_LOCAL)return toast(t('Couldn’t upload the picture. Check your connection and try again.'));done({pic:u,picFull:isStoredImage(fu)?fu:''});});}});}
+// What a new clue, enemy or person met is filed under in the Journal: the current adventure and session.
+// The first time the GM names an adventure, everything already in the Journal is filed under it, so nothing vanishes from view.
+function fileUnderAdventure(v){let n=0;
+ Object.values(clues).forEach(c=>{if(c.shown&&c.adv==null){c.adv=v;n++;gmSet('clues/'+c.id,{adv:v},true);}});
+ Object.values(enemies).forEach(e=>{if(e.shown&&e.adv==null){n++;updEnemy(e.id,{adv:v});}});
+ let ch=false;['npcs','locations','defeated'].forEach(l=>{campaign[l]=(campaign[l]||[]).map(x=>x.adv==null?(ch=true,n++,{...x,adv:v}):x);});
+ if(ch)saveCampaign();if(n)toast(t('What’s in the Journal so far is now filed under {name}.',{name:v}));}
+const tagNow=()=>({adv:String(table.adventure||'').trim(),ss:table.session||1});
 function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.min(12,Number(gm.addCount)||1));
  const base=p?p.pool:4;const pool=gm.addScale?Math.min(8,base+SLOTS.length):base;
  // Number them only when there's more than one of the same name: the first Swamp devil is just "Swamp devil".
@@ -117,7 +125,7 @@ function tallyText(qty,killed){qty=Math.max(1,qty||1);if(qty<2)return '';return 
 // Set how many there are and how many are dead; keeps the campaign's record (and the Journal) in step.
 function setTally(id,qty,killed){const e=enemies[id];if(!e)return;qty=Math.max(1,Math.min(99,qty));killed=Math.max(0,Math.min(qty,killed));
  const was=eKilled(e),dead=killed>=qty;updEnemy(id,{qty,killed,dead,out:dead?true:(e.dead&&!dead?false:e.out)});
- let d=(campaign.defeated||[]).filter(x=>x.id!==id);if(killed>0)d=[...d,{id,n:e.n,type:e.type,pic:e.pic||'',picFull:e.picFull||'',session:table.session||1,at:((campaign.defeated||[]).find(x=>x.id===id)||{}).at||Date.now(),qty,killed}];
+ let d=(campaign.defeated||[]).filter(x=>x.id!==id);if(killed>0)d=[...d,{id,n:e.n,type:e.type,pic:e.pic||'',picFull:e.picFull||'',session:table.session||1,adv:e.adv!=null?e.adv:String(table.adventure||'').trim(),at:((campaign.defeated||[]).find(x=>x.id===id)||{}).at||Date.now(),qty,killed}];
  campaign.defeated=d;saveCampaign();
  if(killed>was)gmStory(killed-was>1||qty>1?logm('Defeated {n} × {enemy}',{n:killed-was,enemy:e.n}):logm('Defeated {enemy}',{enemy:e.n}));}
 function enemyStatus(e){
@@ -202,13 +210,13 @@ function clueLog(c){if(c.shown){gmLog(logm('Revealed clue “{clue}” to {who}'
 async function addClue(show){const tt=(document.getElementById('cl-title')||{}).value||'',b=(document.getElementById('cl-body')||{}).value||'';
  if(!tt.trim()&&!b.trim()&&!gm.clueImg)return toast(t('Write a clue or add a picture first.'));
  let img=gm.clueImg;if(img){toast(t('Saving picture…'));img=await storeImage(img,'campaigns/'+CAMP+'/'+authUid);}
- const id=gmId();const c={id,title:tt.trim(),body:b.trim(),img,to:gm.clueTo||'all',shown:!!show,t:Date.now()};clues[id]=c;gm.clueImg='';gmSet('clues/'+id,c);if(show)clueLog(c);else gmLog(logm('Saved clue “{clue}” (hidden)',{clue:clueName(c)}),false);
+ const id=gmId();const c={id,title:tt.trim(),body:b.trim(),img,to:gm.clueTo||'all',shown:!!show,t:Date.now(),...(show?tagNow():{})};clues[id]=c;gm.clueImg='';gmSet('clues/'+id,c);if(show)clueLog(c);else gmLog(logm('Saved clue “{clue}” (hidden)',{clue:clueName(c)}),false);
  const ti=document.getElementById('cl-title'),bo=document.getElementById('cl-body');if(ti)ti.value='';if(bo)bo.value='';render();toast(show?t('Clue revealed to the players.'):t('Clue saved. Reveal it when they find it.'));}
 
 // ---------- campaign ----------
 function saveCampaign(){render();gmSet('campaign/main',JSON.parse(JSON.stringify(campaign)));}
-function campaignHtml(master){
- const list=(key,label,fields,ph)=>{const a=campaign[key]||[];
+function campaignHtml(master,keep){
+ const list=(key,label,fields,ph)=>{const a=(campaign[key]||[]).filter(x=>master||key==='threads'||!keep||keep(x));
   let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+(key==='npcs'?'<div class="row" style="gap:6px">'+picPicker('n',x.id,imgOk(x.pic))+'</div>':'')+'</div>'+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
    :'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow"><b'+(x.done?' style="text-decoration:line-through;opacity:.6"':'')+'>'+esc(x.name||x.text||'')+'</b>'+(x.att?' <span class="chip">'+esc(x.att)+'</span>':'')+(x.note?'<span class="effect">'+esc(x.note)+'</span>':'')+'</div></div>').join(''):'<p class="note">'+ph+'</p>')+'</div>'+
   (master?'<div class="row"><button class="btn sm" data-gact="cpadd" data-list="'+key+'">'+t('Add')+'</button></div>':'')+'</div>';return h;};
@@ -235,15 +243,26 @@ function recapText(){return t('Session {n} recap',{n:historySession})+'\n'+recap
 // ---------- pages ----------
 // An enemy killed earlier (kept on the campaign's record after the encounter is cleared). The GM can take it off.
 function pastBrief(x){const q=Math.max(1,x.qty||1),k=x.killed||q,ty=tallyText(q,k);return '<div class="item" style="align-items:center">'+picHtml(x.pic,x.picFull,nameT(x.n))+'<div class="grow"><b>'+esc(nameT(x.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+'</div>'+(k>=q?'<span class="chip bad">'+t('Dead')+'</span>':'')+(isGM()?'<button class="btn sm icon" data-gact="defdel" data-id="'+esc(x.id)+'" aria-label="'+t('Remove {name}',{name:esc(nameT(x.n))})+'">×</button>':'')+'</div>';}
+// The Journal's filter: this session, this adventure or everything (remembered on this device, per campaign).
+let jFilter=null;
+function jView(){const adv=String(table.adventure||'').trim();let v=jFilter;
+ if(v==null)try{v=localStorage.getItem('apl-jfilter-'+(CAMP||''));}catch(e){}
+ if(v==='adv'&&!adv)v='all';return v==='ss'||v==='adv'||v==='all'?v:(adv?'adv':'all');}
+function jKeep(){const v=jView(),adv=String(table.adventure||'').trim(),ss=table.session||1;
+ return v==='ss'?(x=>(x.ss||x.session)===ss):v==='adv'?(x=>x.adv===adv):null;}
+function jFilterHtml(){const v=jView(),adv=String(table.adventure||'').trim();
+ const opt=(k,l)=>'<button class="seg'+(v===k?' on':'')+'" data-gact="jfilter" data-v="'+k+'" aria-pressed="'+(v===k)+'">'+l+'</button>';
+ return '<div class="jfilter" role="group" aria-label="'+t('Show')+'"><span class="lbl">'+t('Show')+'</span><div class="segs">'+opt('ss',t('This session'))+(adv?opt('adv',t('This adventure')):'')+opt('all',t('Everything'))+'</div>'+WN.tag('jfilter')+(adv?'<span class="note">'+t('Adventure: {name}',{name:esc(adv)})+'</span>':'')+'</div>';}
 function renderJournal(){
- const shown=Object.values(clues).filter(c=>c.shown).sort((a,b)=>b.t-a.t);
- let h=turnBar()+'<section class="sec"><div class="sec-head"><h2>'+t('Clues &amp; handouts')+'</h2><span class="note">'+t('What the GM has revealed. Newest first.')+'</span></div>'+
-  (shown.length?'<div class="clues">'+shown.map(c=>clueHtml(c,false)).join('')+'</div>':'<p class="note" style="margin:0">'+t('Nothing revealed yet.')+'</p>')+'</section>';
+ const keep=jKeep(),k=x=>!keep||keep(x);
+ const shown=Object.values(clues).filter(c=>c.shown&&k(c)).sort((a,b)=>b.t-a.t);
+ let h=turnBar()+jFilterHtml()+'<section class="sec"><div class="sec-head"><h2>'+t('Clues &amp; handouts')+'</h2><span class="note">'+t('What the GM has revealed. Newest first.')+'</span></div>'+
+  (shown.length?'<div class="clues">'+shown.map(c=>clueHtml(c,false)).join('')+'</div>':'<p class="note" style="margin:0">'+(keep&&Object.values(clues).some(c=>c.shown)?t('Nothing revealed in this part of the story. Choose Everything to see the rest.'):t('Nothing revealed yet.'))+'</p>')+'</section>';
  // One list: enemies the GM is showing now, then ones killed earlier that are no longer on show (newest first).
- const shownEn=Object.values(enemies).filter(e=>e.shown).sort((a,b)=>a.t-b.t);
- const past=(campaign.defeated||[]).filter(x=>!(enemies[x.id]&&enemies[x.id].shown)).sort((a,b)=>b.at-a.at);
+ const shownEn=Object.values(enemies).filter(e=>e.shown&&k(e)).sort((a,b)=>a.t-b.t);
+ const past=(campaign.defeated||[]).filter(x=>!(enemies[x.id]&&enemies[x.id].shown)&&k(x)).sort((a,b)=>b.at-a.at);
  if(shownEn.length||past.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+(past.length?t('Shown by the GM, and enemies defeated so far.'):t('The GM is showing these.'))+'</span></div><div class="list">'+shownEn.map(enemyBrief).join('')+past.map(pastBrief).join('')+'</div></section>';
- h+='<section class="sec"><div class="sec-head"><h2>'+t('Campaign')+'</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false)+'</section>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Campaign')+'</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false,keep)+'</section>';
  // finished sessions only: the current one appears once the GM starts the next
  const done=(table.session||1)-1;
  if(done>=1){
@@ -279,6 +298,8 @@ function renderGM(){
  if(CAMP)h+=gmNextHtml();
  // scene & turns
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Scene &amp; turns')+'</h2><span class="note">'+t('Everyone sees this bar at the top of their screen.')+'</span></div>'+
+  '<label class="field"><span class="lbl">'+t('Current adventure')+'</span><input class="f" id="gm-adv" data-gt="adventure" maxlength="80" value="'+esc(table.adventure||'')+'" placeholder="'+t('e.g. The Witch House')+'"></label>'+
+  '<p class="note" style="margin:0">'+t('Clues you reveal, enemies you show and people the party meets are marked with the adventure and session, so the Journal can show just this adventure or this session.')+'</p>'+
   '<div class="row"><label class="field" style="flex:1;min-width:200px"><span class="lbl">'+t('Scene')+'</span><input class="f" id="gm-scene" data-gt="scene" value="'+esc(table.scene)+'" placeholder="'+t('e.g. The Orne Library, after midnight')+'"></label>'+
   (table.scene||table.fight?'<button class="btn sm" data-gact="endscene">'+t('End scene')+'</button>':'')+'</div>';
  if(!table.fight)h+='<div class="row"><label class="field"><span class="lbl">'+t('Who goes first')+'</span><select class="f" id="gm-first" data-gs="fightFirst"><option value="investigators"'+(gm.fightFirst==='investigators'?' selected':'')+'>'+t('Investigators')+'</option><option value="adversaries"'+(gm.fightFirst==='adversaries'?' selected':'')+'>'+t('Adversaries')+'</option></select></label>'+
@@ -340,7 +361,7 @@ function renderGM(){
 
 // ---------- GM clicks and edits ----------
 function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n),e=id&&enemies[id];
- if(!isGM()&&!['eopen','copyrecap'].includes(a))return toast(t('Only the GM can change this.'));
+ if(!isGM()&&!['eopen','copyrecap','jfilter'].includes(a))return toast(t('Only the GM can change this.'));
  switch(a){
   case 'fight':startFight();break;
   case 'next':nextTurn();break;
@@ -348,7 +369,7 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'endscene':if(table.scene)gmLog(logm('Scene ended: {scene}',{scene:table.scene}),false);saveTable({scene:'',fight:false,phase:'',round:0});break;
   case 'eadd':if(gm.addN==='__custom'){gm.addN='';addEnemies();}else addEnemies();break;
   case 'eopen':gm.open[id]=!gm.open[id];render();break;
-  case 'eshow':if(e){gmLog(e.shown?logm('Hid {enemy} from the players',{enemy:e.n}):logm('Showed {enemy} to the players',{enemy:e.n}),false);if(!e.shown)gmStory(logm('Encountered {enemy}',{enemy:e.n}));updEnemy(id,{shown:!e.shown});}break;
+  case 'eshow':if(e){gmLog(e.shown?logm('Hid {enemy} from the players',{enemy:e.n}):logm('Showed {enemy} to the players',{enemy:e.n}),false);if(!e.shown)gmStory(logm('Encountered {enemy}',{enemy:e.n}));updEnemy(id,e.shown?{shown:false}:{shown:true,...(e.adv!=null&&e.ss?{}:tagNow())});}break;
   case 'edel':if(e){gmLog(logm('Removed {enemy}',{enemy:e.n}),false);delete enemies[id];render();gmDel('enemies/'+id);}break;
   case 'eclearall':if(Object.keys(enemies).length)gmLog(logm('Cleared all enemies'),false);Object.keys(enemies).forEach(k=>gmDel('enemies/'+k));enemies={};render();break;
   case 'espend':if(e){if(e.regular>0)updEnemy(id,{regular:e.regular-1});else if(e.horror>0)updEnemy(id,{horror:e.horror-1});}break;
@@ -369,11 +390,12 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'eclear':if(e)updEnemy(id,{injuries:[],traumas:[]});break;
   case 'roll':rollDice();break;
   case 'cadd':addClue(n===1);break;
-  case 'cshow':{const c=clues[id];if(c){c.shown=!c.shown;clueLog(c);render();gmSet('clues/'+id,{shown:c.shown},true);}break;}
+  case 'cshow':{const c=clues[id];if(c){c.shown=!c.shown;const tg=c.shown&&!c.ss?tagNow():{};Object.assign(c,tg);clueLog(c);render();gmSet('clues/'+id,{shown:c.shown,...tg},true);}break;}
   case 'cdel':if(clues[id])gmLog(logm('Deleted clue “{clue}”',{clue:clueName(clues[id])}),false);delete clues[id];render();gmDel('clues/'+id);break;
   case 'climgdel':gm.clueImg='';render();break;
   case 'picdel':{const id=b.dataset.id;if(b.dataset.kind==='e'){if(enemies[id])updEnemy(id,{pic:'',picFull:''});}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,pic:'',picFull:''}:x);saveCampaign();}break;}
-  case 'cpadd':{const l=b.dataset.list;campaign[l]=[...(campaign[l]||[]),{id:gmId()}];saveCampaign();break;}
+  case 'jfilter':{const v=b.dataset.v;jFilter=v;try{localStorage.setItem('apl-jfilter-'+(CAMP||''),v);}catch(e){}render();break;}
+  case 'cpadd':{const l=b.dataset.list;campaign[l]=[...(campaign[l]||[]),{id:gmId(),...(l==='threads'?{}:tagNow())}];saveCampaign();break;}
   case 'cpdel':{const l=b.dataset.list;campaign[l]=(campaign[l]||[]).filter(x=>x.id!==id);saveCampaign();break;}
   case 'cpdone':campaign.threads=(campaign.threads||[]).map(x=>x.id===id?{...x,done:!x.done}:x);saveCampaign();break;
   case 'wrapall':SLOTS.forEach(s=>{gm.wrap[s]={...(gm.wrap[s]||{mom:false}),xp:gm.wrap.hours||4};});render();break;
@@ -392,7 +414,7 @@ let notesT=null;
 function gmChange(el){
  if(!isGM()&&(el.dataset.gpic||el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
  if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
- if(el.dataset.gt){const k=el.dataset.gt;if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog(logm('Scene: {scene}',{scene:el.value.trim()}),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
+ if(el.dataset.gt){const k=el.dataset.gt;if(k==='adventure'){const v=el.value.trim().slice(0,80);if(v===(table.adventure||''))return true;if(v)gmStory(logm('Began the adventure “{adventure}”',{adventure:v}));const first=!table.adventure&&v;saveTable({adventure:v});if(first)fileUnderAdventure(v);return true;}if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog(logm('Scene: {scene}',{scene:el.value.trim()}),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
  if(el.dataset.gen){const id=el.dataset.gen,k=el.dataset.k;updEnemy(id,{[k]:el.value});
   // Keep its entry under Enemies defeated in step (name and type).
   if((k==='n'||k==='type')&&(campaign.defeated||[]).some(x=>x.id===id)){campaign.defeated=campaign.defeated.map(x=>x.id===id?{...x,[k]:el.value}:x);saveCampaign();}return true;}

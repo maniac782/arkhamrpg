@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-12-adventure',date:'2026-11-12',tags:['jfilter'],
+  title:tk('Journal by adventure and session'),
+  banner:tk('New: the GM can name the current adventure, and the Journal can show just this adventure or this session.'),
+  body:tk('In the GM tab, name the current adventure next to the scene. Clues you reveal, enemies you show and people the party meets are then filed under that adventure and the session, and the top of the Journal lets everyone switch between This session, This adventure and Everything.')},
  {id:'2026-11-12-encounter',date:'2026-11-12',tags:[],
   title:tk('Encounters on the Party page'),
   body:tk('When the GM shows enemies, they now appear at the top of the Party page with their pictures and state, right under the scene and turn tracker, so the whole fight is in one place. The GM can also let players see the enemies’ dice pools.')},
@@ -62,6 +66,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 // Using a tagged feature (tapping the control the label sits in) retires its label.
 document.addEventListener('click',function(e){var c=e.target.closest&&e.target.closest('button,a,label,summary');var tg=c&&c.querySelector&&c.querySelector('[data-newtag]');
  if(!tg&&c){var nx=c.nextElementSibling;if(nx&&nx.hasAttribute&&nx.hasAttribute('data-newtag'))tg=nx;}
+ if(!tg&&c&&c.parentElement){var nx2=c.parentElement.nextElementSibling;if(nx2&&nx2.hasAttribute&&nx2.hasAttribute('data-newtag'))tg=nx2;}
  if(!tg&&e.target.closest)tg=e.target.closest('[data-newtag]');if(!tg)return;var n=tg.getAttribute('data-newtag'),s=tagsSeen();if(s.indexOf(n)<0){s.push(n);set(TKEY,JSON.stringify(s));}
  setTimeout(function(){var all=document.querySelectorAll('[data-newtag="'+n+'"]');for(var i=0;i<all.length;i++)all[i].remove();},0);},true);
 })();

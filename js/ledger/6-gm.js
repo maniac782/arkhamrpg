@@ -313,7 +313,7 @@ function renderGM(){
  // recap
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Session recap')+'</h2></div><div class="row"><label class="field"><span class="lbl">'+t('Session')+'</span><select class="f" data-grecap="1"><option value="">'+t('Choose…')+'</option>'+ss.map(i=>'<option value="'+i+'"'+(historySession===i?' selected':'')+'>'+t('Session {n}',{n:i})+'</option>').join('')+'</select></label>'+(historySession&&histLog.length?'<button class="btn sm" data-gact="copyrecap">'+t('Copy as text')+'</button>':'')+'</div>';
  if(historySession){
-  h+='<label class="field"><span class="lbl">'+t('Summary for players (optional)')+'</span><textarea class="f" rows="3" maxlength="2000" data-gsum="'+historySession+'" placeholder="'+t('A few sentences on what happened. Players see it in the Journal once session {n} is over.',{n:historySession})+'">'+esc(summaryOf(historySession))+'</textarea></label>';
+  h+='<label class="field"><span class="lbl">'+t('Summary for players (optional)')+'</span><textarea class="f" rows="6" maxlength="10000" data-gsum="'+historySession+'" placeholder="'+t('A few sentences on what happened. Players see it in the Journal once session {n} is over.',{n:historySession})+'">'+esc(summaryOf(historySession))+'</textarea></label>';
   h+=histLog.length?'<div class="grid2">'+recapGroups().map(([n,a])=>'<div><span class="lbl">'+esc(n)+'</span><ul class="recap">'+a.map(x=>'<li>'+esc(logText(x))+'</li>').join('')+'</ul></div>').join('')+'</div>':'<p class="note" style="margin:0">'+t('Nothing logged for session {n}. (Recaps start from when this feature was added.)',{n:historySession})+'</p>';}
  h+='</section>';
  // campaign
@@ -395,7 +395,7 @@ function gmChange(el){
  if(el.dataset.gwrap){const s=el.dataset.gwrap;if(s==='hours'){gm.wrap.hours=Math.max(0,Number(el.value)||0);return true;}
   const x=gm.wrap[s]||(gm.wrap[s]={xp:gm.wrap.hours||4,mom:false});if(el.dataset.k==='mom')x.mom=el.checked;else x.xp=Math.max(0,Number(el.value)||0);return true;}
  if(el.dataset.jrecap){loadJournalRecap(Number(el.value));return true;}
- if(el.dataset.gsum){const n=el.dataset.gsum;campaign.summaries={...(campaign.summaries||{}),[n]:el.value.trim().slice(0,2000)};saveCampaign();toast(t('Summary saved.'));return true;}
+ if(el.dataset.gsum){const n=el.dataset.gsum;campaign.summaries={...(campaign.summaries||{}),[n]:el.value.trim().slice(0,10000)};saveCampaign();toast(t('Summary saved.'));return true;}
  if(el.dataset.grecap){if(el.value)loadRecap(Number(el.value));else{historySession=null;render();}return true;}
  return false;
 }

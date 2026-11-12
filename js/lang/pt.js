@@ -2404,5 +2404,7 @@ I18N.add('pt',[
 [`Dismiss`,`Dispensar`],
 [`What’s new`,`Novidades`],
 [`The bigger changes to the ledger, newest first. Smaller fixes happen all the time and aren’t listed.`,`As maiores mudanças do registro, das mais novas para as mais antigas. Pequenas correções acontecem o tempo todo e não aparecem aqui.`],
-[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Novidades:</b> as atualizações maiores ficam na página de <a href="whatsnew.html">Novidades</a>. Quando sai uma, um aviso no topo informa uma vez, e uma pequena etiqueta <b>Novo</b> aparece ao lado do recurso novo por umas duas semanas ou até você usá-lo.`]
+[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Novidades:</b> as atualizações maiores ficam na página de <a href="whatsnew.html">Novidades</a>. Quando sai uma, um aviso no topo informa uma vez, e uma pequena etiqueta <b>Novo</b> aparece ao lado do recurso novo por umas duas semanas ou até você usá-lo.`],
+[`Longer session summaries`,`Resumos de sessão mais longos`],
+[`The GM’s summary for each session can now run to 10,000 characters, so there’s room for the whole story, not just the highlights.`,`O resumo do Mestre para cada sessão agora pode ter até 10.000 caracteres, então cabe a história inteira, não só os destaques.`]
 ]);

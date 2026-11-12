@@ -6,6 +6,9 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-12-recap',date:'2026-11-12',tags:[],
+  title:tk('Longer session summaries'),
+  body:tk('The GM’s summary for each session can now run to 10,000 characters, so there’s room for the whole story, not just the highlights.')},
  {id:'2026-11-08-shopping',date:'2026-11-08',tags:['plan'],
   title:tk('Shopping list and Undo'),
   banner:tk('New: plan purchases with a shopping list, and undo any purchase.'),

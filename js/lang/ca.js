@@ -2404,5 +2404,7 @@ I18N.add('ca',[
 [`Dismiss`,`Descarta`],
 [`What’s new`,`Novetats`],
 [`The bigger changes to the ledger, newest first. Smaller fixes happen all the time and aren’t listed.`,`Els canvis més grans del registre, primer els més recents. Els arranjaments petits són constants i no hi surten.`],
-[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Novetats:</b> les actualitzacions més grans surten a la pàgina de <a href="whatsnew.html">Novetats</a>. Quan n’arriba una, un avís a dalt ho diu una vegada, i una petita etiqueta <b>Nou</b> apareix al costat de la funció nova durant un parell de setmanes o fins que la facis servir.`]
+[`<b>What’s new:</b> bigger updates are listed on the <a href="whatsnew.html">What’s new</a> page. When one lands, a banner at the top says so once, and a small <b>New</b> label sits next to the new feature for a couple of weeks or until you use it.`,`<b>Novetats:</b> les actualitzacions més grans surten a la pàgina de <a href="whatsnew.html">Novetats</a>. Quan n’arriba una, un avís a dalt ho diu una vegada, i una petita etiqueta <b>Nou</b> apareix al costat de la funció nova durant un parell de setmanes o fins que la facis servir.`],
+[`Longer session summaries`,`Resums de sessió més llargs`],
+[`The GM’s summary for each session can now run to 10,000 characters, so there’s room for the whole story, not just the highlights.`,`El resum del DJ de cada sessió ara pot tenir fins a 10.000 caràcters, així que hi cap tota la història, no només el més destacat.`]
 ]);

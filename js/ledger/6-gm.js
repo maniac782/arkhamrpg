@@ -140,7 +140,8 @@ function enemyStatus(e){
 // The Party page's encounter panel: every enemy the GM is showing, with its picture, name and state (and its dice
 // when the GM lets players see them; the GM always does).
 function encounterPanel(){if(campDone())return '';
- const en=Object.values(enemies).filter(e=>e.shown).sort((a,b)=>a.t-b.t);if(!en.length)return '';
+ // Dead enemies leave the encounter (they stay in the Journal); knocked-out ones stay, since they may get back up.
+ const en=Object.values(enemies).filter(e=>e.shown&&!e.dead).sort((a,b)=>a.t-b.t);if(!en.length)return '';
  const pools=isGMView()||!!table.showPools;
  return '<section class="sec encsec"><div class="sec-head"><h2>'+t('Encounter')+'</h2>'+(isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'')+'</div><div class="encgrid">'+en.map(e=>{
   const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e)),pic=picHtml(e.pic,e.picFull,nameT(e.n));
@@ -148,7 +149,7 @@ function encounterPanel(){if(campDone())return '';
   return '<div class="enccard'+(e.dead||e.out?' down':'')+'">'+(pic||'<span class="sqpic encini" aria-hidden="true">'+esc((nameT(e.n).trim()[0]||'?').toUpperCase())+'</span>')+
    '<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+
    (st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+
-   (pools&&!e.dead?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div></section>';}
+   (pools?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div></section>';}
 function enemyBrief(e){const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e));return '<div class="item" style="align-items:center">'+picHtml(e.pic,e.picFull,nameT(e.n))+'<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+'</div>'+(st&&(e.dead||e.out)?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+'</div>';}
 function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();

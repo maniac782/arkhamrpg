@@ -392,3 +392,10 @@ img[data-zoom]{cursor:zoom-in}
 .seg{background:none;border:0;padding:7px 12px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
 .seg+.seg{border-left:1px solid var(--line)}
 .seg.on{background:var(--ink);color:var(--bg)}
+.encwrap{display:grid;gap:16px}
+@media (min-width:900px){.encwrap{grid-template-columns:1fr 1fr;align-items:start}}
+.encinvcard{font:inherit;color:inherit;text-align:left;cursor:pointer;background:none;width:100%}
+.encinvcard:hover{border-color:var(--ink)}
+.encinvcard .avatar{flex:none}
+.encinvcard .grow>*{align-self:flex-start;margin-left:0}
+#tabs .newtag{margin-left:6px}

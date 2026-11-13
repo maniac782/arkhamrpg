@@ -131,7 +131,7 @@ try{const k=IS_DEMO?null:JSON.parse(localStorage.getItem(CACHE_KEY)||'null');CAC
 let cacheT;
 function saveCache(){if(IS_DEMO)return;clearTimeout(cacheT);cacheT=setTimeout(()=>{const d={slots:SLOTS,chars:{},keys:Object.keys(keys).filter(k=>keys[k]),gm:gmClaimed,table,house,...(CAMP?{camp,uid:authUid}:{})};SLOTS.forEach(x=>d.chars[x]=chars[x]);
  try{localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e){try{SLOTS.forEach(x=>d.chars[x]={...chars[x],portrait:''});localStorage.setItem(CACHE_KEY,JSON.stringify(d));}catch(e2){}}},400);}
-try{const t=IS_DEMO?null:localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
+try{const t=IS_DEMO?null:localStorage.getItem(TAB_KEY);if(t&&(t==='party'||t==='encounter'||t==='create'||t==='journal'||t==='gm'||SLOTS.includes(t)))active=t;else if(t&&isSlotId(t))pendingTab=t;}catch(e){}
 SLOTS.forEach(s=>{if(!chars[s])chars[s]=blank(slotNum(s));});
 
 const toastEl=document.getElementById('toast');let toastT;

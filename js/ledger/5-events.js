@@ -25,7 +25,7 @@ document.addEventListener('click',()=>{tapDone=true;setTimeout(()=>{if(pending&&
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{
  const gb=e.target.closest('[data-gact]');if(gb){if(!gb.disabled)gmClick(gb);return;}
- const card=e.target.closest('.pcard');if(card){go(card.dataset.tab);return;}
+ const card=e.target.closest('.pcard,.encinvcard');if(card){go(card.dataset.tab);return;}
  if(active==='create'){const cb=e.target.closest('[data-cact]');if(cb&&!cb.disabled)creatorClick(cb);return;}
  const b=e.target.closest('[data-act]');if(!b||b.matches(':disabled'))return;const s=active,a=b.dataset.act,n=Number(b.dataset.n),c=chars[s];
  switch(a){

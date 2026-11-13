@@ -26,7 +26,7 @@ function poolHtml(c,mini){
 }
 function renderTabs(){
  const tb=document.getElementById('tabs');
- tb.innerHTML=['party',...SLOTS,'journal',...(campDone()?[]:[...(CAMP&&!isGM()?[]:['gm']),'create'])].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?t('Party'):s==='create'?t('+ New investigator'):s==='journal'?t('Journal'):s==='gm'?t('GM'):(chars[s].name||t('Investigator')))+'</button>').join('');
+ tb.innerHTML=['party',...(SLOTS.length?['encounter']:[]),...SLOTS,'journal',...(campDone()?[]:[...(CAMP&&!isGM()?[]:['gm']),'create'])].map(s=>'<button class="tab" role="tab" data-tab="'+s+'" aria-selected="'+(s===active)+'">'+esc(s==='party'?t('Party'):s==='encounter'?t('Encounter'):s==='create'?t('+ New investigator'):s==='journal'?t('Journal'):s==='gm'?t('GM'):(chars[s].name||t('Investigator')))+(s==='encounter'?WN.tag('encounter'):'')+'</button>').join('');
 }
 // The next meetup, set by the owner or GM in the campaign's Settings.
 function nextSessionBar(){if(campDone())return '';
@@ -38,6 +38,11 @@ function nextSessionBar(){if(campDone())return '';
 }
 // The campaign's picture across the top of the Party tab; tap it to see the whole picture.
 function partyBanner(){return CAMP&&camp&&imgOk(camp.photo)?'<img class="partybanner" src="'+camp.photo+'" alt="'+esc(camp.name)+'" data-zoom'+(imgOk(camp.photoFull)?' data-full="'+camp.photoFull+'"':'')+'>':'';}
+function pcardHtml(s){const c=chars[s];const lr=(c.log||[])[0];
+  return '<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([archLabel(c),c.player&&t('played by {name}',{name:c.player==='You'?t('You'):c.player})].filter(Boolean).join(' · ')||t('Unassigned'))+'</div></div></div>'+statusChips(c)+'</div>'+
+  poolHtml(c,true)+
+  '<div class="kv"><div><span class="lbl">'+t('Pool')+'</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">'+t('Horror')+'</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">'+t('Insight')+'</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">'+t('Injuries')+'</span><b>'+c.injuries.length+'</b></div></div>'+
+  (lr?'<div class="log">'+t('Latest: {text}',{text:esc(logText(lr))})+'</div>':'')+'</button>';}
 function renderParty(){
  const tip='<div class="banner">'+t('Tap an investigator to open their sheet.')+' '+(IS_DEMO?t('This is a sample campaign, so nothing you change here is saved.'):IS_LOCAL?t('Everything is saved in this browser. Save it to an account to keep it safe and share it with your group.'):t('Every change syncs to everyone at the table.'))+'</div>';
  // With a campaign picture: the picture on the left, next session and the tip beside it (stacked on phones).
@@ -46,11 +51,7 @@ function renderParty(){
   (CAMP&&!canAddSheet()?'<p class="note" style="margin:0">'+t('You have your investigator. Only the campaign owner can add more.')+'</p>':'')+
   (SLOTS.length<MAX_SLOTS&&canAddSheet()?'<div class="row"><button class="btn" data-act="newinv">'+(CAMP&&!keys.master?t('+ Create my investigator'):t('+ Add an investigator'))+'</button>'+(rosterLocked?'<span class="note">'+t('Publish the updated Firestore rules (see README) to add or remove investigators.')+'</span>':'')+'</div>':'')+
   '<div class="party">';
- SLOTS.forEach(s=>{const c=chars[s];const lr=(c.log||[])[0];
-  h+='<button class="pcard" data-tab="'+s+'"><div class="row" style="justify-content:space-between;width:100%"><div class="row" style="gap:10px;flex-wrap:nowrap">'+avatarHtml(c,'sm')+'<div><h3>'+esc(c.name)+'</h3><div class="note">'+esc([archLabel(c),c.player&&t('played by {name}',{name:c.player==='You'?t('You'):c.player})].filter(Boolean).join(' · ')||t('Unassigned'))+'</div></div></div>'+statusChips(c)+'</div>'+
-  poolHtml(c,true)+
-  '<div class="kv"><div><span class="lbl">'+t('Pool')+'</span><b>'+c.poolLimit+'/'+c.poolMax+'</b></div><div><span class="lbl">'+t('Horror')+'</span><b>'+c.horrorLimit+'</b></div><div><span class="lbl">'+t('Insight')+'</span><b>'+c.insight+'/'+c.insightLimit+'</b></div><div><span class="lbl">'+t('Injuries')+'</span><b>'+c.injuries.length+'</b></div></div>'+
-  (lr?'<div class="log">'+t('Latest: {text}',{text:esc(logText(lr))})+'</div>':'')+'</button>';});
+ SLOTS.forEach(s=>{h+=pcardHtml(s);});
  h+='</div>';
  // In a campaign, players who aren't the GM only see the house rules here (and nothing at all if there are none).
  const gmBody=houseToggle()+(isGMView()?'<div class="row"><button class="btn pri" data-act="sessionAll">'+t('Start new session for everyone')+'</button><button class="btn" data-act="refillAll">'+t('Refill every pool')+'</button></div><p class="note" style="margin:0">'+t('A new session refills insight to its limit, frees habitual and lucky items and clears trauma roll penalties.')+' '+(CAMP?t('This covers every investigator in the campaign.'):t('With the master key or the GM PIN this covers every sheet.'))+'</p>':(CAMP?'':'<p class="note" style="margin:0">'+t('Starting a new session and refilling every pool need the GM PIN (on the GM tab) or the master key.')+'</p>'))+(!localMode&&!CAMP?(keys.master?'<div class="row"><span class="chip ok">'+t('Master key active')+'</span><span class="note">'+t('This device can edit every sheet.')+'</span><button class="btn sm" data-act="mforget">'+t('Remove master key from this device')+'</button></div>':'<div class="row"><input class="maxsel" style="width:170px" type="password" id="mkey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+t('Master key')+'" aria-label="'+t('Master key')+'"><button class="btn sm" data-act="munlock">'+t('Use master key')+'</button></div>'):'');
@@ -409,7 +410,7 @@ function render(){
  renderTabs();
  const app=document.getElementById('app');
  if(campDone()&&(active==='gm'||active==='create'))active='party';
- app.innerHTML=doneBanner()+(active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty());
+ app.innerHTML=doneBanner()+(active==='party'?renderParty():active==='create'?renderCreator():active==='journal'?renderJournal():active==='encounter'?renderEncounter():active==='gm'?renderGM():chars[active]?renderChar(active):renderParty());
  if(keepId){const el=document.getElementById(keepId);if(el)try{el.focus({preventScroll:true});}catch(e){}}
  fitSelects(app);
  if(typeof focusPendingClue==='function')focusPendingClue();

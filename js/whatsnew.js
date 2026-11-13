@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-12-enctab',date:'2026-11-12',tags:['encounter'],
+  title:tk('Encounter tab'),
+  banner:tk('New: an Encounter tab puts the investigators and the enemies in one place during a fight.'),
+  body:tk('Next to Party, the Encounter tab shows every investigator (dice, horror and injuries) beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet. Dead enemies drop off but stay in the Journal.')},
  {id:'2026-11-12-adventure',date:'2026-11-12',tags:['jfilter'],
   title:tk('Journal by adventure and session'),
   banner:tk('New: the GM can name the current adventure, and the Journal can show just this adventure or this session.'),

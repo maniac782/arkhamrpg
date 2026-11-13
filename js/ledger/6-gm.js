@@ -139,17 +139,35 @@ function enemyStatus(e){
 // What everyone sees in the Journal: just the picture, the name and whether it's down. The GM tab has the rest.
 // The Party page's encounter panel: every enemy the GM is showing, with its picture, name and state (and its dice
 // when the GM lets players see them; the GM always does).
-function encounterPanel(){if(campDone())return '';
- // Dead enemies leave the encounter (they stay in the Journal); knocked-out ones stay, since they may get back up.
- const en=Object.values(enemies).filter(e=>e.shown&&!e.dead).sort((a,b)=>a.t-b.t);if(!en.length)return '';
- const pools=isGMView()||!!table.showPools;
- return '<section class="sec encsec"><div class="sec-head"><h2>'+t('Encounter')+'</h2>'+(isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'')+'</div><div class="encgrid">'+en.map(e=>{
+const encEnemies=()=>Object.values(enemies).filter(e=>e.shown&&!e.dead).sort((a,b)=>a.t-b.t);
+function encCards(en){const pools=isGMView()||!!table.showPools;
+ return '<div class="encgrid">'+en.map(e=>{
   const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e)),pic=picHtml(e.pic,e.picFull,nameT(e.n));
   const pc={regular:e.regular,horror:e.horror,poolLimit:e.limit,poolMax:e.max,horrorLimit:e.horrorLimit||0};
-  return '<div class="enccard'+(e.dead||e.out?' down':'')+'">'+(pic||'<span class="sqpic encini" aria-hidden="true">'+esc((nameT(e.n).trim()[0]||'?').toUpperCase())+'</span>')+
+  return '<div class="enccard'+(e.out?' down':'')+'">'+(pic||'<span class="sqpic encini" aria-hidden="true">'+esc((nameT(e.n).trim()[0]||'?').toUpperCase())+'</span>')+
    '<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+
    (st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+
-   (pools?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div></section>';}
+   (pools?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div>';}
+// A compact investigator card for the Encounter tab: picture, name, state, dice and the numbers that matter mid-fight.
+function encInvCard(s){const c=chars[s];
+ return '<button class="enccard encinvcard" data-tab="'+s+'">'+avatarHtml(c,'sm')+'<div class="grow"><b>'+esc(c.name||t('Investigator'))+'</b>'+statusChips(c)+
+  '<div class="encpool">'+poolHtml(c,true)+'<span class="note">'+c.poolLimit+'/'+c.poolMax+'</span></div>'+
+  '<span class="note">'+t('Horror')+' '+c.horrorLimit+' · '+t('Injuries')+' '+c.injuries.length+'</span></div></button>';}
+const poolNote=()=>isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'';
+// The Party page's encounter panel: every enemy the GM is showing, with its picture, name and state (and its dice
+// when the GM lets players see them; the GM always does). Dead enemies leave it (they stay in the Journal);
+// knocked-out ones stay, since they may get back up.
+function encounterPanel(){if(campDone())return '';const en=encEnemies();if(!en.length)return '';
+ return '<section class="sec encsec"><div class="sec-head"><h2>'+t('Encounter')+'</h2>'+poolNote()+'</div>'+encCards(en)+'</section>';}
+// The Encounter tab: the whole fight in one place — the investigators and the enemies the GM is showing, side by side on
+// wide screens.
+function renderEncounter(){const en=campDone()?[]:encEnemies();
+ let h=turnBar();
+ if(!en.length&&!table.fight)h+='<div class="banner">'+t('No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.')+'</div>';
+ h+='<div class="encwrap"><section class="sec"><div class="sec-head"><h2>'+t('Investigators')+'</h2></div><div class="encgrid encinv">'+SLOTS.map(encInvCard).join('')+'</div></section>'+
+  '<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2>'+poolNote()+'</div>'+(en.length?encCards(en):'<p class="note" style="margin:0">'+t('None showing.')+'</p>')+
+  (isGMView()&&!campDone()?'<div class="row"><a class="btn sm" href="#gm" data-act="gotogm">'+t('Manage enemies in the GM tab')+'</a></div>':'')+'</section></div>';
+ return h;}
 function enemyBrief(e){const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e));return '<div class="item" style="align-items:center">'+picHtml(e.pic,e.picFull,nameT(e.n))+'<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+'</div>'+(st&&(e.dead||e.out)?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+'</div>';}
 function enemyHtml(e){
  const p=npcProfile(e.base);const open=!!gm.open[e.id];const master=isGM();

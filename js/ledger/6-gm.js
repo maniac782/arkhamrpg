@@ -137,14 +137,14 @@ function enemyStatus(e){
  return null;
 }
 // What everyone sees in the Journal: just the picture, the name and whether it's down. The GM tab has the rest.
-// The Party page's encounter panel: every enemy the GM is showing, with its picture, name and state (and its dice
-// when the GM lets players see them; the GM always does).
-const encEnemies=()=>Object.values(enemies).filter(e=>e.shown&&!e.dead).sort((a,b)=>a.t-b.t);
+// The enemies the GM is showing that are still in the fight (dead or out ones stay in the Journal), and their cards; players
+// see the dice only when the GM lets them.
+const encEnemies=()=>Object.values(enemies).filter(e=>e.shown&&!e.dead&&!e.out).sort((a,b)=>a.t-b.t);
 function encCards(en){const pools=isGMView()||!!table.showPools;
  return '<div class="encgrid">'+en.map(e=>{
   const st=enemyStatus(e),ty=tallyText(eQty(e),eKilled(e)),pic=picHtml(e.pic,e.picFull,nameT(e.n));
   const pc={regular:e.regular,horror:e.horror,poolLimit:e.limit,poolMax:e.max,horrorLimit:e.horrorLimit||0};
-  return '<div class="enccard'+(e.out?' down':'')+'">'+(pic||'<span class="sqpic encini" aria-hidden="true">'+esc((nameT(e.n).trim()[0]||'?').toUpperCase())+'</span>')+
+  return '<div class="enccard">'+(pic||'<span class="sqpic encini" aria-hidden="true">'+esc((nameT(e.n).trim()[0]||'?').toUpperCase())+'</span>')+
    '<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+
    (st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+
    (pools?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div>';}
@@ -154,11 +154,6 @@ function encInvCard(s){const c=chars[s];
   '<div class="encpool">'+poolHtml(c,true)+'<span class="note">'+c.poolLimit+'/'+c.poolMax+'</span></div>'+
   '<span class="note">'+t('Horror')+' '+c.horrorLimit+' · '+t('Injuries')+' '+c.injuries.length+'</span></div></button>';}
 const poolNote=()=>isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'';
-// The Party page's encounter panel: every enemy the GM is showing, with its picture, name and state (and its dice
-// when the GM lets players see them; the GM always does). Dead enemies leave it (they stay in the Journal);
-// knocked-out ones stay, since they may get back up.
-function encounterPanel(){if(campDone())return '';const en=encEnemies();if(!en.length)return '';
- return '<section class="sec encsec"><div class="sec-head"><h2>'+t('Encounter')+'</h2>'+poolNote()+'</div>'+encCards(en)+'</section>';}
 // The Encounter tab: the whole fight in one place — the investigators and the enemies the GM is showing, side by side on
 // wide screens.
 function renderEncounter(){const en=campDone()?[]:encEnemies();

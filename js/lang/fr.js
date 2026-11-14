@@ -599,7 +599,7 @@ I18N.add('fr',[
 [`<b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.`,`<b>Actions.</b> Les actions simples dépensent des dés sans les lancer ; les actions complexes se lancent.`],
 [`<b>Damage.</b> Each point lowers the pool limit by 1. At 0 you are wounded.`,`<b>Dégâts.</b> Chaque point baisse le plafond de la réserve de 1. À 0, vous êtes grièvement blessé.`],
 [`<b>Strain.</b> Restore the pool limit to max, then suffer an injury at the end of your turn.`,`<b>Se dépasser.</b> Le plafond de la réserve revient au maximum, puis vous subissez une blessure à la fin de votre tour.`],
-[`<b>Injury.</b> More successes than a weapon’s injury rating also inflicts an injury (1d6 + 1 per injury).`,`<b>Blessure.</b> Plus de réussites que le seuil de blessure d’une arme inflige aussi une blessure (1d6 + 1 par blessure).`],
+[`<b>Injury.</b> Successes equal to or greater than a weapon’s injury rating also inflict an injury (1d6 + 1 per injury).`,`<b>Blessure.</b> Autant de réussites que le seuil de blessure d’une arme, ou plus, infligent aussi une blessure (1d6 + 1 par blessure).`],
 [`<b>Horror.</b> Refill horror dice first, up to your limit. A 1 on a horror die means a trauma.`,`<b>Horreur.</b> Remplissez d’abord les dés d’horreur, jusqu’à votre plafond. Un 1 sur un dé d’horreur signifie un traumatisme.`],
 [`<b>Insight.</b> Refills each session. Spend for +1 success, advantage, a clue, or a handy detail.`,`<b>Lucidité.</b> Se remplit à chaque séance. Dépensez-la pour +1 réussite, l’avantage, un indice ou un détail utile.`],
 [`<b>Ammo.</b> Mark one off only when an attack rolls a 1. Reloading is a simple action.`,`<b>Munitions.</b> N’en cochez une que lorsqu’une attaque fait un 1. Recharger est une action simple.`],

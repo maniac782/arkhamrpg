@@ -599,7 +599,7 @@ I18N.add('pl',[
 [`<b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.`,`<b>Czynności.</b> Czynności proste zużywają kości bez rzutu; złożone wymagają rzutu.`],
 [`<b>Damage.</b> Each point lowers the pool limit by 1. At 0 you are wounded.`,`<b>Obrażenia.</b> Każdy punkt obniża limit puli o 1. Przy 0 jesteś ciężko ranny.`],
 [`<b>Strain.</b> Restore the pool limit to max, then suffer an injury at the end of your turn.`,`<b>Wysiłek.</b> Przywróć limit puli do maksimum, a na koniec tury otrzymaj ranę.`],
-[`<b>Injury.</b> More successes than a weapon’s injury rating also inflicts an injury (1d6 + 1 per injury).`,`<b>Rana.</b> Więcej sukcesów niż próg rany broni zadaje też ranę (1k6 + 1 za każdą ranę).`],
+[`<b>Injury.</b> Successes equal to or greater than a weapon’s injury rating also inflict an injury (1d6 + 1 per injury).`,`<b>Rana.</b> Liczba sukcesów równa progowi rany broni lub wyższa zadaje też ranę (1k6 + 1 za każdą ranę).`],
 [`<b>Horror.</b> Refill horror dice first, up to your limit. A 1 on a horror die means a trauma.`,`<b>Groza.</b> Najpierw uzupełnij kości grozy, do swojego limitu. 1 na kości grozy oznacza traumę.`],
 [`<b>Insight.</b> Refills each session. Spend for +1 success, advantage, a clue, or a handy detail.`,`<b>Wgląd.</b> Odnawia się co sesję. Wydaj na +1 sukces, przewagę, wskazówkę lub przydatny szczegół.`],
 [`<b>Ammo.</b> Mark one off only when an attack rolls a 1. Reloading is a simple action.`,`<b>Amunicja.</b> Odznacz nabój tylko wtedy, gdy atak wyrzuci 1. Przeładowanie to czynność prosta.`],

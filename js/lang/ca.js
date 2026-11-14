@@ -599,7 +599,7 @@ I18N.add('ca',[
 [`<b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.`,`<b>Accions.</b> Les accions simples gasten daus sense tirar; les complexes es tiren.`],
 [`<b>Damage.</b> Each point lowers the pool limit by 1. At 0 you are wounded.`,`<b>Dany.</b> Cada punt abaixa en 1 el límit de la reserva. A 0 quedes malferit.`],
 [`<b>Strain.</b> Restore the pool limit to max, then suffer an injury at the end of your turn.`,`<b>Forçar-se.</b> Torna el límit de la reserva al màxim i pateix una ferida al final del teu torn.`],
-[`<b>Injury.</b> More successes than a weapon’s injury rating also inflicts an injury (1d6 + 1 per injury).`,`<b>Ferida.</b> Treure més èxits que el valor de ferida d'una arma també infligeix una ferida (1d6 + 1 per ferida).`],
+[`<b>Injury.</b> Successes equal to or greater than a weapon’s injury rating also inflict an injury (1d6 + 1 per injury).`,`<b>Ferida.</b> Treure tants èxits com el valor de ferida d'una arma, o més, també infligeix una ferida (1d6 + 1 per ferida).`],
 [`<b>Horror.</b> Refill horror dice first, up to your limit. A 1 on a horror die means a trauma.`,`<b>Horror.</b> En reomplir, primer els daus d'horror, fins al teu límit. Un 1 en un dau d'horror vol dir un trauma.`],
 [`<b>Insight.</b> Refills each session. Spend for +1 success, advantage, a clue, or a handy detail.`,`<b>Inspiració.</b> Es reomple cada sessió. Gasta-la per +1 èxit, avantatge, una pista o un detall útil.`],
 [`<b>Ammo.</b> Mark one off only when an attack rolls a 1. Reloading is a simple action.`,`<b>Munició.</b> Ratlla'n una només quan un atac tregui un 1. Recarregar és una acció simple.`],

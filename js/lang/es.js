@@ -599,7 +599,7 @@ I18N.add('es',[
 [`<b>Actions.</b> Simple actions spend dice without rolling; complex actions roll.`,`<b>Acciones.</b> Las acciones simples gastan dados sin tirar; las complejas se tiran.`],
 [`<b>Damage.</b> Each point lowers the pool limit by 1. At 0 you are wounded.`,`<b>Daño.</b> Cada punto baja en 1 el límite de la reserva. A 0 quedas malherido.`],
 [`<b>Strain.</b> Restore the pool limit to max, then suffer an injury at the end of your turn.`,`<b>Forzarse.</b> Devuelve el límite de la reserva al máximo y sufre una herida al final de tu turno.`],
-[`<b>Injury.</b> More successes than a weapon’s injury rating also inflicts an injury (1d6 + 1 per injury).`,`<b>Herida.</b> Sacar más éxitos que el valor de herida de un arma también inflige una herida (1d6 + 1 por herida).`],
+[`<b>Injury.</b> Successes equal to or greater than a weapon’s injury rating also inflict an injury (1d6 + 1 per injury).`,`<b>Herida.</b> Sacar tantos éxitos como el valor de herida de un arma, o más, también inflige una herida (1d6 + 1 por herida).`],
 [`<b>Horror.</b> Refill horror dice first, up to your limit. A 1 on a horror die means a trauma.`,`<b>Horror.</b> Al rellenar, primero los dados de horror, hasta tu límite. Un 1 en un dado de horror significa un trauma.`],
 [`<b>Insight.</b> Refills each session. Spend for +1 success, advantage, a clue, or a handy detail.`,`<b>Inspiración.</b> Se rellena cada sesión. Gástala para +1 éxito, ventaja, una pista o un detalle útil.`],
 [`<b>Ammo.</b> Mark one off only when an attack rolls a 1. Reloading is a simple action.`,`<b>Munición.</b> Tacha una solo cuando un ataque saque un 1. Recargar es una acción simple.`],

@@ -402,6 +402,7 @@ img[data-zoom]{cursor:zoom-in}
 .negfield.on select{border-color:var(--danger);color:var(--danger);font-weight:600}
 .encinv{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
 .encinvcard .grow{flex:1}
-.encsk{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;margin-top:4px;padding-top:6px;border-top:1px solid var(--line);font-size:13px;width:100%;align-self:stretch!important}
-.encsk>span{display:flex;justify-content:space-between;gap:6px}
-.encsk b{font-family:var(--mono,monospace);font-weight:600}
+.encsk{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;margin-top:4px;padding-top:6px;border-top:1px solid var(--line);font-size:13px;width:100%;align-self:stretch!important}
+.encsk>span{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.encsk b{flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:400}
+.encsk>span>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}

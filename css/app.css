@@ -394,8 +394,6 @@ img[data-zoom]{cursor:zoom-in}
 .seg.on{background:var(--ink);color:var(--bg)}
 .encwrap{display:grid;gap:16px}
 @media (min-width:900px){.encwrap{grid-template-columns:1fr 1fr;align-items:start}}
-.encinvcard{font:inherit;color:inherit;text-align:left;cursor:pointer;background:none;width:100%}
-.encinvcard:hover{border-color:var(--ink)}
 .encinvcard .avatar{flex:none}
 .encinvcard .grow>*{align-self:flex-start;margin-left:0}
 #tabs .newtag{margin-left:6px}
@@ -406,3 +404,15 @@ img[data-zoom]{cursor:zoom-in}
 .encsk>span{display:flex;justify-content:space-between;align-items:center;gap:6px}
 .encsk b{flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:400}
 .encsk>span>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.encopen{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.encnm b{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.encbtns{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.encbtns .note{margin-left:2px}
+.encbtns .note+.btn{margin-left:-2px}
+.encweap{display:flex;flex-direction:column;gap:6px;width:100%}
+.encw{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.encw>span:first-child{flex:1 1 100%;font-size:14px}
+.encsel{display:flex;gap:8px;width:100%}
+.encsel select{flex:1;min-width:0}
+.encinj{display:flex;flex-wrap:wrap;gap:4px}
+.encinvcard.ed .grow{gap:8px}

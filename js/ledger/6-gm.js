@@ -148,20 +148,35 @@ function encCards(en){const pools=isGMView()||!!table.showPools;
    '<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+
    (st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+
    (pools?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div>';}
-// A compact investigator card for the Encounter tab: picture, name, state, dice, skill ratings and the numbers that
-// matter mid-fight, so nobody has to flip to their sheet.
-function encInvCard(s){const c=chars[s];
- return '<button class="enccard encinvcard" data-tab="'+s+'">'+avatarHtml(c,'sm')+'<div class="grow"><b>'+esc(c.name||t('Investigator'))+'</b>'+statusChips(c)+
-  '<div class="encpool">'+poolHtml(c,true)+'<span class="note">'+c.poolLimit+'/'+c.poolMax+'</span></div>'+
-  '<span class="note">'+t('Horror')+' '+c.horrorLimit+' · '+t('Injuries')+' '+c.injuries.length+'</span>'+
-  '<div class="encsk" aria-label="'+t('Skills')+'">'+SKILLS.map(([k,n])=>{const r=(c.skills[k]||{}).r;return '<span><span>'+t(n)+'</span><b>'+(r?r+'+':'–')+'</b></span>';}).join('')+'</div></div></button>';}
+// An investigator card for the Encounter tab: picture, name, state, dice, skill ratings and the numbers that matter
+// mid-fight, so nobody has to flip to their sheet. On an investigator you can edit, it also has the fight controls (spend,
+// refill, damage, strain, horror, insight, ammo, injuries and traumas); they work on that investigator, not the open tab.
+function encInvCard(s){const c=chars[s],ed=canEdit(s),A=(act,label,cls,dis,extra)=>'<button class="btn sm'+(cls?' '+cls:'')+'" data-act="'+act+'" data-slot="'+s+'"'+(extra||'')+(dis?' disabled':'')+'>'+label+'</button>';
+ let h='<div class="enccard encinvcard'+(ed?' ed':'')+'"><button class="encopen" data-tab="'+s+'" aria-label="'+t('Open {name}’s sheet',{name:esc(c.name||t('Investigator'))})+'">'+avatarHtml(c,'sm')+'</button><div class="grow">'+
+  '<button class="encopen encnm" data-tab="'+s+'"><b>'+esc(c.name||t('Investigator'))+'</b></button>'+statusChips(c)+
+  '<div class="encpool">'+poolHtml(c,true)+'<span class="note">'+c.poolLimit+'/'+c.poolMax+'</span></div>';
+ if(ed){
+  h+='<div class="encbtns">'+A('spend',t('Spend'),'',!c.regular,' data-k="reg"')+A('spend',t('Spend horror'),'hor',!c.horror,' data-k="hor"')+A('refill',t('Refill'),'pri',false)+'</div>'+
+   '<div class="encbtns">'+A('dmg',t('Take damage'),'dng',!(c.poolLimit>0),' data-n="1"')+A('heal',t('Heal'),'',!(c.poolLimit<c.poolMax),' data-n="1"')+A('strain',t('Strain'),'',!(c.poolLimit<c.poolMax))+'</div>'+
+   '<div class="encbtns"><span class="note">'+t('Horror')+' <b class="num">'+c.horrorLimit+'</b></span>'+A('hor','+1','hor',false,' data-n="1" aria-label="'+t('Suffer 1 horror')+'"')+A('hor','−1','',!c.horrorLimit,' data-n="-1" aria-label="'+t('Remove 1 horror')+'"')+
+   '<span class="note">'+t('Insight')+' <b class="num">'+c.insight+'/'+c.insightLimit+'</b></span>'+A('ins','−1','',!c.insight,' data-n="-1" aria-label="'+t('Spend 1 insight')+'"')+'</div>'+
+   activeEffects(c);
+  if(c.weapons.length)h+='<div class="encweap">'+c.weapons.map(w=>{let pips='';for(let i=0;i<w.ammoMax;i++)pips+='<button class="pip'+(i<w.ammo?'':' spent')+'" data-act="ammo" data-slot="'+s+'" data-id="'+w.id+'" data-n="'+i+'" aria-label="'+(i<w.ammo?t('Ammo {n} loaded',{n:i+1}):t('Ammo {n} spent',{n:i+1}))+'"></button>';
+   return '<div class="encw"><span><b>'+esc(t(w.name||t('Weapon')))+'</b> <span class="note">'+esc(t(w.skill||''))+(w.dmg!==''&&w.dmg!=null?' · '+t('Damage')+' '+esc(w.dmg):'')+(w.inj!==''&&w.inj!=null?' · '+t('Injury rating')+' '+esc(w.inj):'')+'</span></span>'+(w.ammoMax?'<span class="pips">'+pips+'</span>'+A('reload',w.fr?t('Reload (free)'):t('Reload'),'',w.ammo>=w.ammoMax||(!w.fr&&!(gunPool(c.weapons,w)>0)&&!(sharedAmmo()&&c.weapons.reduce((a,x)=>a+(x.fr?0:(x.reloads||0)),0)>0)),' data-id="'+w.id+'"'):'')+'</div>';}).join('')+'</div>';
+  h+='<div class="encsel"><select class="maxsel" data-addinj="1" data-slot="'+s+'" aria-label="'+t('Add an injury')+'"><option value="">'+t('Add an injury…')+'</option>'+injuryOptions()+'</select>'+
+   '<select class="maxsel" data-addtra="1" data-slot="'+s+'" aria-label="'+t('Add a trauma')+'"><option value="">'+t('Add a trauma…')+'</option>'+Object.keys(TRAUMA_AT).map(k=>'<option value="'+esc(k)+'">'+TRAUMA_ROLL[k]+' · '+esc(t(k))+'</option>').join('')+'</select></div>';
+ }else h+='<span class="note">'+t('Horror')+' '+c.horrorLimit+' · '+t('Injuries')+' '+c.injuries.length+'</span>';
+ h+='<div class="encsk" aria-label="'+t('Skills')+'">'+SKILLS.map(([k,n])=>{const r=(c.skills[k]||{}).r;return '<span><span>'+t(n)+'</span><b>'+(r?r+'+':'–')+'</b></span>';}).join('')+'</div></div></div>';
+ return h;}
+// Your own investigators come first on the Encounter tab.
+const encOrder=()=>[...SLOTS].sort((a,b)=>(chars[b].ownerUid===authUid)-(chars[a].ownerUid===authUid));
 const poolNote=()=>isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'';
 // The Encounter tab: the whole fight in one place — the investigators and the enemies the GM is showing, side by side on
 // wide screens.
 function renderEncounter(){const en=campDone()?[]:encEnemies();
  let h=turnBar();
  if(!en.length&&!table.fight)h+='<div class="banner">'+t('No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.')+'</div>';
- h+='<div class="encwrap"><section class="sec"><div class="sec-head"><h2>'+t('Investigators')+'</h2></div><div class="encgrid encinv">'+SLOTS.map(encInvCard).join('')+'</div></section>'+
+ h+='<div class="encwrap"><section class="sec"><div class="sec-head"><h2>'+t('Investigators')+'</h2></div><div class="encgrid encinv">'+encOrder().map(encInvCard).join('')+'</div></section>'+
   '<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2>'+poolNote()+'</div>'+(en.length?encCards(en):'<p class="note" style="margin:0">'+t('None showing.')+'</p>')+
   (isGMView()&&!campDone()?'<div class="row"><a class="btn sm" href="#gm" data-act="gotogm">'+t('Manage enemies in the GM tab')+'</a></div>':'')+'</section></div>';
  return h;}

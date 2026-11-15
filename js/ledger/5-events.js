@@ -25,9 +25,9 @@ document.addEventListener('click',()=>{tapDone=true;setTimeout(()=>{if(pending&&
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#app input,#app textarea,#app select')))render();},0);});
 app.addEventListener('click',e=>{
  const gb=e.target.closest('[data-gact]');if(gb){if(!gb.disabled)gmClick(gb);return;}
- const card=e.target.closest('.pcard,.encinvcard');if(card){go(card.dataset.tab);return;}
+ const card=e.target.closest('.pcard,.encopen');if(card){go(card.dataset.tab);return;}
  if(active==='create'){const cb=e.target.closest('[data-cact]');if(cb&&!cb.disabled)creatorClick(cb);return;}
- const b=e.target.closest('[data-act]');if(!b||b.matches(':disabled'))return;const s=active,a=b.dataset.act,n=Number(b.dataset.n),c=chars[s];
+ const b=e.target.closest('[data-act]');if(!b||b.matches(':disabled'))return;const s=b.dataset.slot&&chars[b.dataset.slot]?b.dataset.slot:active,a=b.dataset.act,n=Number(b.dataset.n),c=chars[s];
  switch(a){
   // Adding an investigator goes through the New investigator tab (build step by step, or bring one over).
   case 'newinv':go('create');break;
@@ -117,7 +117,7 @@ app.addEventListener('click',e=>{
  }
 });
 app.addEventListener('change',e=>{
- const el=e.target,s=active;
+ const el=e.target,s=el.dataset&&el.dataset.slot&&chars[el.dataset.slot]?el.dataset.slot:active;
  if(gmChange(el))return;
  if(el.dataset.assign){const sl=el.dataset.assign,u=el.value||null,old=chars[sl]&&chars[sl].ownerUid;if(CAMP&&db&&keys.master){const b=db.batch();b.update(db.doc('characters/'+sl),{ownerUid:u,...(u?{player:((camp&&camp.names)||{})[u]||''}:{})});if(old&&old!==u&&old!==camp.ownerUid)b.delete(db.doc('players/'+old));if(u&&u!==camp.ownerUid)b.set(db.doc('players/'+u),{slot:sl});b.commit().then(()=>toast(u?t('Assigned to {name}.',{name:(camp.names||{})[u]||t('them')}):t('Now unclaimed.')),()=>toast(t('Couldn’t change that.')));}return;}
  if(el.dataset.pic){const f=el.files&&el.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast(t('Choose an image file.'));

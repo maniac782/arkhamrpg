@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-15-fight',date:'2026-11-15',tags:['encounter'],
+  title:tk('Run the whole fight from the Encounter tab'),
+  banner:tk('New: spend dice, take damage, mark ammo and add injuries right on the Encounter tab.'),
+  body:tk('On the Encounter tab, your investigators now have the fight controls: spend and refill dice, take damage, heal, strain, horror and insight, ammo and reloads, and adding injuries and traumas, next to their skill ratings. Your own investigators come first, and a GM who can edit every investigator gets the controls for all of them.')},
  {id:'2026-11-14-negative',date:'2026-11-14',tags:[],
   title:tk('Track the negative side of personality'),
   body:tk('The negative side of a personality trait only applies when a trauma triggers it. Under the trait on the sheet, mark when it’s triggered and how long it lasts; a new session clears it. The printable sheet has a Triggered box.')},

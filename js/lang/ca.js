@@ -2567,7 +2567,7 @@ I18N.add('ca',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Ara no hi ha cap trobada. Quan el DJ mostri enemics o comenci un combat, tothom sortirà aquí junt.`],
 [`None showing.`,`No se’n mostra cap.`],
 [`Manage enemies in the GM tab`,`Gestiona els enemics a la pestanya DJ`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Pestanya Trobada:</b> al costat de Grup, la pestanya Trobada mostra els daus, l’horror i les ferides de cada investigador al costat dels enemics que ensenya el DJ, sota l’escena i el control de torns. Toca un investigador per obrir-ne la fitxa.`],
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror, injuries and skill ratings beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Pestanya Trobada:</b> al costat de Grup, la pestanya Trobada mostra els daus, l’horror, les ferides i les habilitats de cada investigador al costat dels enemics que ensenya el DJ, sota l’escena i el control de torns. Toca un investigador per obrir-ne la fitxa.`],
 [`Triggered`,`Activat`],
 [`Not triggered`,`Sense activar`],
 [`Triggered until the end of the next turn`,`Activat fins al final del torn següent`],

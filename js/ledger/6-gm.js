@@ -148,11 +148,13 @@ function encCards(en){const pools=isGMView()||!!table.showPools;
    '<div class="grow"><b>'+esc(nameT(e.n))+'</b>'+(ty?'<span class="effect">'+ty+'</span>':'')+
    (st?'<span class="chip '+st[0]+'">'+st[1]+'</span>':'')+
    (pools?'<div class="encpool">'+poolHtml(pc,true)+'<span class="note">'+e.limit+'/'+e.max+'</span></div>':'')+'</div></div>';}).join('')+'</div>';}
-// A compact investigator card for the Encounter tab: picture, name, state, dice and the numbers that matter mid-fight.
+// A compact investigator card for the Encounter tab: picture, name, state, dice, skill ratings and the numbers that
+// matter mid-fight, so nobody has to flip to their sheet.
 function encInvCard(s){const c=chars[s];
  return '<button class="enccard encinvcard" data-tab="'+s+'">'+avatarHtml(c,'sm')+'<div class="grow"><b>'+esc(c.name||t('Investigator'))+'</b>'+statusChips(c)+
   '<div class="encpool">'+poolHtml(c,true)+'<span class="note">'+c.poolLimit+'/'+c.poolMax+'</span></div>'+
-  '<span class="note">'+t('Horror')+' '+c.horrorLimit+' · '+t('Injuries')+' '+c.injuries.length+'</span></div></button>';}
+  '<span class="note">'+t('Horror')+' '+c.horrorLimit+' · '+t('Injuries')+' '+c.injuries.length+'</span>'+
+  '<div class="encsk" aria-label="'+t('Skills')+'">'+SKILLS.map(([k,n])=>{const r=(c.skills[k]||{}).r;return '<span><span>'+t(n)+'</span><b>'+(r?r+'+':'–')+'</b></span>';}).join('')+'</div></div></button>';}
 const poolNote=()=>isGMView()&&!table.showPools?'<span class="note">'+t('Players see names, pictures and state; only you see the dice.')+'</span>':'';
 // The Encounter tab: the whole fight in one place — the investigators and the enemies the GM is showing, side by side on
 // wide screens.

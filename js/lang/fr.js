@@ -2567,7 +2567,7 @@ I18N.add('fr',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Aucune rencontre pour l’instant. Quand le MJ montre des ennemis ou lance un combat, tout le monde apparaît ici ensemble.`],
 [`None showing.`,`Aucun pour l’instant.`],
 [`Manage enemies in the GM tab`,`Gérer les ennemis dans l’onglet MJ`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Onglet Rencontre :</b> à côté de Groupe, l’onglet Rencontre affiche les dés, l’horreur et les blessures de chaque investigateur à côté des ennemis que montre le MJ, sous la scène et le suivi des tours. Touchez un investigateur pour ouvrir sa fiche.`],
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror, injuries and skill ratings beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Onglet Rencontre :</b> à côté de Groupe, l’onglet Rencontre affiche les dés, l’horreur, les blessures et les compétences de chaque investigateur à côté des ennemis que montre le MJ, sous la scène et le suivi des tours. Touchez un investigateur pour ouvrir sa fiche.`],
 [`Triggered`,`Déclenché`],
 [`Not triggered`,`Non déclenché`],
 [`Triggered until the end of the next turn`,`Déclenché jusqu’à la fin du prochain tour`],

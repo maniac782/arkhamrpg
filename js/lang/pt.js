@@ -2567,7 +2567,7 @@ I18N.add('pt',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Nenhum encontro agora. Quando o Mestre mostrar inimigos ou começar um combate, todos aparecem aqui juntos.`],
 [`None showing.`,`Nenhum sendo mostrado.`],
 [`Manage enemies in the GM tab`,`Gerenciar inimigos na aba do Mestre`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Aba Encontro:</b> ao lado de Grupo, a aba Encontro mostra os dados, o horror e os ferimentos de cada investigador ao lado dos inimigos que o Mestre está mostrando, abaixo da cena e do controle de turnos. Toque num investigador para abrir a ficha.`],
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror, injuries and skill ratings beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Aba Encontro:</b> ao lado de Grupo, a aba Encontro mostra os dados, o horror, os ferimentos e as perícias de cada investigador ao lado dos inimigos que o Mestre está mostrando, abaixo da cena e do controle de turnos. Toque num investigador para abrir a ficha.`],
 [`Triggered`,`Ativado`],
 [`Not triggered`,`Não ativado`],
 [`Triggered until the end of the next turn`,`Ativado até o fim do próximo turno`],

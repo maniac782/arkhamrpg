@@ -2567,7 +2567,7 @@ I18N.add('pl',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Teraz nie ma starcia. Gdy MG pokaże wrogów albo zacznie walkę, wszyscy pojawią się tu razem.`],
 [`None showing.`,`Nikt nie jest pokazany.`],
 [`Manage enemies in the GM tab`,`Zarządzaj wrogami w karcie MG`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Karta Starcie:</b> obok Drużyny karta Starcie pokazuje kości, grozę i rany każdego badacza obok wrogów pokazanych przez MG, pod sceną i licznikiem tur. Stuknij badacza, by otworzyć jego kartę.`],
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror, injuries and skill ratings beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Karta Starcie:</b> obok Drużyny karta Starcie pokazuje kości, grozę, rany i umiejętności każdego badacza obok wrogów pokazanych przez MG, pod sceną i licznikiem tur. Stuknij badacza, by otworzyć jego kartę.`],
 [`Triggered`,`Uruchomiona`],
 [`Not triggered`,`Nieuruchomiona`],
 [`Triggered until the end of the next turn`,`Uruchomiona do końca następnej tury`],

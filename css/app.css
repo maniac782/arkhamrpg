@@ -400,3 +400,8 @@ img[data-zoom]{cursor:zoom-in}
 .encinvcard .grow>*{align-self:flex-start;margin-left:0}
 #tabs .newtag{margin-left:6px}
 .negfield.on select{border-color:var(--danger);color:var(--danger);font-weight:600}
+.encinv{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.encinvcard .grow{flex:1}
+.encsk{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;margin-top:4px;padding-top:6px;border-top:1px solid var(--line);font-size:13px;width:100%;align-self:stretch!important}
+.encsk>span{display:flex;justify-content:space-between;gap:6px}
+.encsk b{font-family:var(--mono,monospace);font-weight:600}

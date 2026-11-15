@@ -2567,7 +2567,7 @@ I18N.add('es',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`No hay ningún encuentro ahora. Cuando el DJ muestre enemigos o empiece un combate, todos aparecerán aquí juntos.`],
 [`None showing.`,`No se muestra ninguno.`],
 [`Manage enemies in the GM tab`,`Gestionar enemigos en la pestaña DJ`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Pestaña Encuentro:</b> junto a Grupo, la pestaña Encuentro muestra los dados, el horror y las heridas de cada investigador al lado de los enemigos que enseña el DJ, bajo la escena y el control de turnos. Toca un investigador para abrir su hoja.`],
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror, injuries and skill ratings beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Pestaña Encuentro:</b> junto a Grupo, la pestaña Encuentro muestra los dados, el horror, las heridas y las habilidades de cada investigador al lado de los enemigos que enseña el DJ, bajo la escena y el control de turnos. Toca un investigador para abrir su hoja.`],
 [`Triggered`,`Activado`],
 [`Not triggered`,`Sin activar`],
 [`Triggered until the end of the next turn`,`Activado hasta el final del siguiente turno`],

@@ -302,12 +302,18 @@ function houseToggle(){
  const can=(!db&&localMode)||!!keys.master;
  return '<div class="item" style="padding:0 0 8px"><div class="grow"><b>'+(CAMP&&!isGMView()?'':t('House rules')+' ')+(house.on?'<span class="chip ok">'+t('On')+'</span>':'<span class="chip warn">'+t('Off')+'</span>')+'</b><span class="effect">'+t('Adds: {list}.',{list:esc(names.map(n=>t(n)).join(', '))})+(can?'':' '+(CAMP?t('Only the campaign owner can change this.'):t('Only the master key can change this.'))+'')+'</span></div>'+(can?'<button class="btn sm" data-act="house">'+(house.on?t('Turn off'):t('Turn on'))+'</button>':'')+'</div>';
 }
+// Whether the negative side of the personality trait is in effect. It only switches on when a trauma triggers it, and
+// lasts until the end of the next turn, the scene or (after Mind Undone) the rest of the session.
+const NEG_OPTS=[['',()=>t('Not triggered')],['turn',()=>t('Triggered until the end of the next turn')],['scene',()=>t('Triggered until the end of the scene')],['session',()=>t('Triggered for the rest of the session')]];
+function negField(s,c){const v=c.negOn||'';
+ return '<label class="field negfield'+(v?' on':'')+'" style="margin-top:8px"><span class="lbl">'+t('Negative side')+'</span><select class="f" data-negon="1">'+NEG_OPTS.map(([k,l])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+l()+'</option>').join('')+'</select></label>'+
+  '<p class="note" style="margin:4px 0 0">'+t('Only in effect when a trauma triggers it (Overcome by Horror or Mind Undone), unless you spend insight to avoid it.')+'</p>';}
 function traitField(s,c){
  const names=Object.keys(A.TRAITS);const cur=c.personality||'';const custom=cur&&!names.includes(cur);
  let h='<label class="field"><span class="lbl">'+t('Personality trait')+'</span><select class="f" id="trait-'+s+'" data-trait="1"><option value="">'+t('Choose…')+'</option>'+names.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+t(n)+'</option>').join('')+(custom?'<option selected>'+esc(cur)+'</option>':'')+'</select></label>';
  const pend=edit.trait&&edit.trait.s===s?edit.trait.t:null;
  if(pend)h+='<div class="roll" role="status"><span>'+t('Changing from {from} to {to}. The book allows this with GM permission after a traumatic experience, for 2 XP.',{from:'<b>'+esc(t(cur))+'</b>',to:'<b>'+esc(t(pend))+'</b>'})+'</span><div class="row"><button class="btn sm pri" data-act="traitxp" '+(c.xpUnused>=2?'':'disabled')+'>'+t('Change for 2 XP')+'</button><button class="btn sm" data-act="traitfree">'+t('Just fixing a mistake (free)')+'</button><button class="btn sm" data-act="traitcancel">'+t('Cancel')+'</button></div></div>';
- h+=c.positive||c.negative?'<div class="grid2"><div><span class="lbl">'+t('Positive')+'</span><p class="effect" style="margin:4px 0 0">'+esc(t(c.positive||''))+'</p></div><div><span class="lbl">'+t('Negative (when triggered)')+'</span><p class="effect" style="margin:4px 0 0">'+esc(t(c.negative||''))+'</p></div></div>':'';
+ h+=c.positive||c.negative?'<div class="grid2"><div><span class="lbl">'+t('Positive')+'</span><p class="effect" style="margin:4px 0 0">'+esc(t(c.positive||''))+'</p></div><div><span class="lbl">'+t('Negative (when triggered)')+'</span><p class="effect" style="margin:4px 0 0">'+esc(t(c.negative||''))+'</p>'+negField(s,c)+'</div></div>':cur?negField(s,c):'';
  return h;
 }
 function setTrait(s,tr,cost){const c=chars[s];const d=A.TRAITS[tr]||['',''];const p={personality:tr,positive:d[0],negative:d[1]};if(cost)p.xpUnused=c.xpUnused-cost;edit.trait=null;save(s,p,tr?(cost?logm('Changed personality trait to {trait} (2 XP)',{trait:tr}):logm('Personality trait: {trait}',{trait:tr})):logm('Cleared personality trait'));}

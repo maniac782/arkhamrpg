@@ -399,3 +399,4 @@ img[data-zoom]{cursor:zoom-in}
 .encinvcard .avatar{flex:none}
 .encinvcard .grow>*{align-self:flex-start;margin-left:0}
 #tabs .newtag{margin-left:6px}
+.negfield.on select{border-color:var(--danger);color:var(--danger);font-weight:600}

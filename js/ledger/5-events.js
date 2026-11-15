@@ -135,6 +135,9 @@ app.addEventListener('change',e=>{
  if(el.dataset.addinj||el.dataset.addtra){const v=el.value;if(!v||!chars[s])return;if(el.dataset.addinj)R.addInjury(s,v);else R.addTrauma(s,v);el.value='';return;}
  const c=chars[s];if(!c)return;
  if(el.dataset.tomeread){const L=c.tomeList||[],x=L.find(y=>y.id===el.dataset.tomeread);if(!x)return;save(s,{tomeList:L.map(y=>y.id===x.id?{...y,read:el.checked}:y)},el.checked?logm('Can now read {tome}',{tome:x.n}):logm('Can no longer read {tome}',{tome:x.n}));return;}
+ if(el.dataset.negon){const v=el.value;if(v===(c.negOn||''))return;
+  let lg;if(v==='turn')lg=logm('Negative side triggered until the end of the next turn');else if(v==='scene')lg=logm('Negative side triggered until the end of the scene');else if(v==='session')lg=logm('Negative side triggered for the rest of the session');else lg=logm('Negative side no longer in effect');
+  save(s,{negOn:v},lg);return;}
  if(el.dataset.trait){const t=el.value;if(c.personality&&A.TRAITS[c.personality]&&t&&t!==c.personality){edit.trait={s,t};render();}else setTrait(s,t,0);return;}
  if(el.dataset.f){const p=el.dataset.f;let v=el.value;
   if(p==='xpTotal'||p==='xpUnused'){v=Math.max(0,parseInt(v)||0);const old=Number(c[p])||0;if(v===old)return;save(s,{[p]:v},p==='xpTotal'?logm('Fixed total XP: {from} → {to}',{from:old,to:v}):logm('Fixed unused XP: {from} → {to}',{from:old,to:v}));return;}

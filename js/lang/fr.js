@@ -2567,5 +2567,19 @@ I18N.add('fr',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Aucune rencontre pour l’instant. Quand le MJ montre des ennemis ou lance un combat, tout le monde apparaît ici ensemble.`],
 [`None showing.`,`Aucun pour l’instant.`],
 [`Manage enemies in the GM tab`,`Gérer les ennemis dans l’onglet MJ`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Onglet Rencontre :</b> à côté de Groupe, l’onglet Rencontre affiche les dés, l’horreur et les blessures de chaque investigateur à côté des ennemis que montre le MJ, sous la scène et le suivi des tours. Touchez un investigateur pour ouvrir sa fiche.`]
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Onglet Rencontre :</b> à côté de Groupe, l’onglet Rencontre affiche les dés, l’horreur et les blessures de chaque investigateur à côté des ennemis que montre le MJ, sous la scène et le suivi des tours. Touchez un investigateur pour ouvrir sa fiche.`],
+[`Triggered`,`Déclenché`],
+[`Not triggered`,`Non déclenché`],
+[`Triggered until the end of the next turn`,`Déclenché jusqu’à la fin du prochain tour`],
+[`Triggered until the end of the scene`,`Déclenché jusqu’à la fin de la scène`],
+[`Triggered for the rest of the session`,`Déclenché pour le reste de la séance`],
+[`Negative side`,`Côté négatif`],
+[`Only in effect when a trauma triggers it (Overcome by Horror or Mind Undone), unless you spend insight to avoid it.`,`N’agit que lorsqu’un traumatisme le déclenche (Submergé par l’horreur ou Esprit brisé), sauf si vous dépensez de la lucidité pour l’éviter.`],
+[`Negative side triggered until the end of the next turn`,`Côté négatif déclenché jusqu’à la fin du prochain tour`],
+[`Negative side triggered until the end of the scene`,`Côté négatif déclenché jusqu’à la fin de la scène`],
+[`Negative side triggered for the rest of the session`,`Côté négatif déclenché pour le reste de la séance`],
+[`Negative side no longer in effect`,`Le côté négatif ne s’applique plus`],
+[`<b>Negative side of the personality trait:</b> it isn’t always on. It only takes effect when a trauma triggers it (Overcome by Horror or Mind Undone) and the investigator doesn’t spend insight to avoid it. Under the trait on the sheet, set <b>Negative side</b> to how long it lasts; a new session clears it. The printable sheet has a <b>Triggered</b> box to tick.`,`<b>Côté négatif du trait de personnalité :</b> il n’est pas toujours actif. Il ne s’applique que lorsqu’un traumatisme le déclenche (Submergé par l’horreur ou Esprit brisé) et que l’investigateur ne dépense pas de lucidité pour l’éviter. Sous le trait, sur la fiche, indiquez dans <b>Côté négatif</b> combien de temps il dure ; une nouvelle séance l’efface. La fiche imprimable a une case <b>Déclenché</b> à cocher.`],
+[`Track the negative side of personality`,`Suivre le côté négatif de la personnalité`],
+[`The negative side of a personality trait only applies when a trauma triggers it. Under the trait on the sheet, mark when it’s triggered and how long it lasts; a new session clears it. The printable sheet has a Triggered box.`,`Le côté négatif d’un trait de personnalité ne s’applique que lorsqu’un traumatisme le déclenche. Sous le trait, sur la fiche, indiquez quand il est déclenché et combien de temps il dure ; une nouvelle séance l’efface. La fiche imprimable a une case Déclenché.`]
 ]);

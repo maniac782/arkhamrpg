@@ -2567,5 +2567,19 @@ I18N.add('pt',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Nenhum encontro agora. Quando o Mestre mostrar inimigos ou começar um combate, todos aparecem aqui juntos.`],
 [`None showing.`,`Nenhum sendo mostrado.`],
 [`Manage enemies in the GM tab`,`Gerenciar inimigos na aba do Mestre`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Aba Encontro:</b> ao lado de Grupo, a aba Encontro mostra os dados, o horror e os ferimentos de cada investigador ao lado dos inimigos que o Mestre está mostrando, abaixo da cena e do controle de turnos. Toque num investigador para abrir a ficha.`]
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Aba Encontro:</b> ao lado de Grupo, a aba Encontro mostra os dados, o horror e os ferimentos de cada investigador ao lado dos inimigos que o Mestre está mostrando, abaixo da cena e do controle de turnos. Toque num investigador para abrir a ficha.`],
+[`Triggered`,`Ativado`],
+[`Not triggered`,`Não ativado`],
+[`Triggered until the end of the next turn`,`Ativado até o fim do próximo turno`],
+[`Triggered until the end of the scene`,`Ativado até o fim da cena`],
+[`Triggered for the rest of the session`,`Ativado pelo resto da sessão`],
+[`Negative side`,`Lado negativo`],
+[`Only in effect when a trauma triggers it (Overcome by Horror or Mind Undone), unless you spend insight to avoid it.`,`Só tem efeito quando um trauma o ativa (Dominado pelo horror ou Mente despedaçada), a menos que você gaste lucidez para evitar.`],
+[`Negative side triggered until the end of the next turn`,`Lado negativo ativado até o fim do próximo turno`],
+[`Negative side triggered until the end of the scene`,`Lado negativo ativado até o fim da cena`],
+[`Negative side triggered for the rest of the session`,`Lado negativo ativado pelo resto da sessão`],
+[`Negative side no longer in effect`,`O lado negativo não está mais em efeito`],
+[`<b>Negative side of the personality trait:</b> it isn’t always on. It only takes effect when a trauma triggers it (Overcome by Horror or Mind Undone) and the investigator doesn’t spend insight to avoid it. Under the trait on the sheet, set <b>Negative side</b> to how long it lasts; a new session clears it. The printable sheet has a <b>Triggered</b> box to tick.`,`<b>Lado negativo do traço de personalidade:</b> ele não fica sempre ativo. Só tem efeito quando um trauma o ativa (Dominado pelo horror ou Mente despedaçada) e o investigador não gasta lucidez para evitar. Abaixo do traço, na ficha, defina em <b>Lado negativo</b> quanto tempo dura; uma nova sessão limpa. A ficha para imprimir tem uma caixa <b>Ativado</b> para marcar.`],
+[`Track the negative side of personality`,`Acompanhe o lado negativo da personalidade`],
+[`The negative side of a personality trait only applies when a trauma triggers it. Under the trait on the sheet, mark when it’s triggered and how long it lasts; a new session clears it. The printable sheet has a Triggered box.`,`O lado negativo de um traço de personalidade só vale quando um trauma o ativa. Abaixo do traço, na ficha, marque quando foi ativado e quanto tempo dura; uma nova sessão limpa. A ficha para imprimir tem uma caixa Ativado.`]
 ]);

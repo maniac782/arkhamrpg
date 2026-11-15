@@ -2567,5 +2567,19 @@ I18N.add('pl',[
 [`No encounter right now. When the GM shows enemies or starts a fight, everyone appears here together.`,`Teraz nie ma starcia. Gdy MG pokaże wrogów albo zacznie walkę, wszyscy pojawią się tu razem.`],
 [`None showing.`,`Nikt nie jest pokazany.`],
 [`Manage enemies in the GM tab`,`Zarządzaj wrogami w karcie MG`],
-[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Karta Starcie:</b> obok Drużyny karta Starcie pokazuje kości, grozę i rany każdego badacza obok wrogów pokazanych przez MG, pod sceną i licznikiem tur. Stuknij badacza, by otworzyć jego kartę.`]
+[`<b>Encounter tab:</b> next to Party, the Encounter tab shows every investigator’s dice, horror and injuries beside the enemies the GM is showing, under the scene and turn tracker. Tap an investigator to open their sheet.`,`<b>Karta Starcie:</b> obok Drużyny karta Starcie pokazuje kości, grozę i rany każdego badacza obok wrogów pokazanych przez MG, pod sceną i licznikiem tur. Stuknij badacza, by otworzyć jego kartę.`],
+[`Triggered`,`Uruchomiona`],
+[`Not triggered`,`Nieuruchomiona`],
+[`Triggered until the end of the next turn`,`Uruchomiona do końca następnej tury`],
+[`Triggered until the end of the scene`,`Uruchomiona do końca sceny`],
+[`Triggered for the rest of the session`,`Uruchomiona do końca sesji`],
+[`Negative side`,`Strona negatywna`],
+[`Only in effect when a trauma triggers it (Overcome by Horror or Mind Undone), unless you spend insight to avoid it.`,`Działa tylko wtedy, gdy uruchomi ją trauma (Przytłoczenie grozą lub Rozbity umysł), chyba że wydasz wgląd, by tego uniknąć.`],
+[`Negative side triggered until the end of the next turn`,`Strona negatywna uruchomiona do końca następnej tury`],
+[`Negative side triggered until the end of the scene`,`Strona negatywna uruchomiona do końca sceny`],
+[`Negative side triggered for the rest of the session`,`Strona negatywna uruchomiona do końca sesji`],
+[`Negative side no longer in effect`,`Strona negatywna już nie działa`],
+[`<b>Negative side of the personality trait:</b> it isn’t always on. It only takes effect when a trauma triggers it (Overcome by Horror or Mind Undone) and the investigator doesn’t spend insight to avoid it. Under the trait on the sheet, set <b>Negative side</b> to how long it lasts; a new session clears it. The printable sheet has a <b>Triggered</b> box to tick.`,`<b>Negatywna strona cechy osobowości:</b> nie działa cały czas. Działa tylko wtedy, gdy uruchomi ją trauma (Przytłoczenie grozą lub Rozbity umysł), a badacz nie wyda wglądu, by tego uniknąć. Pod cechą na karcie ustaw w polu <b>Strona negatywna</b>, jak długo trwa; nowa sesja ją czyści. Karta do druku ma pole <b>Uruchomiona</b> do zaznaczenia.`],
+[`Track the negative side of personality`,`Śledź negatywną stronę osobowości`],
+[`The negative side of a personality trait only applies when a trauma triggers it. Under the trait on the sheet, mark when it’s triggered and how long it lasts; a new session clears it. The printable sheet has a Triggered box.`,`Negatywna strona cechy osobowości działa tylko wtedy, gdy uruchomi ją trauma. Pod cechą na karcie zaznacz, kiedy się uruchomiła i jak długo trwa; nowa sesja ją czyści. Karta do druku ma pole Uruchomiona.`]
 ]);

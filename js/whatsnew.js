@@ -6,6 +6,9 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-14-negative',date:'2026-11-14',tags:[],
+  title:tk('Track the negative side of personality'),
+  body:tk('The negative side of a personality trait only applies when a trauma triggers it. Under the trait on the sheet, mark when it’s triggered and how long it lasts; a new session clears it. The printable sheet has a Triggered box.')},
  {id:'2026-11-12-enctab',date:'2026-11-12',tags:['encounter'],
   title:tk('Encounter tab'),
   banner:tk('New: an Encounter tab puts the investigators and the enemies in one place during a fight.'),

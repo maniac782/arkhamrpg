@@ -16,7 +16,7 @@ window.acctIcon=function(name,prof){
     opt=opt||{};var open=!!window.__acctOpen;
     return '<span class="acctwrap"><button class="acctbtn" type="button" data-acct="toggle" aria-haspopup="menu" aria-expanded="'+open+'" title="'+t('Your account')+'">'+window.acctIcon(name,prof)+'<b class="acctname">'+esc(name)+'</b><span class="caret" aria-hidden="true">▾</span></button>'+
       '<div class="acctmenu" role="menu"'+(open?'':' hidden')+'><div class="acctmenu-head">'+window.acctIcon(name,prof)+'<span><b>'+esc(name)+'</b>'+(opt.email?'<span class="note">'+esc(opt.email)+'</span>':'')+'</span></div>'+
-      '<a role="menuitem" href="./?account=1" data-a="account">'+t('Your account')+'</a>'+(opt.admin?'<a role="menuitem" href="admin.html">'+t('Admin')+'</a>':'')+
+      '<a role="menuitem" href="./?account=1" data-a="account">'+t('Your account')+'</a><a role="menuitem" href="./?played=1" data-a="played">'+t('Adventures you’ve played')+'</a>'+(opt.admin?'<a role="menuitem" href="admin.html">'+t('Admin')+'</a>':'')+
       (window.isInstalledApp&&window.isInstalledApp()?'':'<button role="menuitem" type="button" data-acct="install">'+t('Install app')+'</button>')+'<button role="menuitem" type="button" data-acct="feedback">'+t('Send feedback')+'</button>'+'<button role="menuitem" type="button" data-acct="signout">'+t('Sign out')+'</button>'+(document.getElementById('ver')?'<span class="acctver">Arkham Horror RPG Ledger '+esc(document.getElementById('ver').textContent)+'</span>':'')+'</div></span>';
   };
   function setOpen(v){window.__acctOpen=v;document.querySelectorAll('.acctwrap').forEach(function(w){var m=w.querySelector('.acctmenu'),b=w.querySelector('.acctbtn');if(m)m.hidden=!v;if(b)b.setAttribute('aria-expanded',String(v));});}

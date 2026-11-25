@@ -106,9 +106,22 @@ function advHtml(a){const st=advState(a.id),done=st.sc||[],cur=String(table.adve
   (cur?'':'<button class="btn pri" data-gact="advstart" data-id="'+a.id+'">'+t('Start this adventure')+'</button>')+'</div>'+
   (cur?'':'<p class="note" style="margin:0">'+t('Makes it the current adventure and adds its enemies, people and places, all hidden until you show them.')+'</p>')+'</div></details>';}
 // The Journal's list of published adventures this group has started or finished (names only, no spoilers).
+// Your own list of adventures played (prefs/<uid>.played, also on the home page under Adventures you've played).
+// Loaded once, only when the Journal shows an adventure.
+let myPlayed;
+const myPlayedOk=()=>!!(CAMP&&!IS_LOCAL&&db&&db.raw&&authUid);
+function loadMyPlayed(){if(myPlayed!==undefined||!myPlayedOk())return;myPlayed=null;
+ db.raw.doc('prefs/'+authUid).get().then(s=>{myPlayed=(s.exists&&s.data().played)||{};render();}).catch(()=>{myPlayed=false;});}
+function myPlayedBtn(a){if(!myPlayedOk())return '';loadMyPlayed();if(!myPlayed)return '';const k=isGM()?'g':'p',on=(myPlayed[a.id]||'').includes(k);
+ return '<button class="btn sm'+(on?' pri':'')+'" data-myplayed="'+a.id+'" aria-pressed="'+on+'">'+(on?'✓ '+t('On your list'):t('Add to your list'))+'</button>';}
+async function myPlayedToggle(id){if(!myPlayed||!ADVS.some(a=>a.id===id))return;const k=isGM()?'g':'p',before=myPlayed,P={...myPlayed},v=P[id]||'';
+ let n=v.includes(k)?v.replace(k,''):v+k;n=(n.includes('p')?'p':'')+(n.includes('g')?'g':'');if(n)P[id]=n;else delete P[id];
+ myPlayed=P;render();try{await db.raw.doc('prefs/'+authUid).set({played:P},{mergeFields:['played']});if(n.includes(k))toast(t('Added to Adventures you’ve played on your home page.'));}
+ catch(e){myPlayed=before;render();toast(t('Couldn’t save that. Try again.'));}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-myplayed]');if(b)myPlayedToggle(b.dataset.myplayed);});
 function playedHtml(){const L=ADVS.filter(a=>advState(a.id).st);if(!L.length)return '';
  return '<section class="sec"><div class="sec-head"><h2>'+t('Adventures')+'</h2></div><div class="list">'+L.map(a=>{const st=advState(a.id);
-  return '<div class="item"><div class="grow"><b>'+esc(t(a.name))+'</b><span class="effect">'+esc(bookName(a.book))+' · '+t('{n} of {m} scenes played',{n:(st.sc||[]).length,m:a.scenes.length})+'</span></div><span class="chip'+(st.st==='done'?' ok':'')+'">'+advStLabel(st.st)+'</span></div>';}).join('')+'</div></section>';}
+  return '<div class="item" style="flex-wrap:wrap"><div class="grow" style="min-width:0;flex:1 1 200px"><b>'+esc(t(a.name))+'</b><span class="effect">'+esc(bookName(a.book))+' · '+t('{n} of {m} scenes played',{n:(st.sc||[]).length,m:a.scenes.length})+'</span></div><span class="chip'+(st.st==='done'?' ok':'')+'">'+advStLabel(st.st)+'</span>'+myPlayedBtn(a)+'</div>';}).join('')+'</div></section>';}
 function adventuresHtml(){if(!BOOK_NPCS||campDone())return '';const L=ownedAdvs();
  let h='<section class="sec"><div class="sec-head"><h2>'+t('Adventures')+'</h2><span class="note">'+t('Published adventures from the books you own. Only you see the details; players see which ones you’ve played.')+'</span></div>'+
   '<div><span class="lbl">'+t('Books we own')+'</span><div class="row" style="gap:6px 16px">'+BOOKS.map(b=>'<label class="row note" style="gap:6px"><input type="checkbox" data-gbook="'+b.id+'"'+(ownsBook(b.id)?' checked':'')+'> '+esc(t(b.name))+'</label>').join('')+'</div>'+

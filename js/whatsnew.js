@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-25-played',date:'2026-11-25',tags:[],
+  title:tk('Adventures you’ve played'),
+  banner:tk('New: keep your own list of the adventures you’ve played, in any campaign or none.'),
+  body:tk('Choose Adventures you’ve played in the menu under your icon to mark the published adventures you’ve played or run as GM, whether or not they were in a campaign here. Only you see the list. In a campaign’s Journal, Add to your list puts an adventure on it in one tap.')},
  {id:'2026-11-25-thompson',date:'2026-11-25',tags:[],
   title:tk('The Thompson Files, and published adventures'),
   banner:tk('New: The Thompson Files’ creatures and adventures for GMs, plus a Books we own setting.'),

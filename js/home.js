@@ -21,11 +21,11 @@ function render(){
  if(!user){whoEl.innerHTML='';welcomeView();}
  else if(profile===undefined){whoEl.innerHTML='';app.innerHTML='<p class="note" style="padding:24px 16px">'+t('Loading your account…')+'</p>';}
  else if(!profile){whoEl.innerHTML=signOutHtml();app.innerHTML=usernameView();}
- else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+acctMenuHtml(profile.username,profile,{email:(auth&&auth.currentUser&&auth.currentUser.email)||user.email||'',admin:isAdm})+'</span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
+ else{const oc=ui.view==='camp'&&camps.find(x=>x.id===ui.cid);watchOutbox(oc&&oc.ownerUid===user.uid?oc.id:null);watchHouse(oc?oc.id:null);whoEl.innerHTML='<span class="nav">'+acctMenuHtml(profile.username,profile,{email:(auth&&auth.currentUser&&auth.currentUser.email)||user.email||'',admin:isAdm})+'</span>';app.innerHTML=banned?bannedView():ui.view==='camp'?campView():ui.view==='account'?accountView():ui.view==='played'?playedView():ui.view==='new'?newView():ui.view==='invite'?inviteView():homeView();}
  Object.keys(vals).forEach(id=>{const el=document.getElementById(id);if(el&&app.contains(el)&&!ui.clear.has(id))el.value=vals[id];});ui.clear.clear();
  syncRename();
  // Keep the address in step with the page, so reloading a campaign's Settings stays there.
- if(user&&profile){const want=ui.view==='camp'&&ui.cid?'?settings='+encodeURIComponent(ui.cid):'';if(location.search!==want&&!/[?&]join=/.test(location.search)){try{history.replaceState(null,'',location.pathname+want);}catch(e){}}}
+ if(user&&profile){const want=ui.view==='camp'&&ui.cid?'?settings='+encodeURIComponent(ui.cid):ui.view==='played'?'?played=1':'';if(location.search!==want&&!/[?&]join=/.test(location.search)){try{history.replaceState(null,'',location.pathname+want);}catch(e){}}}
  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
 function bannedView(){return '<section class="sec auth"><h2>'+t('Account suspended')+'</h2><p class="note" style="margin:0">'+t('This account has been suspended, so it can’t create or change anything. If you think this is a mistake, email {email}.',{email:'<a href="mailto:maniac78@gmail.com?subject=Arkham%20Ledger%20account">maniac78@gmail.com</a>'})+'</p></section>';}
@@ -52,6 +52,22 @@ function accountView(){
  else h+='<div class="row"><button class="btn dng" data-a="acctdelyes">'+t('Yes, delete everything')+'</button><button class="btn" data-a="acctdelno">'+t('Cancel')+'</button></div>';
  return h+'</section>';
 }
+// Adventures you've played: published adventures you've played (p) or run as GM (g), in any campaign or none.
+// Kept privately in prefs/<uid>.played as {adventureId:'p'|'g'|'pg'}. Titles only, so nothing is spoiled.
+function playedView(){loadPrefs();
+ const A=window.APL_ADVS||[],B=window.APL_BOOKS||[],P=(ui.prefs&&ui.prefs.played)||{};
+ let h='<div class="row"><button class="btn sm" data-a="home">'+t('← My campaigns')+'</button></div>';
+ h+='<section class="sec"><div class="sec-head"><h2>'+t('Adventures you’ve played')+'</h2>'+(ui.prefs?'<span class="note">'+t('{n} of {m}',{n:A.filter(a=>P[a.id]).length,m:A.length})+'</span>':'')+'</div>'+
+  '<p class="note" style="margin:0">'+t('Mark the published adventures you’ve played or run, in any campaign or none. Only you see this list.')+'</p>';
+ if(!ui.prefs)return h+'<p class="note" style="margin:0">'+t('Loading…')+'</p></section>';
+ B.forEach(bk=>{const L=A.filter(a=>a.book===bk.id);if(!L.length)return;
+  h+='<div><span class="lbl">'+esc(t(bk.name))+'</span><div class="list">'+L.map(a=>{const v=P[a.id]||'',btn=(k,label)=>{const on=v.includes(k);return '<button class="btn sm'+(on?' pri':'')+'" data-a="pltog" data-id="'+a.id+'" data-k="'+k+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+label+'</button>';};
+   return '<div class="item" style="flex-wrap:wrap"><div class="grow" style="min-width:0;flex:1 1 200px"><b>'+esc(t(a.name))+'</b></div><div class="row" style="gap:6px;flex-wrap:wrap">'+btn('p',t('Played'))+btn('g',t('Ran it as GM'))+'</div></div>';}).join('')+'</div></div>';});
+ return h+'</section>';
+}
+function playedToggle(id,k){if(!ui.prefs||!(window.APL_ADVS||[]).some(a=>a.id===id)||!/^[pg]$/.test(k))return;
+ const P={...(ui.prefs.played||{})},v=P[id]||'';let n=v.includes(k)?v.replace(k,''):v+k;n=(n.includes('p')?'p':'')+(n.includes('g')?'g':'');
+ if(n)P[id]=n;else delete P[id];savePrefs({played:P});}
 function myTz(){try{return (Intl.DateTimeFormat().resolvedOptions().timeZone||'').slice(0,50);}catch(e){return '';}}
 // Keeps the time zone used for reminder emails current (stored privately in prefs/{uid}).
 function saveTz(){const tz=myTz();if(!tz||!user)return;db.doc('prefs/'+user.uid).get().then(s=>{const p=s.exists?s.data():{};if(p.tz!==tz)return db.doc('prefs/'+user.uid).set({...p,tz});}).catch(()=>{});}
@@ -519,7 +535,7 @@ function syncRename(){const i=document.getElementById('rname'),b=document.getEle
 app.addEventListener('input',e=>{if(e.target.id==='rname')syncRename();if(e.target.id==='cname'){if(ui.err){ui.err='';const er=app.querySelector('.err');if(er)er.remove();}const p=document.getElementById('nprevname');if(p)p.textContent=e.target.value.trim()||t('Your campaign');}});
 app.addEventListener('change',e=>{const el=e.target;if(el.id==='acctlang'){I18N.set(el.value);return;}if(el.id==='avphoto'){const f=el.files&&el.files[0];el.value='';openCropper(f,{title:t('Position your photo'),shape:'circle',outW:160,outH:160,maxLen:18000,onError:toast,onSave:d=>{const old=profile.photo;profile={...profile,photo:d};render();storeImage(d,'users/'+user.uid).then(u=>db.doc('users/'+user.uid).update({photo:u})).then(()=>{toast(t('Photo saved.'));dropImage(old);},er=>{if(window.quotaHit&&quotaHit(er))return;toast(t('Couldn’t save the photo. Try again.'));});}});return;}if(el.id==='nphoto'){const f=el.files&&el.files[0];el.value='';openCropper(f,{title:t('Position the campaign picture'),shape:'wide',outW:1600,outH:900,maxLen:700000,full:{side:2400,maxLen:1200000},onError:toast,onSave:(d,full)=>{ui.newPhoto=d;ui.newPhotoFull=full;render();}});return;}if(el.name==='ngm'){ui.newGM=el.value;return;}if(el.id==='cphoto'){campPhoto(el.files&&el.files[0]);el.value='';return;}if(el.hasAttribute('data-ownergm')){const on=el.checked;db.doc('campaigns/'+ui.cid).update({ownerGM:on}).then(()=>toast(on?t('You can use the GM tools now.'):t('The GM tools are the GM’s alone again.'))).catch(er=>{if(window.quotaHit&&quotaHit(er))return;el.checked=!on;toast(t('Couldn’t save that. Try again.'));});return;}if(el.hasAttribute('data-gmedit')){const on=el.checked;db.doc('campaigns/'+ui.cid).update({gmEdits:on}).then(()=>toast(on?t('The GM can edit every investigator now.'):t('The GM is back to the session tools only.'))).catch(er=>{if(window.quotaHit&&quotaHit(er))return;el.checked=!on;toast(t('Couldn’t save that. Try again.'));});return;}if(el.hasAttribute('data-ownedit')){const on=el.checked;db.doc('campaigns/'+ui.cid).update({ownerEdits:on}).then(()=>toast(on?t('You can edit every investigator again.'):t('Other players’ investigators are locked to them now.'))).catch(er=>{if(window.quotaHit&&quotaHit(er))return;el.checked=!on;toast(t('Couldn’t save that. Try again.'));});return;}houseChange(el);});
 window.addEventListener('acct-signout',()=>auth&&auth.signOut());
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account')e.preventDefault();
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a;if(a==='account'||a==='played')e.preventDefault();
  switch(a){
   case 'google':busy(google);break;
   case 'savecancel':wantSave=false;try{sessionStorage.removeItem('apl-savelocal');}catch(er){}break;
@@ -544,6 +560,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
   case 'avphotodel':dropImage(profile.photo);profile={...profile,photo:''};render();db.doc('users/'+user.uid).update({photo:FV().delete()}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(t('Couldn’t remove it. Try again.'));});break;
   case 'avc':{const k='color',v=b.dataset.v;profile={...profile,[k]:v};render();db.doc('users/'+user.uid).update({[k]:v}).catch(er=>{if(window.quotaHit&&quotaHit(er))return;toast(t('Couldn’t save that. Try again.'));});break;}
   case 'account':ui.view='account';ui.delAsk=false;render();window.scrollTo(0,0);break;
+  case 'played':ui.view='played';render();window.scrollTo(0,0);break;
+  case 'pltog':playedToggle(b.dataset.id,b.dataset.k);break;
   case 'remindtog':{const on=b.checked;savePrefs({noRemind:!on},on?t('Session reminders on.'):t('Session reminders off.'));break;}
   case 'clutog':{const on=b.checked;savePrefs({noCluePush:!on},on?t('Clue notifications on.'):t('Clue notifications off.'));break;}
   case 'turntog':{const on=b.checked;savePrefs({pushTurns:on},on?t('Turn notifications on.'):t('Turn notifications off.'));break;}
@@ -584,7 +602,7 @@ if(!cfgOk()){app.innerHTML='<p class="note" style="padding:24px 16px">'+t('Fireb
 const cfg=Object.assign({},window.FIREBASE_CONFIG);
 if(/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))cfg.authDomain=location.hostname;
 fb=firebase.initializeApp(cfg,'beta');window.armAppCheck&&armAppCheck(fb);auth=fb.auth();db=fb.firestore();
-try{if(new URLSearchParams(location.search).has('account'))ui.view='account';}catch(e){}
+try{if(new URLSearchParams(location.search).has('account'))ui.view='account';if(new URLSearchParams(location.search).has('played'))ui.view='played';}catch(e){}
 try{const st=new URLSearchParams(location.search).get('settings');if(st&&/^[A-Za-z0-9]{10,40}$/.test(st)){ui.view='camp';ui.cid=st;ui.waitCid=st;}}catch(e){}
 try{const q=new URLSearchParams(location.search).get('join');const n=new URLSearchParams(location.search).get('n');
  if(q&&/^[A-Za-z0-9]+\.[a-z0-9]{10,40}$/.test(q)){const [cid,code]=q.split('.');setPendingJoin({cid,code,name:(n||'').slice(0,60)});}

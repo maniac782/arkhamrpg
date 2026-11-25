@@ -82,6 +82,51 @@ function nextTurn(){let ph,round=table.round;
 
 // ---------- enemies ----------
 function npcProfile(n){return NPCS.find(x=>x.n===n);}
+// ---------- the books a campaign owns, and published adventures ----------
+// The GM ticks the books the group owns (Core Rulebook by default); only their enemies and adventures are offered.
+const BOOKS=window.APL_BOOKS||[],ADVS=window.APL_ADVS||[];
+const bookName=id=>{const b=BOOKS.find(x=>x.id===id);return b?t(b.name):id;};
+const campBooks=()=>Array.isArray(campaign.books)?campaign.books:['core'];
+const ownsBook=id=>campBooks().includes(id||'core');
+const ownedNpcs=()=>NPCS.filter(x=>ownsBook(x.src));
+const ownedAdvs=()=>BOOK_NPCS?ADVS.filter(a=>ownsBook(a.book)):[];
+const advState=id=>((campaign.advs||{})[id])||{};
+const ADV_ST=[['',()=>t('Not started')],['play',()=>t('In progress')],['done',()=>t('Finished')]];
+const advStLabel=v=>(ADV_ST.find(x=>x[0]===(v||''))||ADV_ST[0])[1]();
+const pageRef=(book,pg)=>t('{book}, page {n}',{book:bookName(book),n:pg});
+function advHtml(a){const st=advState(a.id),done=st.sc||[],cur=String(table.adventure||'').trim()===t(a.name);
+ return '<details class="adv"'+(gm.open['adv-'+a.id]?' open':'')+' data-gopen="adv-'+a.id+'"><summary><b>'+esc(t(a.name))+'</b>'+(cur?' <span class="chip ok">'+t('Current adventure')+'</span>':st.st?' <span class="chip">'+advStLabel(st.st)+'</span>':'')+
+  '<span class="note">'+esc(t(a.where))+' · '+tn('{n} scene','{n} scenes',a.scenes.length)+(done.length?' · '+t('{n} played',{n:done.length}):'')+'</span></summary>'+
+  '<div class="advbody"><p class="note" style="margin:0">'+esc(pageRef(a.book,a.pg))+'</p><p style="margin:0">'+esc(t(a.blurb))+'</p>'+
+  '<div><span class="lbl">'+t('Scenes')+'</span>'+a.scenes.map((sc,i)=>'<label class="row note" style="gap:6px"><input type="checkbox" data-gadvsc="'+a.id+'" data-i="'+i+'"'+(done.includes(i)?' checked':'')+'> '+esc(t(sc))+'</label>').join('')+'</div>'+
+  (a.foes.length?'<div><span class="lbl">'+t('Enemies')+'</span><p class="note" style="margin:0">'+a.foes.map(([n,c])=>esc(t(n))+(c>1?' ×'+c:'')).join(' · ')+'</p></div>':'')+
+  (a.people.length?'<div><span class="lbl">'+t('People')+'</span>'+a.people.map(([n,no])=>'<p class="note" style="margin:0"><b>'+esc(n)+'</b>'+(no?' — '+esc(t(no)):'')+'</p>').join('')+'</div>':'')+
+  (a.places.length?'<div><span class="lbl">'+t('Places')+'</span>'+a.places.map(([n,no])=>'<p class="note" style="margin:0"><b>'+esc(n)+'</b>'+(no?' — '+esc(t(no)):'')+'</p>').join('')+'</div>':'')+
+  '<div class="row"><label class="field" style="width:auto"><span class="lbl">'+t('Status')+'</span><select class="f" data-gadvst="'+a.id+'">'+ADV_ST.map(([k,l])=>'<option value="'+k+'"'+((st.st||'')===k?' selected':'')+'>'+l()+'</option>').join('')+'</select></label>'+
+  (cur?'':'<button class="btn pri" data-gact="advstart" data-id="'+a.id+'">'+t('Start this adventure')+'</button>')+'</div>'+
+  (cur?'':'<p class="note" style="margin:0">'+t('Makes it the current adventure and adds its enemies, people and places, all hidden until you show them.')+'</p>')+'</div></details>';}
+// The Journal's list of published adventures this group has started or finished (names only, no spoilers).
+function playedHtml(){const L=ADVS.filter(a=>advState(a.id).st);if(!L.length)return '';
+ return '<section class="sec"><div class="sec-head"><h2>'+t('Adventures')+'</h2></div><div class="list">'+L.map(a=>{const st=advState(a.id);
+  return '<div class="item"><div class="grow"><b>'+esc(t(a.name))+'</b><span class="effect">'+esc(bookName(a.book))+' · '+t('{n} of {m} scenes played',{n:(st.sc||[]).length,m:a.scenes.length})+'</span></div><span class="chip'+(st.st==='done'?' ok':'')+'">'+advStLabel(st.st)+'</span></div>';}).join('')+'</div></section>';}
+function adventuresHtml(){if(!BOOK_NPCS||campDone())return '';const L=ownedAdvs();
+ let h='<section class="sec"><div class="sec-head"><h2>'+t('Adventures')+'</h2><span class="note">'+t('Published adventures from the books you own. Only you see the details; players see which ones you’ve played.')+'</span></div>'+
+  '<div><span class="lbl">'+t('Books we own')+'</span><div class="row" style="gap:6px 16px">'+BOOKS.map(b=>'<label class="row note" style="gap:6px"><input type="checkbox" data-gbook="'+b.id+'"'+(ownsBook(b.id)?' checked':'')+'> '+esc(t(b.name))+'</label>').join('')+'</div>'+
+  '<p class="note" style="margin:4px 0 0">'+t('Only enemies and adventures from these books are offered.')+'</p></div>';
+ BOOKS.filter(b=>ownsBook(b.id)).forEach(b=>{const A=L.filter(a=>a.book===b.id);if(A.length)h+='<div><span class="lbl">'+esc(t(b.name))+'</span><div class="advs">'+A.map(advHtml).join('')+'</div></div>';});
+ return h+'</section>';}
+// Start a published adventure: it becomes the current adventure, and its enemies, people and places are added hidden.
+function startAdventure(id){const a=ADVS.find(x=>x.id===id);if(!a)return;const name=t(a.name);
+ if(name!==String(table.adventure||'').trim()){const first=!table.adventure;gmStory(logm('Began the adventure “{adventure}”',{adventure:name}));saveTable({adventure:name});if(first)fileUnderAdventure(name);}
+ const tag={adv:name};let ne=0,np=0,nl=0;
+ a.foes.forEach(([n,c])=>{const p=npcProfile(n);if(!p)return;if(Object.values(enemies).some(e=>e.base===p.n&&e.adv===name))return;ne+=makeEnemies(p,c,{tag}).length;});
+ const addTo=(key,list)=>{const have=new Set((campaign[key]||[]).map(x=>String(x.name||'').toLowerCase()));let n=0;
+  list.forEach(([nm,no])=>{if(have.has(nm.toLowerCase()))return;campaign[key]=[...(campaign[key]||[]),{id:gmId(),name:nm,note:no?t(no):'',hid:true,adv:name,ss:table.session||1}];n++;});return n;};
+ np=addTo('npcs',a.people);nl=addTo('locations',a.places);
+ campaign.advs={...(campaign.advs||{}),[id]:{...advState(id),st:'play'}};saveCampaign();
+ gmLog(logm('Started the adventure “{adventure}”',{adventure:name}),false);
+ toast(t('Started {adventure}: {e} enemies, {p} people and {l} places added, hidden until you show them.',{adventure:name,e:ne,p:np,l:nl}));render();}
+
 const ENEMY_TYPES=['Minor','Major','Monstrous','Named'];
 // A picture for an enemy or a person met: a small square on the card, tap to see it whole.
 function picHtml(pic,full,name){return imgOk(pic)?'<img class="sqpic" src="'+pic+'" alt="'+esc(name||'')+'" data-zoom'+(imgOk(full)?' data-full="'+full+'"':'')+' title="'+t('See the full picture')+'">':'';}
@@ -98,16 +143,19 @@ function fileUnderAdventure(v){let n=0;
  if(ch)saveCampaign();if(n)toast(t('What’s in the Journal so far is now filed under {name}.',{name:v}));}
 const tagNow=()=>({adv:String(table.adventure||'').trim(),ss:table.session||1});
 function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.min(12,Number(gm.addCount)||1));
- const base=p?p.pool:4;const pool=gm.addScale?Math.min(8,base+SLOTS.length):base;
+ makeEnemies(p,count,{scale:gm.addScale,name:gm.addName,type:gm.addType});
+ const cn=String(gm.addName||'').trim();gmLog(logm('Added {n} × {enemy}',{n:count,enemy:p?p.n:(cn||tk('custom enemy'))}),false);gm.addCount=1;gm.addName='';render();toast(t('Added {n} × {enemy}.',{n:count,enemy:p?t(p.n):(cn||t('enemy'))}));}
+// Creates enemies from a profile (or a custom one), hidden from players. Scaling adds a die per investigator, up to 8.
+function makeEnemies(p,count,o){o=o||{};const base=p?p.pool:4;const pool=o.scale&&base<8?Math.min(8,base+SLOTS.length):base;const made=[];
  // Number them only when there's more than one of the same name: the first Swamp devil is just "Swamp devil".
- const nm0=p?p.n:(String(gm.addName||'').trim().slice(0,60)||tk('Enemy'));
+ const nm0=p?p.n:(String(o.name||'').trim().slice(0,60)||tk('Enemy'));
  const same=new RegExp('^'+nm0.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'( \\d+)?$');
  const existing=Object.values(enemies).filter(e=>same.test(e.n)).length;
  for(let i=0;i<count;i++){const id=gmId()+i;const hl=(p&&p.horror)||0;
-  const cn=String(gm.addName||'').trim().slice(0,60);
-  const e={id,base:p?p.n:t('Custom enemy'),n:(p?p.n:(cn||tk('Enemy')))+(count>1||existing?' '+(existing+i+1):''),type:p?p.type:(gm.addType||'Minor'),max:pool,limit:pool,regular:pool-Math.min(hl,pool),horror:Math.min(hl,pool),horrorLimit:hl,injuries:[],traumas:[],strained:false,out:false,shown:false,t:Date.now()+i,note:''};
-  enemies[id]=e;gmSet('enemies/'+id,e);}
- const cn=String(gm.addName||'').trim();gmLog(logm('Added {n} × {enemy}',{n:count,enemy:p?p.n:(cn||tk('custom enemy'))}),false);gm.addCount=1;gm.addName='';render();toast(t('Added {n} × {enemy}.',{n:count,enemy:p?t(p.n):(cn||t('enemy'))}));}
+  const cn=String(o.name||'').trim().slice(0,60);
+  const e={id,base:p?p.n:t('Custom enemy'),n:(p?p.n:(cn||tk('Enemy')))+(count>1||existing?' '+(existing+i+1):''),type:p?p.type:(o.type||'Minor'),max:pool,limit:pool,regular:pool-Math.min(hl,pool),horror:Math.min(hl,pool),horrorLimit:hl,injuries:[],traumas:[],strained:false,out:false,shown:false,t:Date.now()+i,note:'',...(o.tag||{})};
+  enemies[id]=e;gmSet('enemies/'+id,e);made.push(e);}
+ return made;}
 function updEnemy(id,p){const e=enemies[id];if(!e)return;Object.assign(e,p);render();gmSet('enemies/'+id,p,true);}
 function enemyClamp(e){e.limit=Math.max(0,Math.min(e.max,e.limit));let over=e.regular+e.horror-e.limit;while(over>0&&e.regular>0){e.regular--;over--;}while(over>0&&e.horror>0){e.horror--;over--;}}
 function enemyDamage(e,n){if(e.out)return;e.limit-=n;enemyClamp(e);const p={limit:e.limit,regular:e.regular,horror:e.horror};
@@ -217,6 +265,7 @@ function npcProfileHtml(p,e){
  if(p.ab&&p.ab.length)h+='<div><span class="lbl">'+t('Abilities')+'</span>'+p.ab.map(a=>'<div class="note"><b>'+esc(t(a[0]))+'.</b> '+esc(t(a[1]))+'</div>').join('')+'</div>';
  if(p.wk&&p.wk.length)h+='<div><span class="lbl">'+t('Weaknesses')+'</span>'+p.wk.map(a=>'<div class="note"><b>'+esc(t(a[0]))+'.</b> '+esc(t(a[1]))+'</div>').join('')+'</div>';
  if(p.gear)h+='<div class="note"><b>'+t('Gear.')+'</b> '+esc(t(p.gear))+'</div>';
+ if(p.pg)h+='<div class="note">'+esc(pageRef(p.src,p.pg))+'</div>';
  return h+'</div>';
 }
 
@@ -247,8 +296,8 @@ async function addClue(show){const tt=(document.getElementById('cl-title')||{}).
 // ---------- campaign ----------
 function saveCampaign(){render();gmSet('campaign/main',JSON.parse(JSON.stringify(campaign)));}
 function campaignHtml(master,keep){
- const list=(key,label,fields,ph)=>{const a=(campaign[key]||[]).filter(x=>master||key==='threads'||!keep||keep(x));
-  let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+(key==='npcs'?'<div class="row" style="gap:6px">'+picPicker('n',x.id,imgOk(x.pic))+'</div>':'')+'</div>'+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
+ const list=(key,label,fields,ph)=>{const a=(campaign[key]||[]).filter(x=>master||(!x.hid&&(key==='threads'||!keep||keep(x))));
+  let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+(key==='npcs'?'<div class="row" style="gap:6px">'+picPicker('n',x.id,imgOk(x.pic))+'</div>':'')+'</div>'+(x.hid?'<button class="btn sm" data-gact="cpshow" data-list="'+key+'" data-id="'+x.id+'" title="'+t('Hidden from players until you show it')+'">'+t('Show to players')+'</button>':'')+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
    :'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow"><b'+(x.done?' style="text-decoration:line-through;opacity:.6"':'')+'>'+esc(x.name||x.text||'')+'</b>'+(x.att?' <span class="chip">'+esc(x.att)+'</span>':'')+(x.note?'<span class="effect">'+esc(x.note)+'</span>':'')+'</div></div>').join(''):'<p class="note">'+ph+'</p>')+'</div>'+
   (master?'<div class="row"><button class="btn sm" data-gact="cpadd" data-list="'+key+'">'+t('Add')+'</button></div>':'')+'</div>';return h;};
  return '<div class="grid2">'+
@@ -293,6 +342,7 @@ function renderJournal(){
  const shownEn=Object.values(enemies).filter(e=>e.shown&&k(e)).sort((a,b)=>a.t-b.t);
  const past=(campaign.defeated||[]).filter(x=>!(enemies[x.id]&&enemies[x.id].shown)&&k(x)).sort((a,b)=>b.at-a.at);
  if(shownEn.length||past.length)h+='<section class="sec"><div class="sec-head"><h2>'+t('Enemies')+'</h2><span class="note">'+(past.length?t('Shown by the GM, and enemies defeated so far.'):t('The GM is showing these.'))+'</span></div><div class="list">'+shownEn.map(enemyBrief).join('')+past.map(pastBrief).join('')+'</div></section>';
+ h+=playedHtml();
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Campaign')+'</h2>'+(campaign.date?'<span class="chip">'+esc(campaign.date)+'</span>':'')+'</div>'+campaignHtml(false,keep)+'</section>';
  // finished sessions only: the current one appears once the GM starts the next
  const done=(table.session||1)-1;
@@ -324,9 +374,10 @@ const fvDel=()=>(IS_LOCAL?LocalFB.FieldValue:firebase.firestore.FieldValue).dele
 function setNextSession(p){const ref=(IS_LOCAL?LocalFB.app():firebase.app('beta')).firestore().doc('campaigns/'+CAMP);return ref.update(p);}
 function renderGM(){
  if(!isGMView())return gmPinHtml()+'<section class="sec"><h2>'+t('Game Master')+'</h2><p class="note">'+t('These are the Game Master’s tools. Players don’t need anything here.')+(CAMP?' '+t('The campaign owner chooses the GM on the campaign page.'):'')+'</p></section>';
- const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const cats=[...new Set(NPCS.map(x=>x.cat))];const p=npcProfile(gm.addN);
+ const en=Object.values(enemies).sort((a,b)=>a.t-b.t);const ON=ownedNpcs(),cats=[...new Set(ON.map(x=>x.cat))];const p=npcProfile(gm.addN);
  let h=turnBar()+gmPinHtml();
  if(CAMP)h+=gmNextHtml();
+ h+=adventuresHtml();
  // scene & turns
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Scene &amp; turns')+'</h2><span class="note">'+t('Everyone sees this bar at the top of their screen.')+'</span></div>'+
   '<label class="field"><span class="lbl">'+t('Current adventure')+'</span><input class="f" id="gm-adv" data-gt="adventure" maxlength="80" value="'+esc(table.adventure||'')+'" placeholder="'+t('e.g. The Witch House')+'"></label>'+
@@ -340,13 +391,13 @@ function renderGM(){
  h+='<label class="row note" style="gap:6px"><input type="checkbox" data-gt="auto"'+(table.auto?' checked':'')+'> '+t('Refill each side’s pools automatically when their turn starts (surprise round: the side that isn’t surprised adds 1 die)')+'</label></section>';
  // encounter
  h+='<section class="sec"><div class="sec-head"><h2>'+t('Encounter')+'</h2><span class="note">'+t('Enemies are hidden from players unless you show them.')+'</span></div>'+'<label class="row note" style="gap:6px"><input type="checkbox" data-gt="showPools"'+(table.showPools?' checked':'')+'> '+t('Let players see the dice pools of enemies you show')+'</label>'+
-  '<div class="row"><label class="field" style="flex:2;min-width:200px"><span class="lbl">'+(BOOK_NPCS?t('Add from the book'):t('Add an enemy'))+'</span><select class="f" id="gm-add" data-gs="addN">'+(BOOK_NPCS?'<option value="">'+t('Choose an enemy…')+'</option>':'')+cats.map(ct=>'<optgroup label="'+t(ct)+'">'+NPCS.filter(x=>x.cat===ct).map(x=>'<option value="'+esc(x.n)+'"'+(gm.addN===x.n?' selected':'')+'>'+esc(t(x.n))+'</option>').join('')+'</optgroup>').join('')+'<option value="__custom"'+(gm.addN==='__custom'?' selected':'')+'>'+t('Custom enemy')+'</option></select></label>'+
+  '<div class="row"><label class="field" style="flex:2;min-width:200px"><span class="lbl">'+(BOOK_NPCS?t('Add from the book'):t('Add an enemy'))+'</span><select class="f" id="gm-add" data-gs="addN">'+(BOOK_NPCS?'<option value="">'+t('Choose an enemy…')+'</option>':'')+cats.map(ct=>{const src=(ON.find(x=>x.cat===ct)||{}).src;return '<optgroup label="'+(src?esc(bookName(src))+' · ':'')+t(ct)+'">'+ON.filter(x=>x.cat===ct).map(x=>'<option value="'+esc(x.n)+'"'+(gm.addN===x.n?' selected':'')+'>'+esc(t(x.n))+'</option>').join('')+'</optgroup>';}).join('')+'<option value="__custom"'+(gm.addN==='__custom'?' selected':'')+'>'+t('Custom enemy')+'</option></select></label>'+
   '<label class="field" style="width:80px"><span class="lbl">'+t('How many')+'</span><input class="f" type="number" min="1" max="12" id="gm-count" data-gs="addCount" value="'+gm.addCount+'"></label>'+
   '<button class="btn" data-gact="eadd" '+(gm.addN?'':'disabled')+'>'+t('Add')+'</button></div>'+
   (gm.addN==='__custom'?'<div class="row"><label class="field" style="flex:2;min-width:180px"><span class="lbl">'+t('Name')+'</span><input class="f" id="gm-addname" data-gs="addName" maxlength="60" value="'+esc(gm.addName||'')+'" placeholder="'+t('e.g. Swamp devil')+'"></label><label class="field" style="flex:1;min-width:140px"><span class="lbl">'+t('Type')+'</span><select class="f" id="gm-addtype" data-gs="addType">'+ENEMY_TYPES.map(x=>'<option value="'+x+'"'+((gm.addType||'Minor')===x?' selected':'')+'>'+(x==='Named'?t('Named'):t(x+' NPC'))+'</option>').join('')+'</select></label></div>':'')+
   (gm.addN?'<label class="row note" style="gap:6px"><input type="checkbox" data-gs="addScale"'+(gm.addScale?' checked':'')+'> '+(p?t('Scale to the party: +1 die per investigator (max 8), so {n} instead of {base}',{n:Math.min(8,p.pool+SLOTS.length),base:p.pool}):t('Scale to the party: +1 die per investigator (max 8)'))+'</label>':'')+
   (BOOK_NPCS?'':'<p class="note" style="margin:0">'+t('Add enemies and set their pools yourself. Campaigns saved to an account can also add enemies from the Core Rulebook’s profiles.')+'</p>')+
-  (p?'<p class="note" style="margin:0">'+esc(p.type==='Named'?t('Named character'):t(p.type+' NPC'))+(p.size?' · '+t(p.size):'')+'. '+t('Starting pool {n} is a suggestion: the book prints each pool in the profile art, so check it and adjust with Max.',{n:p.pool})+'</p>':'')+
+  (p?'<p class="note" style="margin:0">'+esc(p.type==='Named'?t('Named character'):t(p.type+' NPC'))+(p.size?' · '+t(p.size):'')+'. '+(p.src?esc(pageRef(p.src,p.pg)):t('Starting pool {n} is a suggestion: the book prints each pool in the profile art, so check it and adjust with Max.',{n:p.pool}))+'</p>':'')+
   (en.length?'<div class="row"><button class="btn sm" data-gact="erefillall">'+t('Refill all enemies')+'</button><button class="btn sm dng" data-gact="eclearall">'+t('Remove all')+'</button></div>'+en.map(enemyHtml).join(''):'<p class="note" style="margin:0">'+t('No enemies in this scene.')+'</p>')+'</section>';
  // roller
  const r=gm.roll;
@@ -427,6 +478,8 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
   case 'picdel':{const id=b.dataset.id;if(b.dataset.kind==='e'){if(enemies[id])updEnemy(id,{pic:'',picFull:''});}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,pic:'',picFull:''}:x);saveCampaign();}break;}
   case 'jfilter':{const v=b.dataset.v;jFilter=v;try{localStorage.setItem('apl-jfilter-'+(CAMP||''),v);}catch(e){}render();break;}
   case 'cpadd':{const l=b.dataset.list;campaign[l]=[...(campaign[l]||[]),{id:gmId(),...(l==='threads'?{}:tagNow())}];saveCampaign();break;}
+  case 'advstart':startAdventure(id);break;
+  case 'cpshow':{const l=b.dataset.list;campaign[l]=(campaign[l]||[]).map(x=>x.id===id?{...x,hid:false,...(x.adv!=null?{}:tagNow()),ss:table.session||1}:x);saveCampaign();break;}
   case 'cpdel':{const l=b.dataset.list;campaign[l]=(campaign[l]||[]).filter(x=>x.id!==id);saveCampaign();break;}
   case 'cpdone':campaign.threads=(campaign.threads||[]).map(x=>x.id===id?{...x,done:!x.done}:x);saveCampaign();break;
   case 'wrapall':SLOTS.forEach(s=>{gm.wrap[s]={...(gm.wrap[s]||{mom:false}),xp:gm.wrap.hours||4};});render();break;
@@ -443,7 +496,7 @@ function gmClick(b){const a=b.dataset.gact,id=b.dataset.id,n=Number(b.dataset.n)
 }
 let notesT=null;
 function gmChange(el){
- if(!isGM()&&(el.dataset.gpic||el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
+ if(!isGM()&&(el.dataset.gpic||el.dataset.gt||el.dataset.gen||el.dataset.geinj||el.dataset.getra||el.dataset.gimg||el.dataset.gcp||el.dataset.gcpd||el.dataset.gbook||el.dataset.gadvst||el.dataset.gadvsc||el.dataset.gnotes||el.dataset.gwrap)){toast(t('Only the GM can change this.'));render();return true;}
  if(el.dataset.gs){const k=el.dataset.gs;gm[k]=el.type==='checkbox'?el.checked:el.value;render();return true;}
  if(el.dataset.gt){const k=el.dataset.gt;if(k==='adventure'){const v=el.value.trim().slice(0,80);if(v===(table.adventure||''))return true;if(v)gmStory(logm('Began the adventure “{adventure}”',{adventure:v}));const first=!table.adventure&&v;saveTable({adventure:v});if(first)fileUnderAdventure(v);return true;}if(k==='scene'&&el.value.trim()&&el.value.trim()!==table.scene)gmLog(logm('Scene: {scene}',{scene:el.value.trim()}),true);saveTable({[k]:el.type==='checkbox'?el.checked:el.value.trim()});return true;}
  if(el.dataset.gen){const id=el.dataset.gen,k=el.dataset.k;updEnemy(id,{[k]:el.value});
@@ -455,6 +508,9 @@ function gmChange(el){
  if(el.dataset.gpic){const kind=el.dataset.gpic,id=el.dataset.id,f=el.files&&el.files[0];el.value='';
   gmPicture(f,v=>{if(kind==='e'){if(enemies[id])updEnemy(id,v);if((campaign.defeated||[]).some(x=>x.id===id)){campaign.defeated=campaign.defeated.map(x=>x.id===id?{...x,...v}:x);saveCampaign();}}else{campaign.npcs=(campaign.npcs||[]).map(x=>x.id===id?{...x,...v}:x);saveCampaign();}toast(t('Picture saved.'));});return true;}
  if(el.dataset.gcp){const l=el.dataset.gcp;campaign[l]=(campaign[l]||[]).map(x=>x.id===el.dataset.id?{...x,[el.dataset.k]:el.value}:x);saveCampaign();return true;}
+ if(el.dataset.gbook){const id=el.dataset.gbook;let L=campBooks().filter(x=>x!==id);if(el.checked)L.push(id);campaign.books=L;saveCampaign();return true;}
+ if(el.dataset.gadvst){const id=el.dataset.gadvst;campaign.advs={...(campaign.advs||{}),[id]:{...advState(id),st:el.value}};saveCampaign();return true;}
+ if(el.dataset.gadvsc){const id=el.dataset.gadvsc,i=Number(el.dataset.i);let sc=(advState(id).sc||[]).filter(x=>x!==i);if(el.checked)sc.push(i);sc.sort((a,b)=>a-b);campaign.advs={...(campaign.advs||{}),[id]:{...advState(id),sc,st:advState(id).st||'play'}};saveCampaign();return true;}
  if(el.dataset.gcpd){campaign.date=el.value;saveCampaign();return true;}
  if(el.dataset.gnotes){gmNotes=el.value;gmSet('gm/notes',{text:gmNotes});return true;}
  if(el.dataset.gwrap){const s=el.dataset.gwrap;if(s==='hours'){gm.wrap.hours=Math.max(0,Number(el.value)||0);return true;}
@@ -476,3 +532,6 @@ function focusPendingClue(){
  pendingClue=null;try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
  setTimeout(()=>{el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),2600);},60);
 }
+
+// Remember which adventure entries are open across re-renders.
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.gopen)gm.open[d.dataset.gopen]=d.open;},true);

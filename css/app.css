@@ -420,3 +420,8 @@ img[data-zoom]{cursor:zoom-in}
 .encinvcard.ed .grow{gap:8px}
 .enccard .grow{min-width:0}
 .encinvcard>.encopen{flex:none}
+.advs{display:flex;flex-direction:column;gap:8px}
+.adv{border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.adv>summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;list-style-position:outside}
+.adv>summary .note{flex-basis:100%;margin:0}
+.advbody{display:flex;flex-direction:column;gap:10px;padding-top:10px}

@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-25-thompson',date:'2026-11-25',tags:[],
+  title:tk('The Thompson Files, and published adventures'),
+  banner:tk('New: The Thompson Files’ creatures and adventures for GMs, plus a Books we own setting.'),
+  body:tk('GMs can now add all 51 creatures from The Thompson Files, with their dice pools, abilities and page numbers. A new Adventures section in the GM tab lists the published adventures from the books your group owns: a short summary, scenes to tick off, and a Start this adventure button that sets everything up, hidden until you show it. Players see which adventures you’ve played in the Journal.')},
  {id:'2026-11-15-fight',date:'2026-11-15',tags:['encounter'],
   title:tk('Run the whole fight from the Encounter tab'),
   banner:tk('New: spend dice, take damage, mark ammo and add injuries right on the Encounter tab.'),

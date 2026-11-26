@@ -134,7 +134,7 @@ function startAdventure(id){const a=ADVS.find(x=>x.id===id);if(!a)return;const n
  const tag={adv:name};let ne=0,np=0,nl=0;
  a.foes.forEach(([n,c])=>{const p=npcProfile(n);if(!p)return;if(Object.values(enemies).some(e=>e.base===p.n&&e.adv===name))return;ne+=makeEnemies(p,c,{tag}).length;});
  const addTo=(key,list)=>{const have=new Set((campaign[key]||[]).map(x=>String(x.name||'').toLowerCase()));let n=0;
-  list.forEach(([nm,no])=>{if(have.has(nm.toLowerCase()))return;campaign[key]=[...(campaign[key]||[]),{id:gmId(),name:nm,note:no?t(no):'',hid:true,adv:name,ss:table.session||1}];n++;});return n;};
+  list.forEach(([nm,no])=>{if(have.has(nm.toLowerCase()))return;campaign[key]=[...(campaign[key]||[]),{id:gmId(),name:nm,note:'',...(no?{gmn:t(no)}:{}),hid:true,adv:name,ss:table.session||1}];n++;});return n;};
  np=addTo('npcs',a.people);nl=addTo('locations',a.places);
  campaign.advs={...(campaign.advs||{}),[id]:{...advState(id),st:'play'}};saveCampaign();
  gmLog(logm('Started the adventure “{adventure}”',{adventure:name}),false);
@@ -159,7 +159,8 @@ function addEnemies(){const p=npcProfile(gm.addN);const count=Math.max(1,Math.mi
  makeEnemies(p,count,{scale:gm.addScale,name:gm.addName,type:gm.addType});
  const cn=String(gm.addName||'').trim();gmLog(logm('Added {n} × {enemy}',{n:count,enemy:p?p.n:(cn||tk('custom enemy'))}),false);gm.addCount=1;gm.addName='';render();toast(t('Added {n} × {enemy}.',{n:count,enemy:p?t(p.n):(cn||t('enemy'))}));}
 // Creates enemies from a profile (or a custom one), hidden from players. Scaling adds a die per investigator, up to 8.
-function makeEnemies(p,count,o){o=o||{};const base=p?p.pool:4;const pool=o.scale&&base<8?Math.min(8,base+SLOTS.length):base;const made=[];
+// A profile with perInv:[base,max] (like Arkham Mysteries' Snake Spirit) always gets base + 1 die per investigator, up to max.
+function makeEnemies(p,count,o){o=o||{};const base=p?p.pool:4;const pool=p&&p.perInv?Math.min(p.perInv[1],p.perInv[0]+Math.max(1,SLOTS.length)):o.scale&&base<8?Math.min(8,base+SLOTS.length):base;const made=[];
  // Number them only when there's more than one of the same name: the first Swamp devil is just "Swamp devil".
  const nm0=p?p.n:(String(o.name||'').trim().slice(0,60)||tk('Enemy'));
  const same=new RegExp('^'+nm0.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'( \\d+)?$');
@@ -310,7 +311,7 @@ async function addClue(show){const tt=(document.getElementById('cl-title')||{}).
 function saveCampaign(){render();gmSet('campaign/main',JSON.parse(JSON.stringify(campaign)));}
 function campaignHtml(master,keep){
  const list=(key,label,fields,ph)=>{const a=(campaign[key]||[]).filter(x=>master||(!x.hid&&(key==='threads'||!keep||keep(x))));
-  let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+(key==='npcs'?'<div class="row" style="gap:6px">'+picPicker('n',x.id,imgOk(x.pic))+'</div>':'')+'</div>'+(x.hid?'<button class="btn sm" data-gact="cpshow" data-list="'+key+'" data-id="'+x.id+'" title="'+t('Hidden from players until you show it')+'">'+t('Show to players')+'</button>':'')+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
+  let h='<div><span class="lbl">'+label+'</span><div class="list">'+(a.length?a.map(x=>master?'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow">'+fields.map(([f,pl,w])=>f==='done'?'':'<input class="f" id="cp-'+key+'-'+f+'-'+x.id+'" data-gcp="'+key+'" data-id="'+x.id+'" data-k="'+f+'" value="'+esc(x[f]||'')+'" placeholder="'+t(pl)+'"'+(w?' style="'+w+'"':'')+'>').join('')+(x.gmn?'<span class="note">'+t('From the book, for your eyes only')+': '+esc(x.gmn)+'</span>':'')+(key==='npcs'?'<div class="row" style="gap:6px">'+picPicker('n',x.id,imgOk(x.pic))+'</div>':'')+'</div>'+(x.hid?'<button class="btn sm" data-gact="cpshow" data-list="'+key+'" data-id="'+x.id+'" title="'+t('Hidden from players until you show it')+'">'+t('Show to players')+'</button>':'')+(key==='threads'?'<button class="btn sm" data-gact="cpdone" data-id="'+x.id+'">'+(x.done?t('Reopen'):t('Done'))+'</button>':'')+'<button class="btn sm icon" data-gact="cpdel" data-list="'+key+'" data-id="'+x.id+'" aria-label="'+t('Remove')+'">×</button></div>'
    :'<div class="item">'+(key==='npcs'?picHtml(x.pic,x.picFull,x.name):'')+'<div class="grow"><b'+(x.done?' style="text-decoration:line-through;opacity:.6"':'')+'>'+esc(x.name||x.text||'')+'</b>'+(x.att?' <span class="chip">'+esc(x.att)+'</span>':'')+(x.note?'<span class="effect">'+esc(x.note)+'</span>':'')+'</div></div>').join(''):'<p class="note">'+ph+'</p>')+'</div>'+
   (master?'<div class="row"><button class="btn sm" data-gact="cpadd" data-list="'+key+'">'+t('Add')+'</button></div>':'')+'</div>';return h;};
  return '<div class="grid2">'+

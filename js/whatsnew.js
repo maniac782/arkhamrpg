@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-25-arkham-mysteries',date:'2026-11-25',tags:[],
+  title:tk('Arkham Mysteries'),
+  banner:tk('New: Arkham Mysteries’ adventures, enemies and tome for GMs.'),
+  body:tk('Tick Arkham Mysteries under Books we own in the GM tab to get its three adventures (The Ophidian’s Nightmare, One for the Road and The Thricefold Power), its 16 enemies with their dice pools and page numbers, and the Ars Magnum Oculus in the tomes list. People added by Start this adventure now keep the book’s note to you separately, so showing them to players doesn’t give anything away.')},
  {id:'2026-11-25-played',date:'2026-11-25',tags:[],
   title:tk('Adventures you’ve played'),
   banner:tk('New: keep your own list of the adventures you’ve played, in any campaign or none.'),

@@ -1,5 +1,5 @@
 /* Enemy and ally profiles from Chapter 8 of the Core Rulebook (Allies and Enemies) and its adventure, and from
-   The Thompson Files (src:'tf', with pg = the book's page). Profiles without src are from the Core Rulebook.
+   The Thompson Files (src:'tf') and Arkham Mysteries (src:'am'), with pg = the book's page. Profiles without src are from the Core Rulebook.
    Skills are in the order: Agility, Athletics, Wits, Presence, Intuition, Knowledge, Resolve, Melee, Ranged, Lore (0 = can't).
    Abilities, weaknesses and gear are short summaries in our own words, not the book's text.
    The book prints each profile's dice pool in its art; "pool" here is only a starting suggestion, so check the book and adjust. */
@@ -44,6 +44,10 @@ const SNAKE = ['Snakelike','Disadvantage on everything in extreme cold (snow, ic
 const QUICKDODGE = ['Quick Dodge','After dodging a ranged attack, it may move up to 10 ft.'];
 const FAST = ['Fast','Once per turn, if not engaged, a free action moves it up to 20 ft.'];
 const PACK = ['Pack Tactics','+1 die when attacking someone engaged with one of its allies.'];
+// Arkham Mysteries
+const SHADOWF = ['Shadow Form','Moves through solid objects and ignores obstacles and terrain. Attacks against it have disadvantage and it can’t be injured.'];
+const LIGHTVUL = ['Light Vulnerability','Its Shadow Form doesn’t protect it from light (flashlights, fire, some magic or light weapons).'];
+const AMATEUR = ['Amateur Sorcerer','A complex Lore action with one 1 costs it 1 horror; two or more 1s cost it and everyone within 30 ft 1 horror.'];
 const TOUGH = 'Tough hide: −1 damage from attacks (minimum 1).';
 return [
 // ---------- Generic NPCs ----------
@@ -455,6 +459,66 @@ return [
   ['Poison Breath','Once per session, complex Ranged Combat action: the target and everyone within 5 ft suffer the Sickened injury until they pass an Athletics action or get a witch hazel poultice (which heals it all).'],
   ['Tail Slap','Complex Melee Combat action: everyone engaged with it takes 2 damage and is thrown 10 ft and knocked prone.'],TERRIFY],
  wk:[SNAKE],atk:[['Swordlike Fangs','Melee',4,3,'Engaged','']],gear:'Thick hide: −2 damage from attacks (minimum 1); it takes 2+ damage after that to injure it.'},
+// ---------- Arkham Mysteries (src:'am'; pg = the book's page; pools are the book's) ----------
+{n:'Beatriz Almeida',cat:'The Ophidian’s Nightmare',src:'am',pg:30,type:'Named',pool:6,sk:[4,5,5,5,4,4,3,3,5,3],
+ ab:[['Alter Appearance','An hour-long ritual ending in a person’s sacrifice lets it take that person’s exact look; a simple action switches back and forth. While disguised it loses Venomous Bite and can’t use its fangs and claws.'],
+  ['Call of Yig','Once per scene, a complex Lore action calls a Summoned Viper Swarm into the scene next round (two if there are four or more investigators).'],
+  ['Venomous Bite','Once per scene, a complex Melee Combat action on an engaged foe: unless they avoid it with a reaction, they suffer the Sickened injury. At the start of each later scene they suffer it again unless they pass an Athletics action. It lasts until they pass one, a witch hazel poultice cures it (healing all Sickened), or they die.']],
+ wk:[SNAKE],atk:[['Fangs and Claws','Melee',2,3,'Engaged',''],['Colt 1903 Pocket Pistol','Ranged',2,4,'30 ft','Ammo 2. Spotting it, even in a search, is difficult']],gear:TOUGH},
+{n:'Summoned Viper Swarm',cat:'The Ophidian’s Nightmare',src:'am',pg:30,type:'Minor',pool:3,sk:[4,5,5,6,6,0,5,4,0,0],
+ ab:[MINOR,['Creeping Poison','Its injuries are always Sickened.'],['Prey Relocalization','+1 to each die when it attacks a Sickened character.']],
+ atk:[['Dual Bite','Melee',3,3,'Engaged','']],gear:'Writhing coils: −1 physical damage (minimum 1).'},
+{n:'Snake Spirit',cat:'The Ophidian’s Nightmare',src:'am',pg:31,type:'Major',pool:5,perInv:[1,6],sk:[4,5,5,5,5,0,4,4,0,0],
+ ab:[MAJOR,['Number of Dice','Its dice pool maximum is 1 plus 1 per investigator present, up to 6.'],
+  ['Incorporeal','Attacks against it have disadvantage; it can’t be injured and takes no damage from attacks.'],
+  ['Death Rattle','Once per turn, a simple action: everyone who hears it must pass a Resolve action at the start of their next turn or suffer 1d3 horror.'],
+  ['Strike at the Heart','Once per encounter, a complex Melee Combat action on an engaged foe: they suffer the Sickened injury, and again at the start of each later scene unless they pass a difficult Athletics action. It lasts until they pass one, get faith or spell healing, or die.']],
+ wk:[['Bound','Held to the rattlesnake skeleton by its display mountings; it can’t move.'],['Spirit Creature','Enchanted weapons and faith or spell knacks get past its Incorporeal.']],
+ atk:[['Ethereal Bite','Melee',2,4,'Engaged','Physical armor doesn’t reduce it']],gear:''},
+{n:'The Haunter',cat:'One for the Road',src:'am',pg:60,type:'Major',pool:7,sk:[4,4,6,6,5,6,4,4,0,4],
+ ab:[MAJOR,['Devour Life','Spell. Complex Lore action on someone within 20 ft (with advantage if its tentacles hit them this turn): unless they pass a Resolve reaction, 3 damage and 2 horror, and it heals 2.'],FLYER,
+  ['Huge','At the moonshiner’s camp it fills a 15 × 15 ft space.'],SHADOWF],
+ wk:[NIGHT,LIGHTVUL],atk:[['Devouring Tentacles','Melee',1,4,'Engaged','2+ successes: grappled (disadvantage on Athletics, Agility, Melee and Ranged, and can’t move) until a difficult Athletics action'],['Ripping Claws','Melee',3,3,'Engaged','+3 to its injury rolls']],gear:''},
+{n:'Shadow Man',cat:'One for the Road',src:'am',pg:61,type:'Major',pool:4,sk:[3,5,5,6,5,4,4,4,6,4],
+ ab:[MAJOR,SHADOWF,['Sign Your Name','A Resolve action on someone within 20 ft: unless they pass a Resolve reaction, 2 horror. If that earns them a trauma this encounter, it’s Obligated to Sign instead: each round within 20 ft of the Book of Azathoth they must pass a Resolve reaction or spend their dice going to sign it in blood.']],
+ wk:[NIGHT,LIGHTVUL],atk:[['Punch and Kick','Melee',2,3,'Engaged','']],gear:''},
+{n:'Sheriff John J. Boxleiter',cat:'One for the Road',src:'am',pg:61,type:'Major',pool:5,sk:[5,5,5,4,5,6,4,4,4,4],
+ ab:[MAJOR,['Thrall Master','Complex Presence action: every allied enthralled townsperson within 30 ft may move up to 15 ft for free.']],
+ wk:[NIGHT],atk:[['Colt Police Revolver','Ranged',2,4,'75 ft','Ammo 2. A simple action reloads only one circle'],['Trapezohedron Dagger','Melee',2,2,'Engaged','']],gear:'Twenty dollars, wool-lined jacket, cultist robes, badge, flashlight, handcuffs.'},
+{n:'Enthralled Townsfolk',cat:'One for the Road',src:'am',pg:62,type:'Minor',pool:3,sk:[4,4,6,6,6,6,5,4,6,6],
+ ab:[MINOR],atk:[['Grasping Hands','Melee',1,5,'Engaged','2+ successes: held and can’t move until a complex Athletics action; attacks on them have advantage']],gear:''},
+{n:'Red Rower Gang Member',cat:'One for the Road',src:'am',pg:63,type:'Minor',pool:2,sk:[5,6,5,6,5,6,5,5,6,6],
+ ab:[['We Don’t Trust Adults','+2 to each die on Intuition reactions to tell whether an adult is lying.'],MINOR,PACK],
+ atk:[['Baseball Bat','Melee',2,3,'Engaged','Rolling two or more 1s breaks it']],gear:'Two dollars and 20 cents, filthy clothes.'},
+{n:'Ranch Hand',cat:'One for the Road',src:'am',pg:63,type:'Minor',pool:4,sk:[5,4,5,5,4,6,5,4,4,6],
+ ab:[MINOR],atk:[['Double-Barreled Shotgun','Ranged',3,3,'50 ft','Reload after 2 shots. −2 to dice on reactions to dodge it'],['Bullwhip','Melee',1,0,'10 ft','3+ successes: knock the target prone or make them drop something they hold'],['Pocketknife','Melee',1,4,'Engaged','Spotting it, even in a search, is very difficult']],
+ gear:'Four dollars, cowboy hat, survival kit. Heavy clothing: −1 melee damage (minimum 1).'},
+{n:'Clarence Sullivan',cat:'The Thricefold Power',src:'am',pg:89,type:'Major',pool:6,sk:[5,5,5,5,3,4,4,6,6,4],
+ ab:[MAJOR,AMATEUR,['Spirit Gateway','Spell. Difficult Lore action: a spirit animates a nearby corpse as a Zombie. It doesn’t obey and attacks the living. Any 1s cost it 1 damage.']],
+ atk:[],gear:'Nine dollars, sweaty casual clothes, family photos, a faded calling card, his fragment of the tome.'},
+{n:'Frank Cox',cat:'The Thricefold Power',src:'am',pg:89,type:'Major',pool:6,sk:[5,5,4,6,3,3,4,6,6,3],
+ ab:[MAJOR,['Clairvoyant Evasion','May use Lore on reactions to avoid attacks; a 1 costs it 1 horror.'],AMATEUR,
+  ['Maddening Insight','Spell. Complex Lore action: someone who can hear and understand it may reroll up to two dice on their next action.']],
+ atk:[],gear:'257 dollars, rumpled business clothes, a journal of unhinged ramblings, his fragment of the tome.'},
+{n:'Ethel Smith',cat:'The Thricefold Power',src:'am',pg:90,type:'Major',pool:6,sk:[4,5,5,6,5,4,3,6,6,4],
+ ab:[MAJOR,['Reckless Sorcerer','A complex Lore action with one 1 costs it 1 horror; two or more 1s cost it and everyone within 30 ft 1 horror.'],
+  ['Spheres of Elimination','Spell. Complex Lore action on a target within 50 ft: 2 damage plus 1 per two successes; two or more 6s also injure. Any 1s cost it 2 damage.'],COUNTER],
+ atk:[],gear:'Four dollars, bloodstained casual clothes, a letter of expulsion, her fragment of the tome. Protective charm: −1 damage from every source, magic included (minimum 1).'},
+{n:'The Ravenous One',cat:'The Thricefold Power',src:'am',pg:90,type:'Major',pool:6,sk:[4,4,6,6,6,6,5,4,6,6],
+ ab:[MAJOR,FRENZY,['Ravenous','Once per turn after a melee attack, it gains an extra die that must go to another melee attack.']],
+ atk:[['Fierce Teeth and Claws','Melee',2,2,'Engaged','']],gear:TOUGH},
+{n:'The Devouring One',cat:'The Thricefold Power',src:'am',pg:91,type:'Major',pool:6,sk:[6,3,6,6,6,6,5,4,6,6],
+ ab:[MAJOR,FRENZY,['Devour','Once per scene, a simple action eats part of an engaged corpse: its pool limit rises by 3 (up to its maximum). Foes within 20 ft who see it: pass a Resolve reaction or suffer 1 horror.']],
+ wk:[HUNGER],atk:[['Clumsy Blows','Melee',3,4,'Engaged','']],gear:'Unnaturally tough hide: −2 damage from attacks (minimum 1).'},
+{n:'High-Priced Assassin',cat:'The Thricefold Power',src:'am',pg:92,type:'Major',pool:6,sk:[4,4,4,5,4,6,4,4,3,6],
+ ab:[MAJOR,['Deadly Aim','When it spends more than one die on a ranged attack, the target takes −1 to dice on reactions to dodge it.']],
+ atk:[['Garrote','Melee',3,5,'Engaged','4+ successes: it can start strangling, cutting the target’s dice pool to 1'],['Colt 1911 Pistol','Ranged',2,3,'75 ft','Ammo 2'],['Scoped Springfield Rifle','Ranged',3,3,'500 ft','Ammo 1']],
+ gear:'42 dollars, plain suit and fedora, a briefcase that fits the rifle taken apart. Linen bulletproof vest: −1 ranged damage (minimum 1).'},
+{n:'Mi-Go Abductor',cat:'The Thricefold Power',src:'am',pg:93,type:'Major',pool:8,sk:[4,4,3,6,4,2,2,3,3,3],
+ ab:[MAJOR,['Weak Flier','A move action can fly up to 10 ft.'],['Cautious Abductor','When it injures with a bladed melee weapon, it may lower the injury result by 1 or 2.'],['Paradoxical Optics','Human-made cameras don’t see it.']],
+ wk:[['Light Sensitivity','Disadvantage on everything in very bright light (midday sun, headlights on high beam).']],
+ atk:[['Mi-Go Blaster','Ranged',2,3,'40 ft','2+ successes: thrown back 5 ft and prone'],['Mi-Go Blade','Melee',2,2,'Engaged','+1 damage per two extra successes, up to 4 damage']],
+ gear:'Small mist projector, brain cylinders, strange alien trinkets. Alien physiology: −1 damage from attacks (minimum 1).'},
 ];
 })();
 /* The book's NPC trauma table (Table 8–1): roll 1d6, +1 per 1 on a horror die. */

@@ -3,7 +3,8 @@
    foes: [enemy profile name (js/npcs.js), how many]. people/places: [name, GM note]. */
 window.APL_BOOKS = [
  {id:'core',name:tk('Core Rulebook')},
- {id:'tf',name:tk('The Thompson Files')}
+ {id:'tf',name:tk('The Thompson Files')},
+ {id:'am',name:tk('Arkham Mysteries')}
 ];
 window.APL_ADVS = [
 {id:'tick',book:'core',pg:225,name:tk('Terror at the Tick-Tock Club'),where:'Arkham',
@@ -65,5 +66,23 @@ window.APL_ADVS = [
  scenes:[tk('The Town'),tk('Race to the Ziggurat'),tk('Confronting the Mummy')],
  foes:[['Gangster',4],['Eztli Guardian',2],['Mummy',1]],
  people:[['Fred E. Hadley',tk('Runs Hadley Industries')]],
- places:[['The ziggurat',tk('A sacred site several days away')]]}
+ places:[['The ziggurat',tk('A sacred site several days away')]]},
+{id:'am-snake',book:'am',pg:11,name:tk('The Ophidian’s Nightmare'),where:'Arkham',
+ blurb:tk('Professor Quincy Dexter invites the investigators to preview a new exhibit at the Miskatonic Museum, but a graduate student has just been found dead there. A rattlesnake skeleton in the exhibit holds a trapped and angry snake spirit, and a Child of Yig in disguise has come to free it, whatever that costs Professor Dexter.'),
+ scenes:[tk('Nightfall at the Museum'),tk('Death and Dioramas'),tk('The Research Library'),tk('The World of Minerals'),tk('The Hall of the Atlantic'),tk('The Mastodon Room'),tk('The Serpent’s Will'),tk('Aftermath')],
+ foes:[['Summoned Viper Swarm',1],['Beatriz Almeida',1],['Snake Spirit',1]],
+ people:[['Professor Quincy Dexter',tk('Zoology professor who organized the exhibit and invited the investigators')],['Kyle Everett',tk('Graduate student found dead in the museum')],['Officer Tetsuo Mori',tk('Police officer still at the museum')],['Francesca Weaver',tk('Taxidermist who made the exhibit’s dioramas')],['Lucas Keller',tk('Built much of the new exhibit')],['Beatriz Almeida',tk('Poses as a visiting student; really a Child of Yig')]],
+ places:[['Miskatonic Museum',tk('Its new Natural History of the American Southwest exhibit opens in the morning')]]},
+{id:'am-road',book:'am',pg:33,name:tk('One for the Road'),where:'Arkham',
+ blurb:tk('A friend of the investigators falls into a strange coma after a glass of new moonshine at Hibb’s Roadhouse, and he isn’t the only one. The trail runs through the Sheldon Gang’s moonshine camp, where a bat-like Haunter waits, to the small town of New Brecon, whose sheriff serves Nyarlathotep and needs more souls to bring his master through.'),
+ scenes:[tk('A Quick Nightcap'),tk('A Prayer to St. Mary'),tk('Patient Albert Evanstone'),tk('Patient Kate Mackenzie'),tk('Patient Edward Hanshaw'),tk('The Sheldon Gang'),tk('The Moonshiner’s Camp'),tk('Aftermath, Part One'),tk('One Week Later'),tk('A Small-Town Welcome'),tk('You Lot Best Clear Out'),tk('The Abyssal Pulpit'),tk('Aftermath, Part Two')],
+ foes:[['Red Rower Gang Member',3],['Shadow Man',2],['The Haunter',1],['Sheriff John J. Boxleiter',1],['Enthralled Townsfolk',6]],
+ people:[['Tommy Boylan',tk('The investigators’ friend; falls into a coma at Hibb’s Roadhouse')],['Old Man Hibbard',tk('Owner of Hibb’s Roadhouse')],['Nurse Loretta Clark',tk('Nurse at St. Mary’s Hospital')],['Albert Evanstone',tk('Coma patient; an investigator who was close to the truth')],['Kate Mackenzie',tk('Coma patient; a carpenter')],['Greg Mackenzie',tk('Kate’s husband')],['Colonel Edward Hanshaw',tk('Coma patient; owns Sweetacre Ranch')],['Steven Howser',tk('Head rancher at Sweetacre Ranch')],['Sarah Sheldon',tk('Runs the Sheldon Gang’s liquor business')],['Sheriff John J. Boxleiter',tk('Sheriff of New Brecon; secretly serves Nyarlathotep')]],
+ places:[['Hibb’s Roadhouse',tk('A speakeasy a few miles outside Arkham')],['St. Mary’s Hospital',''],['Sweetacre Ranch',tk('Colonel Hanshaw’s horse farm and apple orchard')],['The moonshiner’s camp',tk('Out in the woods')],['New Brecon',tk('A small town where the moonshiners came from')]]},
+{id:'am-thrice',book:'am',pg:65,name:tk('The Thricefold Power'),where:'Arkham',
+ blurb:tk('Strange disappearances and deaths lead to three would-be sorcerers of the Silver Twilight Lodge who split a dangerous tome after a ritual put them in touch with Yog-Sothoth. One raises the dead, one sees the future, and one wants revenge. Carl Sanford wants the tome back, and he has an alien ally to tidy up loose ends.'),
+ scenes:[tk('Extra! Extra!'),tk('Consuming Grief'),tk('Master of the Lodge'),tk('The Augur and the Assassin'),tk('Vengeance and Void'),tk('Aftermath')],
+ foes:[['Zombie',3],['Clarence Sullivan',1],['The Ravenous One',1],['The Devouring One',1],['High-Priced Assassin',1],['Gangster',2],['Frank Cox',1],['Ethel Smith',1],['Mi-Go Abductor',1]],
+ people:[['Rex Murphy',tk('Reporter at the Arkham Advertiser')],['Carl Sanford',tk('Head of the Silver Twilight Lodge; behind it all')],['Clarence Sullivan',tk('Lodge aspirant grieving his parents')],['Frank Cox',tk('Lodge aspirant; a dropout and schemer')],['Ethel Smith',tk('Lodge aspirant expelled from Miskatonic')],['Madeline Duterte',tk('Runs a funeral home')],['Dr. Shivani Maheswaran',tk('Doctor at St. Mary’s Hospital')]],
+ places:[['Christchurch Cemetery',''],['St. Mary’s Hospital',''],['Arkham Advertiser',tk('Arkham’s newspaper')],['Bayfriar Gardens',''],['Omicron Sigma Tau sorority',''],['Arkham Woods',tk('Where the ritual happened')]]},
 ];

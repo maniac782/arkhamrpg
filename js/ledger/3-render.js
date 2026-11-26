@@ -425,16 +425,18 @@ function render(){
 // ---- Tomes from the book (c.tomeList: [{id, n, read}]), with their spells in short ----
 const TOMES=window.APL_TOMES||[];
 const tomeOf=n=>TOMES.find(x=>x.n===n);
+// Tomes from other books (src) are offered only when the campaign owns that book.
+const tomeOffered=x=>!x.src||(typeof ownsBook==='function'&&BOOK_NPCS&&ownsBook(x.src));
 function tomesHtml(s,c){if(!TOMES.length)return '';const L=c.tomeList||[],ed=canEdit(s);
  let h='';
  if(L.length)h+='<div class="tomes">'+L.map(x=>{const b=tomeOf(x.n);if(!b)return '';
   return '<div class="tome"><div class="tome-head"><b>'+esc(x.n)+'</b><span class="chip">'+t(b.r)+'</span>'+(ed?'<button class="btn sm icon" data-act="tomedel" data-id="'+x.id+'" aria-label="'+t('Remove tome')+'">×</button>':'')+'</div>'+
    (b.alt?'<div class="note">'+t('Also known as')+': '+esc(t(b.alt))+'</div>':'')+
-   '<div class="note">'+t(b.d)+'</div>'+
+   '<div class="note">'+t(b.d)+(b.src&&b.pg&&typeof pageRef==='function'?' ('+esc(pageRef(b.src,b.pg))+')':'')+'</div>'+
    '<label class="row note tome-read"><input type="checkbox" data-tomeread="'+x.id+'"'+(x.read?' checked':'')+(ed?'':' disabled')+'> '+t('Can read it')+'</label>'+
    '<div class="note"><b>'+t('Knowledge bonus')+':</b> '+t(b.kb)+'</div>'+
    '<details class="tome-sp"><summary>'+tn('{n} spell','{n} spells',b.sp.length)+'</summary><ul>'+b.sp.map(([nm,tx])=>'<li><b>'+t(nm)+'.</b> '+t(tx)+'</li>').join('')+'</ul></details></div>';}).join('')+'</div>';
  if(ed){const have=new Set(L.map(x=>x.n));
-  h+='<div class="row"><select class="f" id="tomepick-'+s+'" aria-label="'+t('Add a tome from the book')+'" style="flex:1;min-width:0"><option value="">'+t('Add a tome from the book…')+'</option>'+TOMES.filter(x=>!have.has(x.n)).map(x=>'<option value="'+esc(x.n)+'">'+esc(x.n)+' · '+t(x.r)+'</option>').join('')+'</select><button class="btn" data-act="tomeadd">'+t('Add')+'</button>'+WN.tag('tomes')+'</div>';}
+  h+='<div class="row"><select class="f" id="tomepick-'+s+'" aria-label="'+t('Add a tome from the book')+'" style="flex:1;min-width:0"><option value="">'+t('Add a tome from the book…')+'</option>'+TOMES.filter(x=>!have.has(x.n)&&tomeOffered(x)).map(x=>'<option value="'+esc(x.n)+'">'+esc(x.n)+' · '+t(x.r)+'</option>').join('')+'</select><button class="btn" data-act="tomeadd">'+t('Add')+'</button>'+WN.tag('tomes')+'</div>';}
  if(L.length||ed)h+='<p class="note" style="margin:0">'+t('To use a tome, an investigator must first read it: a difficult Knowledge or Lore action (very difficult if it’s in an ancient language or code). After that they can cast its spells while holding it open and reading aloud. On Lore or Knowledge actions about its topics, each die gets +1.')+'</p>';
  return h;}

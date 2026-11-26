@@ -1,4 +1,5 @@
-/* The tomes from the Core Rulebook's Tomes chapter (pages 101–105).
+/* The tomes from the Core Rulebook's Tomes chapter (pages 101–105), and from other books (src, pg = the book's page;
+   offered only to campaigns that own that book).
    Descriptions and spells are short summaries in our own words, not the book's text; check the book for the full rules.
    n: the tome's name (a proper name, left untranslated) · r: rarity · alt: other names · kb: knowledge bonus topics
    d: a line about the tome · sp: [spell, what it does] */
@@ -49,5 +50,11 @@ window.APL_TOMES = [
  sp:[[tk('Bind the Deep'),tk('Difficult Resolve action within sight of the ocean: summon or bind a Deep One as a servant. Repeat each scene to keep it; failing frees it, and a 1 turns it on the caster.')],
   [tk('Kiss of Brine'),tk('Complex Lore action with water within 100 ft: a target within 40 ft takes 3 damage. A 1 costs 1 horror.')],
   [tk('Mists of R’lyeh'),tk('Complex Lore action: the caster or an ally within 30 ft turns to mist until the caster’s next turn: can’t attack, be attacked or touch things, and can pass through gaps. Extra successes add targets or turns. Any 1s: 1 horror to each target and the caster.')],
-  [tk('Surging Currents'),tk('Complex Lore action: push someone in water within 200 ft 10 ft per success. Very difficult to move a ship within 1,000 ft. A 1 costs 1 horror.')]]}
+  [tk('Surging Currents'),tk('Complex Lore action: push someone in water within 200 ft 10 ft per success. Very difficult to move a ship within 1,000 ft. A 1 costs 1 horror.')]]},
+{n:'Ars Magnum Oculus',src:'am',pg:66,r:tk('Rare'),alt:'The Keytext, Archive of the Threshold',kb:tk('Yog-Sothoth, divination, resurrection, gateways and paths to other dimensions'),
+ d:tk('A 17th-century illuminated copy of an ancient work about Yog-Sothoth, with commentary added by many hands until it’s confusing and dangerous. Identifying it is a very difficult Lore action; each fragment of it you hold cuts the successes needed by one (minimum 1).'),
+ sp:[[tk('Communion with the Gate'),tk('Once per session, difficult Lore action: suffer 1d3 horror, then until the end of the next scene reroll dice equal to your horror dice limit on complex Lore or Knowledge actions. Three casting together: one step easier, but each suffers 1d3+2 horror.')],
+  [tk('Spirit Gateway'),tk('Difficult Lore action: a spirit animates a nearby corpse as a Zombie. It doesn’t obey you and attacks the living. Any 1s cost you 1 horror.')],
+  [tk('Maddening Insight'),tk('Complex Lore action: you or someone who can hear you may reroll up to two dice on the next action; every two successes adds one more listener. Any 1s cost 1 horror to you and everyone helped.')],
+  [tk('Spheres of Elimination'),tk('Complex Lore action on a target within 50 ft: 2 damage plus 1 per two extra successes; two or more 6s also injure. Any 1s cost you 2 damage.')]]},
 ];

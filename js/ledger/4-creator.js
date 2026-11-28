@@ -132,7 +132,7 @@ function renderCreator(){
  h+='<section class="sec"><h2>'+t('2 · Personality trait')+'</h2><label class="field"><span class="lbl">'+t('Trait')+'</span><select class="f" id="cr-trait" data-cf="trait"><option value="">'+t('Choose…')+'</option>'+Object.keys(A.TRAITS).map(n=>'<option value="'+n+'"'+(n===cr.trait?' selected':'')+'>'+t(n)+'</option>').join('')+'</select></label>'+
  (tr?'<div class="grid2"><div><span class="lbl">'+t('Positive')+'</span><p style="margin:4px 0 0">'+esc(t(tr[0]))+'</p></div><div><span class="lbl">'+t('Negative (when triggered)')+'</span><p style="margin:4px 0 0">'+esc(t(tr[1]))+'</p></div></div>':'')+'</section>';
  // 3
- h+='<section class="sec"><h2>'+t('3 · Archetype')+'</h2><label class="field"><span class="lbl">'+t('Archetype')+'</span><select class="f" id="cr-arch" data-cf="archetype"><option value="">'+t('Choose…')+'</option>'+ARCH.map(a=>'<option value="'+a+'"'+(a===cr.archetype?' selected':'')+'>'+t(a)+'</option>').join('')+'</select></label>'+
+ h+='<section class="sec"><h2>'+t('3 · Archetype')+'</h2><label class="field"><span class="lbl">'+t('Archetype')+'</span><select class="f" id="cr-arch" data-cf="archetype"><option value="">'+t('Choose…')+'</option>'+archList(cr.archetype).map(a=>'<option value="'+a+'"'+(a===cr.archetype?' selected':'')+'>'+t(a)+'</option>').join('')+'</select></label>'+
  (arch?'<p class="note" style="margin:0">'+t('Can improve {three} up to 3+, and {two} up to 2+. Everything else stops at 4+.',{three:arch.three.map(sname).join(', '),two:sname(arch.two)})+'</p>':'')+'</section>';
  // 4
  h+='<section class="sec"><div class="sec-head"><h2>'+t('4 · Starting skills')+'</h2><span class="note">'+t('All skills start at 6+. Raise three to 5+ and one to 4+ for free.')+(xpB?' <b>'+t('XP left: {n} of {max}',{n:xpB-crXpSpent(),max:xpB})+'</b>':'')+'</span></div><div class="skills">'+
@@ -159,7 +159,7 @@ function renderCreator(){
  }
  h+='</section>';
  // 7
- const cats=['Weapons','Protection','Useful items','Tools and personal','Outdoors','Transport'];
+ const cats=['Weapons','Protection','Useful items','Tools and personal','Musical instruments','Outdoors','Transport'].filter(ct=>ct==='Weapons'||GR().some(g=>g.cat===ct));
  const left=mB-mS;
  h+='<section class="sec"><div class="sec-head"><h2>'+t('7 · Equipment')+'</h2><span class="num" style="font-weight:600;color:'+(left<0?'var(--danger)':'var(--ink)')+'">'+t('{amount} left of {budget}',{amount:money(left),budget:money(mB)})+'</span></div>'+
  '<div class="tabs" role="tablist">'+cats.map(c=>'<button class="tab" role="tab" data-cact="cat" data-n="'+c+'" aria-selected="'+(cr.cat===c)+'">'+t(c)+'</button>').join('')+'</div><div class="list" style="max-height:420px;overflow:auto">';

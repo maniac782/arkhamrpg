@@ -110,6 +110,8 @@ app.addEventListener('click',e=>{
   case 'wrel':R.wrel(s,b.dataset.id,n);break;
   case 'cash':R.money(s,n);break;
   case 'tomeadd':{const sel=document.getElementById('tomepick-'+s);if(!sel||!sel.value)return toast(t('Choose one first.'));const L=c.tomeList||[];if(L.some(x=>x.n===sel.value))return;save(s,{tomeList:[...L,{id:uid(),n:sel.value,read:false}]},logm('Added a tome: {tome}',{tome:sel.value}));break;}
+  case 'xadd':{const k=b.dataset.k,key=XK[k];if(!key)break;const sel=document.getElementById('xpick-'+k+'-'+s);if(!sel||!sel.value)return toast(t('Choose one first.'));const L=c[key]||[];if(L.some(x=>x.n===sel.value)||!xOf(k,sel.value))return;save(s,{[key]:[...L,{id:uid(),n:sel.value}]},logm('Added to the sheet: {name}',{name:sel.value}));break;}
+  case 'xdel':{const k=b.dataset.k,key=XK[k];if(!key)break;const L=c[key]||[],x=L.find(y=>y.id===b.dataset.id);if(!x)break;save(s,{[key]:L.filter(y=>y.id!==x.id)},logm('Removed from the sheet: {name}',{name:x.n}));break;}
   case 'tomedel':{const L=c.tomeList||[],x=L.find(y=>y.id===b.dataset.id);if(!x)break;save(s,{tomeList:L.filter(y=>y.id!==x.id)},logm('Removed a tome: {tome}',{tome:x.n}));break;}
   case 'cashset':{const el=document.getElementById('cash-'+s);if(el.value==='')return toast(t('Enter an amount first.'));const v=Math.round(Math.max(0,Number(el.value)||0)*100)/100;const old=Number(c.money)||0;if(v===old)return toast(t('Money is already {amount}.',{amount:money(v)}));save(s,{money:v},logm('Set money: {from} → {to}',{from:money(old),to:money(v)}));break;}
   case 'cashin':case 'cashout':{const el=document.getElementById('cash-'+s);const v=Math.abs(Number(el.value)||0);if(!v)return toast(t('Enter an amount first.'));R.money(s,a==='cashin'?v:-v);break;}

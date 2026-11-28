@@ -107,6 +107,8 @@ input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--brass);outline:
 .skill{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px dotted var(--line)}
 .skill .nm{flex:1;font-weight:600}
 .skill .btn.sm{min-width:76px;justify-content:center;text-align:center;flex-shrink:0}
+/* very narrow phones (320px): the "max" label stays for screen readers only, and the XP button shrinks */
+@media (max-width:360px){.skill{gap:6px}.skill>label.note{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.skill .btn.sm{min-width:0;padding-left:8px;padding-right:8px}.skill .nm{min-width:0;overflow-wrap:anywhere}}
 .rate{flex-shrink:0;width:42px;height:42px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px}
 .maxsel{width:58px;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:4px}
 /* the small boxed dropdowns get the same arrow as the others */
@@ -377,6 +379,7 @@ img[data-zoom]{cursor:zoom-in}
 .tome-head{display:flex;align-items:center;gap:8px}
 .tome-head b{flex:1;font-family:var(--display);font-size:17px}
 .tome-read{gap:6px;align-items:center}
+.xlist{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .tome-sp summary{cursor:pointer;font-size:14px;color:var(--muted)}
 .tome-sp ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}
 .encgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(150px,100%),1fr));gap:8px}

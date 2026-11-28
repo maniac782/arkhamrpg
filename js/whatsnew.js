@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-27-new-orleans',date:'2026-11-27',tags:[],
+  title:tk('Songs of New Orleans'),
+  banner:tk('New: Songs of New Orleans, with the Musician archetype, rituals, favors, gear, enemies and adventures.'),
+  body:tk('When the GM ticks Songs of New Orleans under Books we own, players get the Musician archetype, seven weapons, musical instruments and other gear, three tomes, and lists for Voodoo rituals, relics and favors on their sheets. GMs get its 13 enemies and allies and seven adventures, from the full Krewe in Yellow to six short mysteries around the city.')},
  {id:'2026-11-25-arkham-mysteries',date:'2026-11-25',tags:[],
   title:tk('Arkham Mysteries'),
   banner:tk('New: Arkham Mysteries’ adventures, enemies and tome for GMs.'),

@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-28-kingsport-mysteries',date:'2026-11-28',tags:[],
+  title:tk('Kingsport Mysteries'),
+  banner:tk('New: Kingsport Mysteries’ three adventures and their enemies and allies for GMs.'),
+  body:tk('Tick Kingsport Mysteries under Books we own in the GM tab to get its three adventures (Safe Harbor, Leap of Faith and Dreams of Shrouded Silk) and 15 new profiles, from the cursed werewolf boys and the Witches of Boons and Blights to the Priest of the Empty Sky. Each adventure also uses profiles you already have, such as Lady, zoogs, nightgaunts and Hune-Mists.')},
  {id:'2026-11-27-kingsport',date:'2026-11-27',tags:[],
   title:tk('Dreams of Kingsport'),
   banner:tk('New: Dreams of Kingsport, with the Dreamer archetype, Dreamlands foes, favors, relics and adventures.'),

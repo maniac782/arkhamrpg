@@ -6,7 +6,8 @@ window.APL_BOOKS = [
  {id:'tf',name:tk('The Thompson Files')},
  {id:'am',name:tk('Arkham Mysteries')},
  {id:'sn',name:tk('Songs of New Orleans')},
- {id:'dk',name:tk('Dreams of Kingsport')}
+ {id:'dk',name:tk('Dreams of Kingsport')},
+ {id:'km',name:tk('Kingsport Mysteries')}
 ];
 window.APL_ADVS = [
 {id:'tick',book:'core',pg:225,name:tk('Terror at the Tick-Tock Club'),where:'Arkham',
@@ -207,4 +208,22 @@ window.APL_ADVS = [
  foes:[['Moon-Tree Keeper',1]],
  people:[],
  places:[['The Enchanted Wood',''],['The Moon','']]},
+{id:'km-harbor',book:'km',pg:11,name:tk('Safe Harbor'),where:'Kingsport',
+ blurb:tk('Mayor Mayme Banks hires the investigators after two dockworkers are torn apart outside the Rope and Anchor, just as a man missing for six years is pulled alive from the sea. Two teenage boys who played an old wishing game called Witches of Boons and Blights are missing, and the witches’ curse has made them werewolves.'),
+ scenes:[tk('Meeting About Murder'),tk('The Rope and Anchor'),tk('Encounter in the Night'),tk('Meeting with Lilah'),tk('Boons and Blights'),tk('Visiting the Sayres'),tk('The Fort'),tk('Fuller Animal Hospital and Aquarium'),tk('Lady at the Warehouses'),tk('Night of Beasts'),tk('Aftermath')],
+ foes:[['Wally Rigg, Half-Transformed',1],['Wally Rigg, Unleashed',1],['Leo Sayre, Half-Transformed',1],['Witches of Boons and Blights',3]],
+ people:[['Mayor Mayme Banks',tk('Mayor of Kingsport; hires the investigators and is up for reelection')],['Eugene Bennett',tk('The mayor’s assistant')],['Jonas Rigg',tk('Owns the Rope and Anchor; found the bodies')],['Lilah Rigg',tk('Jonas’s half sister; Wally’s mother')],['Oscar Sullivan',tk('Lilah’s husband and Wally’s stepfather; descended from Salem accusers')],['Wally Rigg',tk('Seventeen; cursed, and the killer')],['Leo Sayre',tk('Sixteen; cursed, and fighting it')],['Eddie Sayre',tk('Leo’s father, back after six years lost at sea')],['Edith and Clarence Sayre',tk('Eddie’s parents, who raised Leo')],['Dr. Alice Jemison',tk('Lead veterinarian at the Fuller Animal Hospital and Aquarium')],['Lady',tk('A possible ally who knows about the stray dogs (use her profile)')]],
+ places:[['Banks House',tk('The mayor’s home in Central Hill')],['The Rope and Anchor',tk('A tavern near the pier; the murders happened in its alley')],['The Sayre house',''],['The boys’ fort',tk('Their secret hideout')],['Fuller Animal Hospital and Aquarium',tk('In South Shore')],['The harbor warehouses',tk('Where stray dogs have grown aggressive')]]},
+{id:'km-leap',book:'km',pg:41,name:tk('Leap of Faith'),where:'Kingsport',
+ blurb:tk('Kingsport’s children are leaping from the cliffs into a sea cave and landing unharmed. A struggling stage magician hires the investigators to learn the trick, but a Dreamlands sorcerer is trapping the children’s dreaming selves in an endless fall, with a twelve-year-old girl forced to help her.'),
+ scenes:[tk('The Magic Act'),tk('Child’s Play'),tk('The Sea Cave'),tk('Unwitting Dreamer'),tk('Dreams and Plans'),tk('Down Deep, Fast Asleep')],
+ foes:[['Zoog',8],['Nightgaunt',3],['Isellia',1]],
+ people:[['Professor Ostrov',tk('Orville Ostrowski, a boardwalk magician and hypnotist; hires the investigators')],['Billie Adler',tk('Twelve; a natural dreamer forced to serve Isellia')],['Harriet Adler',tk('Billie’s younger sister; hates the game')],['Rudy',tk('A boy who makes the leap')],['Florence Lane',tk('Owns the Kingsport Commune for the Arts')],['Isellia',tk('A Dreamlands sorcerer who wants dreaming children kept out')]],
+ places:[['Kingsport boardwalk',''],['The sea cave',tk('Below the cliffs; explore it at low tide')],['Kingsport Commune for the Arts',tk('The Artists’ Colony, where Ostrov rents a shack')],['Isellia’s lair',tk('In the Dreamlands, by the sea')]]},
+{id:'km-silk',book:'km',pg:67,name:tk('Dreams of Shrouded Silk'),where:tk('Kingsport and the Dreamlands'),
+ blurb:tk('Members of an eccentric fashion club are falling ill with a cold fever and vanishing, and two sisters have been gone for days. The trail leads through the club’s workshop into the Dreamlands, where the sisters have spent what feels like years holding back a priest of Silenus and her Hune-Mists.'),
+ scenes:[tk('Missed Stitches'),tk('Madam Buford’s Workshop'),tk('A Fitful Slumber'),tk('Circling the Clouds'),tk('A Palace of Pink Marble'),tk('Ripping Seams'),tk('Needle and Blade'),tk('Harbinger of the Empty Sky'),tk('A Fashionable Prize')],
+ foes:[['Hune-Mist Fledgling Swarm',3],['Hune-Mist',1],['Priest of the Empty Sky',1]],
+ people:[['Mr. and Mrs. Li',tk('Run Li’s Noodle Parlor; parents of the missing sisters')],['Madam Clementine Buford',tk('Chairperson of the Shrouded Silk Society; secretly training members to fight in the Dreamlands')],['Stella Li',tk('Madam Buford’s protégé; a missing sister (use her profile as an ally)')],['Mable Li',tk('Stella’s younger sister, also missing (use her profile as an ally)')],['Irving Windermere',tk('A wealthy, envious member who vanished first')],['Faye Alvarez',tk('Mable’s best friend; an embroiderer')],['Ruby-Louise Hughes',tk('Makes the society’s hatpins')],['Lester Fernsby',tk('Fencing instructor who taught the members to fight with hatpins')],['Bettie Quibell',tk('An elderly nanny who stopped coming to meetings')],['Maximillious Brook',tk('A Dreamlands cartographer who can help')],['Miss Bates',tk('Lost the chairperson vote; really the Priest of the Empty Sky')]],
+ places:[['Li’s Noodle Parlor',tk('In South Shore')],['Madam Buford’s workshop',tk('The society’s headquarters, with the sisters asleep upstairs')],['Serannian',tk('A cloud city in the Dreamlands')],['The Palace of King Kuranes',tk('The pink marble palace, now ruled by the priest')]]},
 ];

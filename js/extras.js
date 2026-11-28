@@ -36,7 +36,19 @@ relics:[
 {n:tk('Chef Paul’s Utensils'),src:'sn',pg:83,r:tk('Unique'),alt:'Tasting Spoons, The Sous Chef’s Friend',
  d:tk('An enchanted roll of engraved silver cutlery. Eating with them adds two dice to actions and reactions to resist poisons, toxins and allergens, and a complex Knowledge action names every ingredient in a dish, poisons included.')},
 {n:tk('The Finger of St. Roch'),src:'sn',pg:83,r:tk('Unique'),alt:'The Healer’s Hand, The Relic of Montpelier, The Confessor’s Boon',
- d:tk('A jeweled gold reliquary holding a saint’s mummified finger. Its holder never suffers the Sickened injury (they suffer no injury instead) and shrugs off minor ailments like colds and food poisoning.')}
+ d:tk('A jeweled gold reliquary holding a saint’s mummified finger. Its holder never suffers the Sickened injury (they suffer no injury instead) and shrugs off minor ailments like colds and food poisoning.')},
+{n:tk('Always Behind You'),src:'dk',pg:102,r:tk('Rare'),alt:'',
+ d:tk('A mahogany and lapis crossbow carried by the faceless hunters of Ilarnek. Ranged Combat, damage 2, injury 2, range 500 ft, reload after each shot; armor doesn’t reduce it. A simple action imbues a bolt: wespling venom (its injuries are Sickened), somulus dust (instead of injuring, the target passes a Resolve action or sleeps 1d6 hours) or aromas vitae (instead of injuring, you know where the target is for 24 hours).')},
+{n:tk('Amulet of Asterias'),src:'dk',pg:102,r:tk('Rare'),alt:'',
+ d:tk('A slick, seven-pointed star of dark metal. The wearer heals 2 damage each turn (or every 5 minutes), heals every injury after an hour in saltwater, and needs no food, drink or sleep. A piece of themselves left in saltwater grows into an obedient comet in their likeness. Asterias sees everything around it.')},
+{n:tk('Mystic Chisel'),src:'dk',pg:102,r:tk('Rare'),alt:'',
+ d:tk('A flawless silver chisel with a purple blackwood handle. Carving art with it adds 2 to each die but costs 1 horror; it can even carve smoke, fog, sunbeams or water, for 2 horror.')},
+{n:tk('Mystic Sextant'),src:'dk',pg:103,r:tk('Rare'),alt:'',
+ d:tk('An 18th-century sextant that shows phantom stars of other worlds. Advantage on complex actions to tell what world you’re on or to open gates, and a complex Lore action finds the distance and direction to an open gate or thin place.')},
+{n:tk('Ring of Cold Lead'),src:'dk',pg:103,r:tk('Uncommon'),alt:'',
+ d:tk('An icy gray ring set with a moonstone. Twisting it (a simple action) astrally projects you to somewhere on the Plateau of Leng for as long as you wear it. Ending it early takes a complex Resolve action; failing costs 1 horror and keeps you there.')},
+{n:tk('Tooth of the Leviathan'),src:'dk',pg:104,r:tk('Uncommon'),alt:'',
+ d:tk('A scrimshaw tooth of a vast sea beast. Melee Combat, damage 2, injury 3; armor doesn’t reduce it. A Lore reaction resists being disarmed, and while you hold it you breathe underwater and ordinary sea creatures won’t attack you.')}
 ],
 // Favors (Songs of New Orleans, Tools of Investigation). xp: cost to accept, ben: benefits, dec: when declined, lose: how it’s lost.
 favors:[
@@ -63,6 +75,22 @@ favors:[
 {n:tk('Favor of Buckner'),src:'sn',pg:79,xp:1,
  ben:tk('Introductions to important people, and interest-free loans of up to $2,000, one at a time.'),
  dec:tk('He insists on a $50 gift; refusing that too may enrage him.'),
- lose:tk('Making no effort to repay a loan for two months: he collects, legally or not.')}
+ lose:tk('Making no effort to repay a loan for two months: he collects, legally or not.')},
+{n:tk('Favor of Ulthar'),src:'dk',pg:93,xp:1,
+ ben:tk('You can talk with any cat, and you have advantage on complex Presence actions to win one’s help.'),
+ dec:tk('Nothing but a look of distaste.'),
+ lose:tk('Any violence, insult or defiance toward a cat, even moving when one has chosen your lap.')},
+{n:tk('Favor of the Corsairs of Leng'),src:'dk',pg:93,xp:2,
+ ben:tk('Free passage on any Corsair ship from a Dreamlands port, advantage to charter one, and a captain may take a charter even when you can’t pay as usual.'),
+ dec:tk('They grow suspicious: diplomacy with them is difficult from then on, and it’s never offered again.'),
+ lose:tk('Acting against the Corsairs or the moonbeasts, or entering Sarkomand or going to the Moon uninvited. They never deal with you again.')},
+{n:tk('Favor of a Captain'),src:'dk',pg:94,xp:2,
+ ben:tk('Free passage for you and your allies on that captain’s ship when it’s in port, advantage to charter it, and a charter even when you can’t pay as usual.'),
+ dec:tk('None.'),
+ lose:tk('Violence or insults toward the captain or crew, stealing or breaking local laws, or bringing the ship serious trouble. You may be put ashore, or thrown overboard.')},
+{n:tk('Favor of the Pickman Family'),src:'dk',pg:94,xp:1,
+ ben:tk('Gladys Pickman gets you a meeting with nearly anyone in Kingsport, or into an exclusive event, and you have advantage on complex Presence or Wits actions there to learn things or ask for help.'),
+ dec:tk('None.'),
+ lose:tk('Using it once (no penalty). Acting badly toward Gladys or her contacts, endangering Kingsport or getting arrested also loses it, and then dealings with Gladys and Granny Orne have disadvantage.')}
 ]
 };

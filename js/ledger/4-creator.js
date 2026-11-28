@@ -65,7 +65,7 @@ function crDone(){cr=crBlank();crRestored=false;try{localStorage.removeItem(CR_K
 function crSkill(k){let r=6;if(cr.five.includes(k))r=5;if(cr.four===k)r=4;return r;}
 function crUpCost(k){let r=crSkill(k),cost=0;for(let i=0;i<(cr.ups[k]||0);i++){cost+=SKILL_COST[r];r--;}return cost;}
 function crRating(k){return crSkill(k)-(cr.ups[k]||0);}
-function crFloor(k){return cr.archetype?A.maxFor(cr.archetype,k):4;}
+function crFloor(k){return cr.archetype?A.maxFor(cr.archetype,k,cr.archThree):4;}
 function crXpBudget(){return cr.bonus==='xp'?5:0;}
 function crKnackCost(){return cr.bought.reduce((s,n)=>{const k=A.knacksFor(cr.archetype).find(x=>x.name===n);return s+(k?KNACK_COST[k.tier]:0);},0);}
 function crXpSpent(){return SKILLS.reduce((s,[k])=>s+crUpCost(k),0)+crKnackCost();}
@@ -101,7 +101,7 @@ function crBuild(){
  });
  const xp=crXpBudget();
  const b=blank(1);
- return Object.assign(b,{name:cr.name.trim(),player:CAMP?(((camp&&camp.names)||{})[keys.master?crPlayerUid():authUid]||''):cr.player,archetype:cr.archetype,personality:cr.trait,positive:td[0],negative:td[1],
+ return Object.assign(b,{name:cr.name.trim(),player:CAMP?(((camp&&camp.names)||{})[keys.master?crPlayerUid():authUid]||''):cr.player,archetype:cr.archetype,archThree:(cr.archThree||[]).slice(),personality:cr.trait,positive:td[0],negative:td[1],
   xpTotal:xp,xpUnused:xp-crXpSpent(),skills,insightLimit:cr.bonus==='insight'?2:1,insight:cr.bonus==='insight'?2:1,
   knacks,weapons,kits,items,reloads,habitual,money:Math.round((crMoneyBudget()-crMoneySpent())*100)/100,
   bg:Object.assign(b.bg,cr.bg,vehicles.length?{vehicle:[cr.bg.vehicle,...vehicles].filter(Boolean).join(', ')}:{}),log:[{t:Date.now(),...logm('Created in the ledger')}]});
@@ -133,7 +133,8 @@ function renderCreator(){
  (tr?'<div class="grid2"><div><span class="lbl">'+t('Positive')+'</span><p style="margin:4px 0 0">'+esc(t(tr[0]))+'</p></div><div><span class="lbl">'+t('Negative (when triggered)')+'</span><p style="margin:4px 0 0">'+esc(t(tr[1]))+'</p></div></div>':'')+'</section>';
  // 3
  h+='<section class="sec"><h2>'+t('3 · Archetype')+'</h2><label class="field"><span class="lbl">'+t('Archetype')+'</span><select class="f" id="cr-arch" data-cf="archetype"><option value="">'+t('Choose…')+'</option>'+archList(cr.archetype).map(a=>'<option value="'+a+'"'+(a===cr.archetype?' selected':'')+'>'+t(a)+'</option>').join('')+'</select></label>'+
- (arch?'<p class="note" style="margin:0">'+t('Can improve {three} up to 3+, and {two} up to 2+. Everything else stops at 4+.',{three:arch.three.map(sname).join(', '),two:sname(arch.two)})+'</p>':'')+'</section>';
+ (arch&&arch.pick?pickThreeHtml(arch,cr.archThree,'cthree'):'')+
+ (arch?'<p class="note" style="margin:0">'+t('Can improve {three} up to 3+, and {two} up to 2+. Everything else stops at 4+.',{three:(arch.pick?(cr.archThree||[]).filter(k=>arch.three.includes(k)):arch.three).map(sname).join(', ')||t('the skills you choose'),two:sname(arch.two)})+'</p>':'')+'</section>';
  // 4
  h+='<section class="sec"><div class="sec-head"><h2>'+t('4 · Starting skills')+'</h2><span class="note">'+t('All skills start at 6+. Raise three to 5+ and one to 4+ for free.')+(xpB?' <b>'+t('XP left: {n} of {max}',{n:xpB-crXpSpent(),max:xpB})+'</b>':'')+'</span></div><div class="skills">'+
  SKILLS.map(([k,n])=>{const r=crRating(k),up=cr.ups[k]||0,f=crFloor(k),next=SKILL_COST[r];
@@ -216,7 +217,7 @@ function creatorClick(b){
 }
 function downloadSheet(c){
  // Bring each injury's and trauma's effect along, so the sheet (and the copy rebuilt from its link on iPhone) can print it.
- c={...c,injuries:(c.injuries||[]).map(j=>{const x=injuryInfo(j.name);return x?{...j,fx:x[1]}:j;}),traumas:(c.traumas||[]).map(j=>TRAUMA_AT[j.name]?{...j,fx:traumaFor(TRAUMA_AT[j.name])[1]}:j)};
+ c={...c,injuries:(c.injuries||[]).map(j=>{const x=injuryInfo(j.name);return x?{...j,fx:x[1]}:j;}),traumas:(c.traumas||[]).map(j=>TRAUMA_AT[j.name]?{...j,fx:traumaFor(TRAUMA_AT[j.name])[1]}:uniqueTrauma(j.name)?{...j,fx:uniqueTrauma(j.name)[1]}:j)};
  const html=A.sheetHtml(c);
  // Hand the sheet to print.html on this same (secure) site through this browser's storage.
  let id=null;

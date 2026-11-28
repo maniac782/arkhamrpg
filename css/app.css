@@ -379,6 +379,7 @@ img[data-zoom]{cursor:zoom-in}
 .tome-head{display:flex;align-items:center;gap:8px}
 .tome-head b{flex:1;font-family:var(--display);font-size:17px}
 .tome-read{gap:6px;align-items:center}
+.pick3{border:0;padding:0;margin:0 0 10px;min-width:0}.pick3 legend{padding:0;margin-bottom:4px}
 .xlist{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .tome-sp summary{cursor:pointer;font-size:14px;color:var(--muted)}
 .tome-sp ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}

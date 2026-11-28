@@ -6,6 +6,10 @@
 (function(){
 var TAG_DAYS=14,KEY='apl-wn-seen',TKEY='apl-wn-tags';
 var E=window.WHATSNEW=[
+ {id:'2026-11-27-kingsport',date:'2026-11-27',tags:[],
+  title:tk('Dreams of Kingsport'),
+  banner:tk('New: Dreams of Kingsport, with the Dreamer archetype, Dreamlands foes, favors, relics and adventures.'),
+  body:tk('When the GM ticks Dreams of Kingsport under Books we own, players get the Dreamer archetype (choose which three skills can reach 3+), four weapons, sailing gear and boats, three tomes, four favors, six relics and the Litany of Dreams trauma. GMs get its 38 enemies and allies, from Kingsport townsfolk to gugs and shantaks, and 13 adventures, including the full Dream Manifest. Unique traumas from Songs of New Orleans now appear in the trauma picker too.')},
  {id:'2026-11-27-new-orleans',date:'2026-11-27',tags:[],
   title:tk('Songs of New Orleans'),
   banner:tk('New: Songs of New Orleans, with the Musician archetype, rituals, favors, gear, enemies and adventures.'),

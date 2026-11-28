@@ -128,8 +128,9 @@ app.addEventListener('change',e=>{
  if(el.dataset.pick){pickSel[el.dataset.pick+s]=el.value;if(el.dataset.pick!=='w')render();return;}
  if(el.dataset.kpick){kpickSel[el.dataset.kpick==='cr'?'cr':s]=el.value;return;}
  if(s==='create'){
-  if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};}if(p==='slot')cr.confirm=false;}}
+  if(el.dataset.cf){const p=el.dataset.cf;if(p.startsWith('bg.'))cr.bg={...cr.bg,[p.slice(3)]:el.value};else{cr[p]=el.value;if(p==='archetype'){cr.freeKnack='';cr.bought=[];cr.ups={};cr.archThree=[];}if(p==='slot')cr.confirm=false;}}
   else if(el.dataset.cbonus){cr.bonus=el.dataset.cbonus;if(cr.bonus!=='xp'){cr.ups={};cr.bought=[];}if(cr.bonus!=='money'&&crMoneySpent()>crMoneyBudget())toast(t('Your gear now costs more than $50. Remove something.'));}
+  else if(el.dataset.cthree){const k=el.dataset.cthree;let L=(cr.archThree||[]).filter(x=>x!==k);if(el.checked)L.push(k);cr.archThree=L.slice(0,3);cr.ups={};}
   else if(el.dataset.cconfirm){cr.confirm=el.checked;}
   else return;
   crSave();render();return;
@@ -140,6 +141,7 @@ app.addEventListener('change',e=>{
  if(el.dataset.negon){const v=el.value;if(v===(c.negOn||''))return;
   let lg;if(v==='turn')lg=logm('Negative side triggered until the end of the next turn');else if(v==='scene')lg=logm('Negative side triggered until the end of the scene');else if(v==='session')lg=logm('Negative side triggered for the rest of the session');else lg=logm('Negative side no longer in effect');
   save(s,{negOn:v},lg);return;}
+ if(el.dataset.archthree){const k=el.dataset.archthree;let L=(c.archThree||[]).filter(x=>x!==k);if(el.checked)L.push(k);L=L.slice(0,3);const sks=JSON.parse(JSON.stringify(c.skills));SKILLS.forEach(([kk])=>{sks[kk].max=archMax(c,kk,null,L);});save(s,{archThree:L,skills:sks},logm('Chose the archetype’s 3+ skills: {skills}',{skills:L.map(x=>SKILLS.find(y=>y[0]===x)[1]).join(', ')}));return;}
  if(el.dataset.trait){const t=el.value;if(c.personality&&A.TRAITS[c.personality]&&t&&t!==c.personality){edit.trait={s,t};render();}else setTrait(s,t,0);return;}
  if(el.dataset.f){const p=el.dataset.f;let v=el.value;
   if(p==='xpTotal'||p==='xpUnused'){v=Math.max(0,parseInt(v)||0);const old=Number(c[p])||0;if(v===old)return;save(s,{[p]:v},p==='xpTotal'?logm('Fixed total XP: {from} → {to}',{from:old,to:v}):logm('Fixed unused XP: {from} → {to}',{from:old,to:v}));return;}

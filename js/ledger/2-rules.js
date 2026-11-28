@@ -31,7 +31,7 @@ const R={
   if(ui&&c.injuries.filter(j=>j.name===nm).length>=lethal-1&&!c.injuries.some(j=>j.name==='Dead')){p.injuries.push({id:uid(),name:'Dead',note:''});toast(lethal===2?t('A second {injury} injury is fatal.',{injury:t(nm)}):t('A third {injury} injury is fatal.',{injury:t(nm)}));}
   if(nm==='Comatose'||nm==='Dire'){c.poolLimit=0;clampPool(c);Object.assign(p,{poolLimit:0,regular:c.regular,horror:c.horror});}
   save(s,p,logm('Injury: {injury}',{injury:nm}));},
- addTrauma(s,nm){const c=chars[s];if(!(nm in TRAUMA_AT))return;
+ addTrauma(s,nm){const c=chars[s];if(!(nm in TRAUMA_AT)&&!uniqueTrauma(nm))return;
   const p={traumas:[{id:uid(),name:nm,note:''},...c.traumas].slice(0,10)};
   if(nm==='Mind Undone')p.traumaMod=c.traumaMod+1;
   if(nm==='Shocked'){if(c.regular+c.horror>0){if(c.regular>0)p.regular=c.regular-1;else p.horror=c.horror-1;}else p.traumaMod=c.traumaMod+1;}
@@ -54,7 +54,7 @@ const R={
   if(c.xpUnused<MC_COST)return toast(t('Needs {n} XP.',{n:MC_COST}));
   const p={mc:{arch,at:Date.now()},xpUnused:c.xpUnused-MC_COST,poolMax:c.poolMax+1,poolLimit:c.poolLimit+(c.poolLimit>=c.poolMax?1:0)};
   // The new archetype's skill limits only ever loosen a skill's max; the old maxes are kept so Undo can restore them.
-  if(arch!==c.archetype){const sks=JSON.parse(JSON.stringify(c.skills)),prev={};SKILLS.forEach(([k])=>{prev[k]=sks[k].max||'';const now=sks[k].max?Number(sks[k].max):4,f=Math.min(now,A.maxFor(arch,k));sks[k].max=f<4?String(f):'';});p.skills=sks;p.mc.prev=prev;}
+  if(arch!==c.archetype){const sks=JSON.parse(JSON.stringify(c.skills)),prev={};SKILLS.forEach(([k])=>{prev[k]=sks[k].max||'';const now=sks[k].max?Number(sks[k].max):4,f=Math.min(now,A.maxFor(arch,k,c.archThree));sks[k].max=f<4?String(f):'';});p.skills=sks;p.mc.prev=prev;}
   save(s,p,arch===c.archetype?logm('Multiclassed within {trait} (20 XP): dice pool max {n}, more knacks',{trait:c.archetype,n:p.poolMax}):logm('Multiclassed into {trait} (20 XP): dice pool max {n}',{trait:arch,n:p.poolMax}));},
  unMulticlass(s){const c=chars[s];if(!c.mc)return;const was=c.mc.arch;
   const p={mc:null,xpUnused:c.xpUnused+MC_COST,poolMax:Math.max(1,c.poolMax-1)};p.poolLimit=Math.min(c.poolLimit,p.poolMax);
